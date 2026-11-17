@@ -3,7 +3,14 @@ import fichier from '../../catalogue/catalogue-initial.json'
 // Contrôle du fichier public catalogue/catalogue-initial.json (docs/reference.md §9) :
 // rien de personnel, rien d'inventé qui ne tienne pas debout, et des valeurs que la base acceptera.
 
-type Edition = { publisher: unknown; language: unknown; format: unknown; translator: unknown; isbn: unknown; page_count: unknown }
+type Edition = {
+  publisher: string | null
+  language: string
+  format: string | null
+  translator: string | null
+  isbn: string | null
+  page_count: number | null
+}
 type Oeuvre = {
   key: string
   title_fr: string
@@ -21,11 +28,12 @@ type Oeuvre = {
   themes: string[]
   atmospheres: string[]
   editions: Edition[]
-  volumes: { number: number; isbn: string | null }[]
+  volumes: { number: number; title: string | null; isbn: string | null }[]
   media: { kind: string; title: string | null; seasons: number | null; episodes_total: number | null }[]
-  relecture: { sources: { label: string; url: string }[] }
+  relecture: { sources: { label: string; url: string }[]; a_trancher?: string }
 }
 type Catalogue = {
+  relecture_generale: { themes_proposes: { name: string; pour: string[]; raison: string }[]; points: string[] }
   tags: { genre: string[]; atmosphere: string[]; theme: { name: string; is_interest: boolean }[] }
   works: Oeuvre[]
 }
@@ -38,6 +46,9 @@ const LONGUEURS = ['court', 'moyen', 'long']
 const ROLES = ['auteur', 'traducteur', 'illustrateur']
 const MEDIAS = ['anime', 'film', 'serie', 'autre']
 const FORMAT_ISBN = /^(97[89][0-9]{10}|[0-9]{9}[0-9X])$/
+
+// Les deux seules œuvres dont l'édition de référence est en anglais (docs/reference.md §3, « Langue de lecture »).
+const EDITIONS_ANGLAISES = ['1984', 'la-ferme-des-animaux']
 
 function cleIsbnValide(isbn: string): boolean {
   if (isbn.length === 13) {
@@ -55,6 +66,10 @@ function tousLesIsbn(oeuvre: Oeuvre): string[] {
 }
 
 describe('catalogue de départ', () => {
+  it('compte les 35 œuvres prévues : 32 du cahier des charges et 3 mangas ajoutés', () => {
+    expect(catalogue.works).toHaveLength(35)
+  })
+
   it('ne contient rien de personnel', () => {
     // Statut, possession, progression, appréciation, notes : ces mots ne doivent apparaître nulle part comme champ.
     const champsInterdits = [
@@ -88,11 +103,25 @@ describe('catalogue de départ', () => {
     expect(theme.some((t) => t.is_interest)).toBe(true)
   })
 
+  it('ne glisse aucun thème proposé dans le vocabulaire avant validation', () => {
+    const themes = catalogue.tags.theme.map((t) => t.name)
+    const cles = catalogue.works.map((o) => o.key)
+    for (const propose of catalogue.relecture_generale.themes_proposes) {
+      expect(themes).not.toContain(propose.name)
+      for (const cle of propose.pour) expect(cles).toContain(cle)
+    }
+  })
+
   it('identifie chaque œuvre par une clé et un titre uniques', () => {
     const cles = catalogue.works.map((o) => o.key)
     const titres = catalogue.works.map((o) => o.title_fr)
     expect(new Set(cles).size).toBe(cles.length)
     expect(new Set(titres).size).toBe(titres.length)
+  })
+
+  it('n’a d’édition anglaise que pour 1984 et La Ferme des animaux', () => {
+    const anglaises = catalogue.works.filter((o) => o.editions.some((e) => e.language !== 'fr')).map((o) => o.key)
+    expect(anglaises.sort()).toEqual([...EDITIONS_ANGLAISES].sort())
   })
 
   describe.each(catalogue.works.map((oeuvre) => [oeuvre.title_fr, oeuvre] as const))('%s', (_titre, oeuvre) => {
@@ -117,6 +146,13 @@ describe('catalogue de départ', () => {
       }
     })
 
+    it('a une seule édition de référence, dans une langue que je lis', () => {
+      expect(oeuvre.editions).toHaveLength(1)
+      expect(['fr', 'en']).toContain(oeuvre.editions[0].language)
+      // Une édition anglaise n'a de sens ici que pour une œuvre écrite en anglais.
+      if (oeuvre.editions[0].language === 'en') expect(oeuvre.original_language).toBe('en')
+    })
+
     it('a un synopsis rédigé', () => {
       expect(oeuvre.synopsis.length).toBeGreaterThan(150)
       expect(oeuvre.synopsis.length).toBeLessThan(700)
@@ -127,6 +163,7 @@ describe('catalogue de départ', () => {
       for (const nom of oeuvre.genres) expect(genre).toContain(nom)
       for (const nom of oeuvre.atmospheres) expect(atmosphere).toContain(nom)
       for (const nom of oeuvre.themes) expect(theme.map((t) => t.name)).toContain(nom)
+      for (const liste of [oeuvre.genres, oeuvre.atmospheres, oeuvre.themes]) expect(new Set(liste).size).toBe(liste.length)
       expect(oeuvre.genres.length).toBeGreaterThanOrEqual(1)
       expect(oeuvre.genres.length).toBeLessThanOrEqual(2)
       expect(oeuvre.themes.length).toBeGreaterThanOrEqual(3)
@@ -135,9 +172,10 @@ describe('catalogue de départ', () => {
       expect(oeuvre.atmospheres.length).toBeLessThanOrEqual(3)
     })
 
-    it('n’a que des ISBN bien formés, à la clé de contrôle juste', () => {
+    it('n’a que des ISBN à 13 chiffres, à la clé de contrôle juste', () => {
       for (const isbn of tousLesIsbn(oeuvre)) {
         expect(isbn, isbn).toMatch(FORMAT_ISBN)
+        expect(isbn, isbn).toHaveLength(13)
         expect(cleIsbnValide(isbn), isbn).toBe(true)
       }
     })
@@ -145,7 +183,7 @@ describe('catalogue de départ', () => {
     it('numérote ses tomes sans trou ni doublon, et seulement si c’est une série', () => {
       const numeros = oeuvre.volumes.map((v) => v.number)
       expect(numeros).toEqual(numeros.map((_, i) => i + 1))
-      if (!oeuvre.is_series) expect(numeros).toEqual([])
+      expect(numeros.length > 0).toBe(oeuvre.is_series)
     })
 
     it('cite au moins une source', () => {
