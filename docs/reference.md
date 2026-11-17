@@ -39,6 +39,7 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Voix de l'interface | Première personne du propriétaire (« Mon ressenti », « Mon envie du moment »). |
 | Appréciation | Quelques mots plutôt que des étoiles (voir §6.4). Facultative. |
 | Mangas | Possession et progression suivies tome par tome. |
+| Langue de lecture | Français ou anglais. Le catalogue n'ajoute pas d'édition anglaise d'office. Quand j'ajoute un livre par son ISBN, l'édition est celle de mon exemplaire. Pour une œuvre écrite en anglais, « Découvrir ailleurs » indique si la version originale vaut le coup (ex. 1984 et son vocabulaire inventé). Si mon édition est en anglais, le titre original s'affiche en premier. Les fiches (synopsis, étiquettes) restent toujours en français. |
 | Anime | Média associé à l'œuvre (saisons, épisodes), jamais compté comme des livres. |
 | Hors connexion | Consultation possible. Les modifications demandent une connexion. |
 | Couvertures | Recherche automatique, copie dans le stockage Supabase, couverture typographique générée en dernier recours. |
@@ -237,7 +238,8 @@ Philosophique → réconfortant → classique existentiel → dystopie → autre
 Un mode séparé de « Mon envie du moment », pour trouver des œuvres qui ne sont pas encore dans ma bibliothèque.
 
 - **Ce que l'appli envoie à l'API Claude** (modèle Sonnet 5.5, sortie JSON structurée) : l'envie choisie, mes lectures récentes et appréciées (titres et étiquettes), mes thèmes de cœur (les thèmes marqués centres d'intérêt, §6.1) et les titres déjà présents. Jamais mes notes ni mes citations.
-- **Ce que Claude propose** : 3 œuvres absentes de ma bibliothèque, chacune avec une raison et une fiche (synopsis sans spoiler, étiquettes du vocabulaire existant, tonalité, exigence, longueur).
+- **Ce que Claude propose** : 3 œuvres absentes de ma bibliothèque, chacune avec une raison et une fiche en français (synopsis sans spoiler, étiquettes du vocabulaire existant, tonalité, exigence, longueur).
+- **Version originale** : pour une œuvre écrite en anglais, Claude dit si la lire en version originale vaut le coup, avec une raison courte (style, jeux de langue, vocabulaire inventé), ou rien si la traduction convient aussi bien.
 - **Vérification avant affichage** : chaque proposition est vérifiée sur Google Books ou la BnF. L'ISBN, l'éditeur et la couverture viennent toujours de ces sources, jamais de l'IA. Une proposition introuvable dans ces sources n'est pas affichée.
 - **« Ajouter à ma liste »** enregistre l'œuvre en « À découvrir », déjà étiquetée. Rien n'est enregistré sans ce geste.
 - Si l'IA est indisponible ou si la limite de dépense est atteinte, ce mode l'indique simplement ; tout le reste de l'appli fonctionne.
@@ -265,11 +267,11 @@ Les couvertures ne sont jamais enregistrées dans le dépôt GitHub public.
 
 ### 8.4 Fiche automatique
 
-À l'ajout d'un livre, les métadonnées publiques sont d'abord récupérées (§8.1). L'API Claude propose ensuite un synopsis et des étiquettes, en suggestion modifiable : rien n'est enregistré tant que la fiche n'est pas validée. Sans l'IA, l'ajout fonctionne de la même façon, avec ces champs à remplir à la main.
+À l'ajout d'un livre, les métadonnées publiques sont d'abord récupérées (§8.1). L'API Claude propose ensuite un synopsis et des étiquettes, en suggestion modifiable : rien n'est enregistré tant que la fiche n'est pas validée. Sans l'IA, l'ajout fonctionne de la même façon, avec ces champs à remplir à la main. La fiche est toujours en français, même pour une édition en anglais.
 
 ## 9. Catalogue initial
 
-Les 30 œuvres du cahier des charges, plus 3 mangas ajoutés le 17 novembre 2026, soit 33 œuvres, toutes en « À découvrir » et « Non possédé ». Vinland Saga est une seule œuvre avec 29 tomes et un média associé (anime, 2 saisons de 24 épisodes).
+Les 32 œuvres listées dans le cahier des charges (qui en annonce 30), plus 3 mangas ajoutés le 17 novembre 2026, soit 35 œuvres, toutes en « À découvrir » et « Non possédé ». Vinland Saga est une seule œuvre avec 29 tomes et un média associé (anime, 2 saisons de 24 épisodes).
 
 Ajouts du 17 novembre 2026 (à vérifier à l'étape 3 comme le reste) :
 
