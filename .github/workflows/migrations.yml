@@ -1,14 +1,13 @@
 # Vérifie les migrations de la base sur une base jetable, puis, sur main seulement,
-# les applique au vrai projet Supabase.
+# les applique au vrai projet Supabase (sans effet s'il n'y a rien de nouveau).
+# L'Action tourne à chaque envoi, sur toutes les branches : le dernier commit d'une
+# pull request porte ainsi toujours le résultat des tests de sécurité.
 # Rappel : les journaux sont publics. Les tests n'utilisent que des données fictives,
 # et aucune étape n'affiche de clé ni de donnée personnelle.
 name: Migrations
 
 on:
   push:
-    paths:
-      - 'supabase/**'
-      - '.github/workflows/migrations.yml'
   workflow_dispatch:
 
 permissions:
