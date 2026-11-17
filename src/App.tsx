@@ -10,6 +10,10 @@ import { Decouvrir } from './ecrans/Decouvrir'
 import { Ajouter } from './ecrans/Ajouter'
 import { Reglages } from './ecrans/Reglages'
 import { Introuvable } from './ecrans/Introuvable'
+import { Connexion, NonConfigure } from './ecrans/Connexion'
+import type { Auth } from './session/auth'
+import { authParDefaut } from './session/authParDefaut'
+import { FournisseurSession, useEtatSession } from './session/Session'
 
 const ECRANS: Record<Ecran, () => React.JSX.Element> = {
   accueil: Accueil,
@@ -29,21 +33,48 @@ const TITRES: Record<Ecran, string> = {
   introuvable: 'Page introuvable · Ichnos',
 }
 
-export function App() {
+/** L'appli entière est réservée au compte connecté : sans session, seul l'écran de connexion s'affiche. */
+export function App({ auth = authParDefaut }: { auth?: Auth | null }) {
+  if (!auth) {
+    return (
+      <>
+        <HorsConnexion />
+        <NonConfigure />
+      </>
+    )
+  }
+  return <AppReservee auth={auth} />
+}
+
+function AppReservee({ auth }: { auth: Auth }) {
+  const session = useEtatSession(auth)
   const ecran = useEcran()
   const Contenu = ECRANS[ecran]
 
   useEffect(() => {
-    document.title = TITRES[ecran]
-  }, [ecran])
+    if (session.statut === 'chargement') return
+    document.title = session.statut === 'connecte' ? TITRES[ecran] : 'Connexion · Ichnos'
+  }, [ecran, session.statut])
+
+  // Le temps de relire la session gardée sur l'appareil (quelques millisecondes) : le fond seul.
+  if (session.statut === 'chargement') return null
+
+  if (session.statut === 'deconnecte') {
+    return (
+      <>
+        <HorsConnexion />
+        <Connexion auth={auth} />
+      </>
+    )
+  }
 
   return (
-    <>
+    <FournisseurSession value={{ auth, compte: session.compte }}>
       <AllerAuContenu />
       <HorsConnexion />
       <BarreLaterale ecran={ecran} />
       <Contenu />
       <BarreDuBas ecran={ecran} />
-    </>
+    </FournisseurSession>
   )
 }

@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Bouton } from '../composants/Bouton'
 import { Page, TitrePage } from '../composants/Page'
+import { useSession } from '../session/Session'
 import { appliquerTheme, lireChoixTheme, type ChoixTheme } from '../theme/theme'
 
 const CHOIX: { valeur: ChoixTheme; libelle: string }[] = [
@@ -44,6 +46,44 @@ export function Reglages() {
           ))}
         </div>
       </fieldset>
+      <MonCompte />
     </Page>
+  )
+}
+
+function MonCompte() {
+  const { auth, compte } = useSession()
+  const [occupe, setOccupe] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  async function meDeconnecter() {
+    setOccupe(true)
+    setErreur(null)
+    const resultat = await auth.deconnecter()
+    // En cas de succès, l'appli repasse d'elle-même à l'écran de connexion.
+    if (resultat.ok) return
+    setOccupe(false)
+    setErreur(
+      resultat.echec === 'reseau'
+        ? 'Pas de connexion à internet : la déconnexion attendra le retour du réseau.'
+        : 'La déconnexion n’a pas abouti. Je réessaie dans un instant.',
+    )
+  }
+
+  return (
+    <section aria-labelledby="mon-compte" className="flex max-w-xl flex-col items-start gap-3">
+      <h2 id="mon-compte" className="m-0 font-titre text-2xl">
+        Mon compte
+      </h2>
+      <p className="m-0 mb-1 break-all text-discret">{compte.email}</p>
+      <Bouton variante="secondaire" occupe={occupe} onClick={meDeconnecter}>
+        Me déconnecter
+      </Bouton>
+      {erreur && (
+        <p role="alert" className="m-0 rounded-carte bg-accent-doux px-5 py-3 text-[0.9375rem] leading-snug text-accent-texte">
+          {erreur}
+        </p>
+      )}
+    </section>
   )
 }
