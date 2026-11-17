@@ -1,0 +1,3 @@
+# Réglages de la CLI Supabase pour la base jetable montée par GitHub Actions.
+# Rien de secret ici : les accès au vrai projet sont dans les secrets GitHub.
+project_id = "ichnos"
