@@ -3,6 +3,7 @@ import { BarreDuBas, BarreLaterale } from './navigation/Navigation'
 import { useEcran } from './navigation/useEcran'
 import type { Ecran } from './navigation/routes'
 import { HorsConnexion } from './composants/HorsConnexion'
+import { AllerAuContenu } from './composants/AllerAuContenu'
 import { Accueil } from './ecrans/Accueil'
 import { Bibliotheque } from './ecrans/Bibliotheque'
 import { Decouvrir } from './ecrans/Decouvrir'
@@ -38,6 +39,7 @@ export function App() {
 
   return (
     <>
+      <AllerAuContenu />
       <HorsConnexion />
       <BarreLaterale ecran={ecran} />
       <Contenu />

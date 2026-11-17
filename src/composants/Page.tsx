@@ -5,7 +5,8 @@ export function Page({ children, entete }: { children: ReactNode; entete?: React
   return (
     <main
       id="contenu"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-10 pr-[max(1.5rem,env(safe-area-inset-right))] pl-[max(1.5rem,env(safe-area-inset-left))] tablette:pr-[max(2.5rem,env(safe-area-inset-right))] tablette:pl-[calc(env(safe-area-inset-left)+18.5rem)]"
+      tabIndex={-1}
+      className="mx-auto outline-none flex w-full max-w-6xl flex-col gap-10 pr-[max(1.5rem,env(safe-area-inset-right))] pl-[max(1.5rem,env(safe-area-inset-left))] tablette:pr-[max(2.5rem,env(safe-area-inset-right))] tablette:pl-[calc(env(safe-area-inset-left)+18.5rem)]"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
         paddingBottom: 'calc(max(env(safe-area-inset-bottom), 1rem) + 7.5rem)',

@@ -23,6 +23,14 @@ describe('squelette', () => {
     expect(within(barreDuBas).getByRole('link', { name: 'Ajouter une œuvre' })).toHaveAttribute('href', '#/ajouter')
   })
 
+  it('« Aller au contenu » place le focus sur le contenu sans changer d’écran', () => {
+    render(<App />)
+    Element.prototype.scrollIntoView = () => {}
+    act(() => screen.getByRole('link', { name: 'Aller au contenu' }).click())
+    expect(document.activeElement).toBe(screen.getByRole('main'))
+    expect(window.location.hash).toBe('')
+  })
+
   it('change d’écran quand l’adresse change', () => {
     render(<App />)
     aller('#/decouvrir')
