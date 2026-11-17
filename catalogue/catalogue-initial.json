@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "etat": "lot témoin : 5 œuvres sur 33, en relecture",
+  "a_propos": "Catalogue de départ d'Ichnos. Informations bibliographiques publiques uniquement : aucun statut de lecture, aucune possession, aucune appréciation, aucune note. Le bloc « relecture » de chaque œuvre (sources, remarques, autres éditions) sert à la vérification et n'est pas importé.",
+  "tags": {
+    "genre": [
+      "Classique",
+      "Roman philosophique",
+      "Littérature existentielle",
+      "Dystopie",
+      "Critique sociale",
+      "Fable et allégorie",
+      "Science-fiction",
+      "Fantasy et merveilleux",
+      "Récit humaniste",
+      "Aventure historique",
+      "Philosophie",
+      "Spiritualité",
+      "Essai pratique",
+      "Témoignage",
+      "Humour et parodie"
+    ],
+    "atmosphere": [
+      "Douce",
+      "Chaleureuse",
+      "Sereine",
+      "Contemplative",
+      "Poétique",
+      "Mélancolique",
+      "Introspective",
+      "Onirique",
+      "Ironique",
+      "Drôle",
+      "Épique",
+      "Tendue",
+      "Oppressante",
+      "Dérangeante",
+      "Âpre"
+    ],
+    "theme": [
+      { "name": "Pardon de soi", "is_interest": true },
+      { "name": "Rédemption", "is_interest": true },
+      { "name": "Acceptation de soi", "is_interest": true },
+      { "name": "Paix intérieure", "is_interest": true },
+      { "name": "Compassion", "is_interest": true },
+      { "name": "Comprendre l'autre", "is_interest": true },
+      { "name": "Dépasser ses peurs", "is_interest": true },
+      { "name": "Regrets", "is_interest": true },
+      { "name": "Quête de sens", "is_interest": true },
+      { "name": "Liberté", "is_interest": true },
+      { "name": "Rapport au temps", "is_interest": true },
+      { "name": "Technologie et attention", "is_interest": true },
+      { "name": "Relations humaines", "is_interest": true },
+      { "name": "Beauté des choses simples", "is_interest": true },
+      { "name": "Transformation personnelle", "is_interest": true },
+      { "name": "Absurde", "is_interest": false },
+      { "name": "Culpabilité", "is_interest": false },
+      { "name": "Conscience morale", "is_interest": false },
+      { "name": "Jugement", "is_interest": false },
+      { "name": "Identité", "is_interest": false },
+      { "name": "Aliénation", "is_interest": false },
+      { "name": "Solitude", "is_interest": false },
+      { "name": "Pouvoir", "is_interest": false },
+      { "name": "Totalitarisme", "is_interest": false },
+      { "name": "Surveillance", "is_interest": false },
+      { "name": "Propagande", "is_interest": false },
+      { "name": "Censure", "is_interest": false },
+      { "name": "Conformisme", "is_interest": false },
+      { "name": "Bonheur imposé", "is_interest": false },
+      { "name": "Violence", "is_interest": false },
+      { "name": "Nature humaine", "is_interest": false },
+      { "name": "Solidarité", "is_interest": false },
+      { "name": "Dignité", "is_interest": false },
+      { "name": "Sagesse", "is_interest": false },
+      { "name": "Stoïcisme", "is_interest": false },
+      { "name": "Pleine conscience", "is_interest": false },
+      { "name": "Écoute", "is_interest": false },
+      { "name": "Résilience", "is_interest": false },
+      { "name": "Amour", "is_interest": false },
+      { "name": "Amitié", "is_interest": false },
+      { "name": "Espoir", "is_interest": false },
+      { "name": "Patience", "is_interest": false },
+      { "name": "Courage", "is_interest": false },
+      { "name": "Désir", "is_interest": false },
+      { "name": "Humilité", "is_interest": false },
+      { "name": "Pacifisme", "is_interest": false },
+      { "name": "Responsabilité", "is_interest": false },
+      { "name": "Obsession", "is_interest": false },
+      { "name": "Attente", "is_interest": false },
+      { "name": "Connaissance", "is_interest": false }
+    ]
+  },
+  "works": [
+    {
+      "key": "vinland-saga",
+      "title_fr": "Vinland Saga",
+      "title_original": "ヴィンランド・サガ",
+      "original_language": "ja",
+      "first_published_year": 2005,
+      "form": "manga",
+      "is_series": true,
+      "authors": [{ "name": "Makoto Yukimura", "role": "auteur" }],
+      "synopsis": "Au début du XIe siècle, le jeune Islandais Thorfinn grandit parmi des mercenaires vikings, aux côtés de l'homme qu'il s'est juré de tuer. De champs de bataille en mers froides, entre l'Angleterre et le Danemark, il ne vit que pour sa vengeance. Mais que reste-t-il d'un guerrier quand la colère ne suffit plus ? Une fresque historique qui interroge peu à peu la violence, et ce que signifie vraiment être fort.",
+      "tone": 2,
+      "density": 2,
+      "length": "long",
+      "genres": ["Aventure historique"],
+      "themes": ["Rédemption", "Pardon de soi", "Pacifisme", "Responsabilité", "Transformation personnelle"],
+      "atmospheres": ["Épique", "Âpre", "Introspective"],
+      "editions": [
+        {
+          "publisher": "Kurokawa",
+          "language": "fr",
+          "format": "manga",
+          "translator": null,
+          "isbn": null,
+          "page_count": null
+        }
+      ],
+      "volumes": [
+        { "number": 1, "isbn": "9782351423554" },
+        { "number": 2, "isbn": "9782351423561" },
+        { "number": 3, "isbn": "9782351423578" },
+        { "number": 4, "isbn": "9782351423585" },
+        { "number": 5, "isbn": "9782351423592" },
+        { "number": 6, "isbn": "9782351425114" },
+        { "number": 7, "isbn": "9782351425350" },
+        { "number": 8, "isbn": "9782351425367" },
+        { "number": 9, "isbn": "9782351426012" },
+        { "number": 10, "isbn": "9782351426814" },
+        { "number": 11, "isbn": "9782351427828" },
+        { "number": 12, "isbn": "9782351429297" },
+        { "number": 13, "isbn": "9782368520796" },
+        { "number": 14, "isbn": "9782368520802" },
+        { "number": 15, "isbn": "9782368522097" },
+        { "number": 16, "isbn": "9782368522738" },
+        { "number": 17, "isbn": "9782368524176" },
+        { "number": 18, "isbn": "9782368524626" },
+        { "number": 19, "isbn": "9782368525869" },
+        { "number": 20, "isbn": "9782368526989" },
+        { "number": 21, "isbn": "9782368527269" },
+        { "number": 22, "isbn": "9782368528402" },
+        { "number": 23, "isbn": "9782368529614" },
+        { "number": 24, "isbn": "9782368529621" },
+        { "number": 25, "isbn": "9782380711516" },
+        { "number": 26, "isbn": "9782380713183" },
+        { "number": 27, "isbn": "9782380715453" },
+        { "number": 28, "isbn": "9791042014810" },
+        { "number": 29, "isbn": "9791042019396" }
+      ],
+      "media": [{ "kind": "anime", "title": "Vinland Saga", "seasons": 2, "episodes_total": 48 }],
+      "relecture": {
+        "edition_proposee": "Kurokawa, 29 tomes parus de 2009 à 2026 (série terminée).",
+        "sources": [
+          { "label": "BnF, notice de la série chez Kurokawa", "url": "https://catalogue.bnf.fr/ark:/12148/cb414177511" },
+          { "label": "BnF, tome 29 (dépôt légal 2026)", "url": "https://catalogue.bnf.fr/ark:/12148/cb48816815v" },
+          { "label": "Wikipédia, Vinland Saga (prépublication, fin de la série, anime)", "url": "https://fr.wikipedia.org/wiki/Vinland_Saga" }
+        ],
+        "remarques": [
+          "Les 29 ISBN de tomes viennent chacun d'une notice de la BnF.",
+          "Prépublication au Japon à partir d'avril 2005 ; dernier chapitre paru le 25 juillet 2025 ; 29 tomes au Japon comme en France.",
+          "Anime : saison 1 (2019, Wit Studio) et saison 2 (2023, MAPPA), 24 épisodes chacune, soit 48.",
+          "Kurokawa réédite la série depuis 2025 avec de nouveaux ISBN (tome 1 : 979-10-420-2059-0). J'ai gardé ceux de l'édition d'origine."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "momo",
+      "title_fr": "Momo",
+      "title_original": "Momo",
+      "original_language": "de",
+      "first_published_year": 1973,
+      "form": "roman",
+      "is_series": false,
+      "authors": [{ "name": "Michael Ende", "role": "auteur" }],
+      "synopsis": "Momo, une petite fille venue de nulle part, vit dans les ruines d'un amphithéâtre, au bord d'une grande ville. Elle possède un don rare : elle sait écouter, si bien que chacun repart de chez elle un peu plus lui-même. Le jour où d'étranges hommes en gris persuadent les habitants d'économiser leur temps, la ville devient pressée, efficace et triste. Momo, qui n'a rien d'autre que son temps, est la seule à voir ce qui se passe.",
+      "tone": 4,
+      "density": 1,
+      "length": "moyen",
+      "genres": ["Fantasy et merveilleux", "Fable et allégorie"],
+      "themes": ["Rapport au temps", "Écoute", "Amitié", "Beauté des choses simples"],
+      "atmospheres": ["Douce", "Poétique", "Onirique"],
+      "editions": [
+        {
+          "publisher": "Bayard jeunesse",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Corinna Gepner",
+          "isbn": "9782747024693",
+          "page_count": 430
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Bayard jeunesse, collection Estampille, 2009, traduction de Corinna Gepner.",
+        "sources": [
+          { "label": "BnF, édition Bayard jeunesse 2009", "url": "https://catalogue.bnf.fr/ark:/12148/cb41482244m" },
+          { "label": "BnF, édition originale allemande (Thienemann, 1973)", "url": "https://catalogue.bnf.fr/ark:/12148/cb39026066d" }
+        ],
+        "remarques": [
+          "Longueur « moyen » : les autres éditions françaises font environ 310 pages ; l'édition Bayard en compte 430 à cause de sa mise en page.",
+          "« Attention », dans le cahier des charges, est rendu par le thème « Écoute »."
+        ],
+        "autres_editions": [
+          "Traduction plus ancienne de Marianne Strauss (Stock, 1980 ; Le Livre de poche jeunesse, 1989), sous le titre long « Momo ou la Mystérieuse histoire des voleurs de temps… »."
+        ]
+      }
+    },
+    {
+      "key": "la-chute",
+      "title_fr": "La Chute",
+      "title_original": null,
+      "original_language": "fr",
+      "first_published_year": 1956,
+      "form": "roman_court",
+      "is_series": false,
+      "authors": [{ "name": "Albert Camus", "role": "auteur" }],
+      "synopsis": "Dans un bar d'Amsterdam, un ancien avocat parisien aborde un inconnu et se met à lui parler. Soir après soir, Jean-Baptiste Clamence raconte l'homme admiré qu'il était, généreux, brillant, sûr de sa vertu, puis l'instant où cette belle image s'est fissurée. Un monologue ironique et troublant, où celui qui se confesse semble tendre un miroir à celui qui l'écoute.",
+      "tone": 2,
+      "density": 4,
+      "length": "court",
+      "genres": ["Classique", "Littérature existentielle"],
+      "themes": ["Culpabilité", "Jugement", "Conscience morale", "Solitude"],
+      "atmospheres": ["Ironique", "Introspective", "Dérangeante"],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": null,
+          "isbn": "9782070360109",
+          "page_count": 160
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 10.",
+        "sources": [
+          { "label": "Gallimard, fiche de l'édition Folio n° 10", "url": "https://www.gallimard.fr/catalogue/la-chute/9782070360109" },
+          { "label": "BnF, édition originale (Gallimard, 1956)", "url": "https://catalogue.bnf.fr/ark:/12148/cb31902884m" },
+          { "label": "BnF, Folio n° 10 (1971)", "url": "https://catalogue.bnf.fr/ark:/12148/cb352243269" }
+        ],
+        "remarques": [
+          "L'ISBN du Folio vient du site de Gallimard : la notice BnF de 1971 n'en porte pas.",
+          "Pagination : 160 pages selon Gallimard, 159 selon la BnF. J'ai retenu celle de l'éditeur.",
+          "« Hypocrisie », dans le cahier des charges, est rendu par « Jugement » et « Conscience morale ». Je peux l'ajouter au vocabulaire si vous y tenez."
+        ],
+        "autres_editions": ["Folioplus classiques n° 125 (2008), avec dossier : ISBN 978-2-07-034961-6, 212 pages."]
+      }
+    },
+    {
+      "key": "1984",
+      "title_fr": "1984",
+      "title_original": "Nineteen Eighty-Four",
+      "original_language": "en",
+      "first_published_year": 1949,
+      "form": "roman",
+      "is_series": false,
+      "authors": [{ "name": "George Orwell", "role": "auteur" }],
+      "synopsis": "À Londres, dans un État où le Parti surveille chaque geste et réécrit sans cesse le passé, Winston Smith travaille à corriger les archives pour qu'elles donnent toujours raison au pouvoir. Un jour, il commence à tenir un journal, acte minuscule et déjà impardonnable. Le roman suit cette tentative de garder une pensée à soi dans un monde qui prétend décider de ce qui est vrai.",
+      "tone": 1,
+      "density": 3,
+      "length": "moyen",
+      "genres": ["Dystopie", "Classique"],
+      "themes": ["Totalitarisme", "Surveillance", "Liberté", "Propagande"],
+      "atmospheres": ["Oppressante", "Tendue", "Dérangeante"],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Josée Kamoun",
+          "isbn": "9782072878497",
+          "page_count": 393
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 822 (2020), traduction de Josée Kamoun.",
+        "sources": [
+          { "label": "BnF, Folio n° 822, traduction Kamoun (2020)", "url": "https://catalogue.bnf.fr/ark:/12148/cb465691674" },
+          { "label": "Wikidata, Nineteen Eighty-Four (roman de 1949)", "url": "https://www.wikidata.org/wiki/Q208460" }
+        ],
+        "remarques": [
+          "Trois traductions existent en poche chez Gallimard. J'ai proposé celle du Folio courant ; à vous de choisir.",
+          "La traduction Kamoun (2018) est au présent et dit « néoparler » ; celle d'Audiberti (1950) est la version historique, avec « novlangue »."
+        ],
+        "autres_editions": [
+          "Folio SF n° 685 (2021), traduction d'Amélie Audiberti : ISBN 978-2-07-293822-1, 407 pages.",
+          "Folio classique (2021), traduction de Philippe Jaworski, sous le titre « Mil neuf cent quatre-vingt-quatre » : ISBN 978-2-07-292412-5, 507 pages."
+        ]
+      }
+    },
+    {
+      "key": "lettres-a-lucilius",
+      "title_fr": "Lettres à Lucilius",
+      "title_original": "Epistulae morales ad Lucilium",
+      "original_language": "la",
+      "first_published_year": null,
+      "form": "philosophie",
+      "is_series": false,
+      "authors": [{ "name": "Sénèque", "role": "auteur" }],
+      "synopsis": "À la fin de sa vie, retiré des affaires de Rome, Sénèque écrit à son ami Lucilius cent vingt-quatre lettres. Il part de petits faits du quotidien, un voyage, une maladie, le vacarme d'un établissement de bains, et en tire des conseils pour mieux vivre : user de son temps, apprivoiser la peur, distinguer ce qui dépend de soi. Une philosophie stoïcienne à hauteur d'homme, qui se lit une lettre à la fois.",
+      "tone": 4,
+      "density": 3,
+      "length": "long",
+      "genres": ["Philosophie", "Classique"],
+      "themes": ["Stoïcisme", "Sagesse", "Dépasser ses peurs", "Rapport au temps", "Paix intérieure"],
+      "atmospheres": ["Sereine", "Introspective"],
+      "editions": [
+        {
+          "publisher": "Flammarion",
+          "language": "fr",
+          "format": "grand format",
+          "translator": "Maxime Rovere",
+          "isbn": "9782080455314",
+          "page_count": 805
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Flammarion, 2025, traduction intégrale de Maxime Rovere (les 124 lettres).",
+        "sources": [
+          { "label": "BnF, édition Flammarion 2025", "url": "https://catalogue.bnf.fr/ark:/12148/cb48629959b" },
+          { "label": "Librairie Mollat, « texte intégral »", "url": "https://www.mollat.com/livres/3375242/seneque-lettres-a-lucilius-texte-integral" },
+          { "label": "Wikidata, Epistulae morales ad Lucilium", "url": "https://www.wikidata.org/wiki/Q720535" }
+        ],
+        "remarques": [
+          "Année de première parution laissée vide : les lettres ont été écrites vers 63-64 apr. J.-C., sans date d'édition unique.",
+          "J'ai proposé une édition intégrale, puisque la lecture se suit lettre par lettre. C'est un grand format à 35 € ; les éditions de poche ne donnent qu'une partie des lettres.",
+          "Le caractère intégral de l'édition Flammarion vient de la fiche du libraire Mollat, pas de la BnF."
+        ],
+        "autres_editions": [
+          "GF Flammarion n° 599 (2017), lettres 1 à 29 seulement, traduction de Marie-Ange Jourdan-Gueyer : ISBN 978-2-08-140449-6, 200 pages.",
+          "Robert Laffont, collection Bouquins (1993), « Entretiens, Lettres à Lucilius », édition de Paul Veyne, intégrale avec d'autres œuvres : ISBN 2-221-07127-1, 1 103 pages.",
+          "Arléa poche (2010), « Apprendre à vivre », choix de lettres traduit par Alain Golomb : ISBN 978-2-86959-904-8, 291 pages."
+        ]
+      }
+    }
+  ]
+}
