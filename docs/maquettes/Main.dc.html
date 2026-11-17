@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ichnos — Accueil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&amp;family=Nunito:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 1120px; position: relative; overflow: hidden; box-sizing: border-box; background: {{c.bg}}; color: {{c.ink}}; font-family: 'Nunito', system-ui, sans-serif; font-size: 16px; line-height: 1.45">
+
+<div style="display: flex; flex-direction: column; gap: 40px; padding: 64px 24px 150px">
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div style="font-family: 'Lora', Georgia, serif; font-style: italic; font-size: 22px; color: {{c.accentText}}">Ichnos</div>
+<button aria-label="Réglages" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.muted}}; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+</button>
+</div>
+
+<section aria-labelledby="encours" style="display: flex; flex-direction: column; gap: 18px">
+<h1 id="encours" style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 34px; line-height: 1.1">En ce moment</h1>
+<div style="display: flex; gap: 18px; margin: 0 -24px; padding: 0 24px 4px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 24px">
+<sc-for list="{{reading}}" as="b" hint-placeholder-count="3">
+<div style="flex: 0 0 156px; display: flex; flex-direction: column; gap: 12px; scroll-snap-align: start">
+<a href="Fiche.dc.html" style="display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: {{c.ink}}">
+<div aria-hidden="true" style="{{b.coverStyle}}">
+<div style="font-family: 'Lora', Georgia, serif; font-size: 19px; line-height: 1.15; font-weight: 500">{{b.title}}</div>
+<div style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600">{{b.author}}</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-weight: 700; font-size: 15px; line-height: 1.25">{{b.title}}</div>
+<div style="font-size: 14px; color: {{c.muted}}">{{b.progressText}}</div>
+</div>
+</a>
+<a href="MiseAJour.dc.html" aria-label="{{b.stepLabel}}" style="align-self: flex-start; height: 44px; padding: 0 16px 0 14px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>
+{{b.stepText}}</a>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="idee" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="idee" style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 24px">Une idée pour la suite</h2>
+<div style="background: {{c.surface}}; border-radius: 28px; padding: 20px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 10px 30px {{c.shadow}}; border: 1px solid {{c.border}}">
+<div style="display: flex; gap: 18px; align-items: flex-start">
+<div aria-hidden="true" style="{{idea.coverStyle}}">
+<div style="font-family: 'Lora', Georgia, serif; font-size: 17px; line-height: 1.1; font-weight: 500">{{idea.title}}</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<div style="font-family: 'Lora', Georgia, serif; font-size: 24px; line-height: 1.1">Momo</div>
+<div style="font-size: 14px; color: {{c.muted}}">Michael Ende</div>
+<p style="margin: 8px 0 0; font-size: 15px; line-height: 1.5">Lumineux, après la gravité de Crime et Châtiment. Il parle du temps et de l'attention aux autres.</p>
+</div>
+</div>
+<div style="display: flex; gap: 10px">
+<a href="Fiche.dc.html" aria-label="Voir la fiche de Momo" style="flex: 1 1 0; height: 48px; border-radius: 999px; background: {{c.accent}}; color: {{c.onAccent}}; font-size: 15px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">Voir la fiche</a>
+<button style="flex: 1 1 0; height: 48px; border-radius: 999px; border: 1px solid {{c.border}}; background: transparent; color: {{c.ink}}; font-size: 15px; font-weight: 600">Une autre idée</button>
+</div>
+</div>
+<a href="Decouvrir.dc.html" style="height: 56px; padding: 0 20px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; text-decoration: none; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600">
+Selon mon humeur
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</a>
+</section>
+
+<section aria-labelledby="termines" style="display: flex; flex-direction: column; gap: 16px">
+<h2 id="termines" style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 24px">Terminés récemment</h2>
+<div style="display: flex; gap: 18px">
+<sc-for list="{{finished}}" as="done" hint-placeholder-count="2">
+<a href="Fiche.dc.html" style="width: 112px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: {{c.ink}}">
+<div aria-hidden="true" style="{{done.coverStyle}}">
+<div style="font-family: 'Lora', Georgia, serif; font-size: 15px; line-height: 1.12; font-weight: 500">{{done.title}}</div>
+</div>
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 14px; font-weight: 700; line-height: 1.25">{{done.title}}</span>
+<span style="font-size: 13px; color: {{c.muted}}">{{done.author}}</span>
+</div>
+</a>
+</sc-for>
+</div>
+</section>
+
+</div>
+
+<nav aria-label="Navigation principale" style="position: absolute; left: 16px; right: 16px; bottom: 34px; height: 72px; border-radius: 999px; background: {{c.surface}}; border: 1px solid {{c.border}}; box-shadow: 0 12px 34px {{c.shadowStrong}}; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; box-sizing: border-box">
+<a href="Main.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; height: 54px; border-radius: 999px; justify-content: center; text-decoration: none; background: {{c.accentSoft}}; color: {{c.accentText}}; font-size: 12px; font-weight: 700">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5H9v5H5.5A1.5 1.5 0 0 1 4 19z"></path></svg>
+Accueil</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; height: 54px; justify-content: center; text-decoration: none; color: {{c.muted}}; font-size: 12px; font-weight: 600">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5zM16 5.6l3.2-.9 3 14.2-3.2.8z"></path></svg>
+Bibliothèque</a>
+<a href="Decouvrir.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; height: 54px; justify-content: center; text-decoration: none; color: {{c.muted}}; font-size: 12px; font-weight: 600">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>
+Découvrir</a>
+<button aria-label="Ajouter une œuvre" style="width: 54px; height: 54px; border-radius: 999px; border: none; background: {{c.accent}}; color: {{c.onAccent}}; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Thème"},"$preview":{"width":390,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var dark = this.props.dark ?? false;
+    var c = dark
+      ? { bg: '#151413', surface: '#262422', ink: '#EEEAE4', muted: '#A6A099', accent: '#8D3131', accentText: '#EEEAE4', accentSoft: '#3A1E1D', onAccent: '#F5EFE9', border: '#3A3734', shadow: 'rgba(0,0,0,0.35)', shadowStrong: 'rgba(0,0,0,0.5)' }
+      : { bg: '#F5EFE6', surface: '#FBF8F3', ink: '#2A2420', muted: '#6E625A', accent: '#550000', accentText: '#550000', accentSoft: '#EEDDD8', onAccent: '#FBF8F3', border: '#DDD0C0', shadow: 'rgba(60,35,25,0.08)', shadowStrong: 'rgba(60,35,25,0.14)' };
+    function cover(bg, fg, w, h, r) {
+      return 'width: ' + w + 'px; height: ' + h + 'px; flex: 0 0 ' + w + 'px; box-sizing: border-box; border-radius: ' + r + 'px; background: ' + bg + '; color: ' + fg + '; padding: ' + Math.round(w * 0.1) + 'px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 22px ' + c.shadowStrong;
+    }
+    var reading = [
+      { title: 'Siddhartha', author: 'Hermann Hesse', bg: '#C9A46A', fg: '#2A2420', progressText: 'Page 75 sur 190', stepText: 'Où j’en suis', stepLabel: 'Noter où j’en suis dans Siddhartha' },
+      { title: 'Vinland Saga', author: 'Makoto Yukimura', bg: '#2F3A40', fg: '#EFE7DC', progressText: 'Tome 4 sur 29', stepText: 'Où j\u2019en suis', stepLabel: 'Noter où j\u2019en suis dans Vinland Saga' },
+      { title: 'Lettres à Lucilius', author: 'Sénèque', bg: '#550000', fg: '#F5EFE6', progressText: 'Lettre 12', stepText: 'Où j\u2019en suis', stepLabel: 'Noter où j\u2019en suis dans les Lettres à Lucilius' }
+    ].map(function (b) {
+      return Object.assign({}, b, { coverStyle: cover(b.bg, b.fg, 156, 228, 14) });
+    });
+    var finished = [
+      { title: 'Le Petit Prince', author: 'Saint-Exupéry', bg: '#2D3A5C', fg: '#F5EFE6' },
+      { title: 'La Métamorphose', author: 'Franz Kafka', bg: '#8E4A35', fg: '#FBF8F3' }
+    ].map(function (b) {
+      return Object.assign({}, b, { coverStyle: cover(b.bg, b.fg, 112, 164, 12) });
+    });
+    return {
+      c: c,
+      reading: reading,
+      finished: finished,
+      idea: { title: 'Momo', coverStyle: cover('#A8B59A', '#2A2420', 92, 136, 12) }
+    };
+  }
+}
+</script>
+</body>
+</html>

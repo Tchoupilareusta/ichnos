@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ichnos — Fiche de Siddhartha</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&amp;family=Nunito:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 1240px; position: relative; overflow: hidden; box-sizing: border-box; background: {{c.bg}}; color: {{c.ink}}; font-family: 'Nunito', system-ui, sans-serif; font-size: 16px; line-height: 1.45">
+
+<div style="display: flex; flex-direction: column; gap: 34px; padding: 64px 24px 60px">
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<a href="Main.dc.html" style="height: 44px; padding: 0 16px 0 10px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; display: flex; align-items: center; gap: 4px; box-sizing: border-box; text-decoration: none; font-size: 15px; font-weight: 600">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+Retour</a>
+<button aria-label="Modifier les informations de l'œuvre" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"></path></svg>
+</button>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center">
+<div aria-hidden="true" style="width: 196px; height: 290px; box-sizing: border-box; border-radius: 18px; background: #C9A46A; color: #2A2420; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 18px 40px {{c.shadowStrong}}">
+<div style="font-family: 'Lora', Georgia, serif; font-size: 27px; line-height: 1.1; font-weight: 500">Siddhartha</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="height: 1px; background: rgba(42,36,32,0.4); width: 40px"></div>
+<div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700">Hermann Hesse</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 36px; line-height: 1.05">Siddhartha</h1>
+<div style="font-size: 17px">Hermann Hesse</div>
+<div style="font-size: 14px; color: {{c.muted}}">Titre original : Siddhartha · 1922</div>
+</div>
+<p aria-label="Thèmes : Sagesse, Recherche de soi, Expérience, Paix intérieure" style="margin: 0; max-width: 320px; display: flex; flex-wrap: wrap; justify-content: center; column-gap: 14px; row-gap: 6px; font-family: 'Lora', Georgia, serif; font-style: italic; font-size: 19px; line-height: 1.35">
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="4">
+<span style="background: linear-gradient(transparent 14%, {{c.mark}} 14%, {{c.mark}} 90%, transparent 90%); padding: 0 5px; border-radius: 3px">{{t.label}}</span>
+</sc-for>
+</p>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center">
+<button aria-haspopup="menu" aria-label="Statut de lecture : En cours. Changer" style="height: 44px; padding: 0 16px 0 18px; border-radius: 999px; border: none; background: {{c.accentSoft}}; color: {{c.accentText}}; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px">En cours
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+</button>
+<button aria-haspopup="menu" aria-label="Possession : Je l'ai. Changer" style="height: 44px; padding: 0 16px 0 18px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px">Je l'ai
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+</button>
+</div>
+</div>
+
+<section aria-labelledby="progression" style="background: {{c.surface}}; border-radius: 28px; padding: 22px; display: flex; flex-direction: column; gap: 16px; border: 1px solid {{c.border}}; box-shadow: 0 10px 30px {{c.shadow}}">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 id="progression" style="margin: 0; font-size: 14px; font-weight: 700; color: {{c.muted}}">Ma progression</h2>
+<button style="height: 44px; padding: 0 6px; border: none; background: transparent; color: {{c.accentText}}; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px">Saisir la page</button>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<button aria-label="Reculer d'une page" style="width: 52px; height: 52px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.bg}}; color: {{c.ink}}; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg>
+</button>
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-family: 'Lora', Georgia, serif; font-size: 34px; line-height: 1">Page 75</span>
+<span style="font-size: 15px; color: {{c.muted}}">sur 190</span>
+</div>
+<button aria-label="Avancer d'une page" style="width: 52px; height: 52px; border-radius: 999px; border: none; background: {{c.accent}}; color: {{c.onAccent}}; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+</div>
+<div role="progressbar" aria-label="Progression dans Siddhartha" aria-valuemin="0" aria-valuemax="190" aria-valuenow="75" style="height: 6px; border-radius: 999px; background: {{c.track}}; overflow: hidden">
+<div style="height: 6px; width: 39%; border-radius: 999px; background: {{c.bar}}"></div>
+</div>
+</section>
+
+<section aria-labelledby="resume" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="resume" style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 24px">En quelques mots</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6">Dans l'Inde ancienne, le fils d'un brahmane quitte la maison de son père pour chercher par lui-même une sagesse qu'aucun maître ne peut transmettre. Un récit bref et limpide sur l'expérience, la patience et l'écoute du monde.</p>
+<p style="margin: 4px 0 0; font-size: 15px; color: {{c.muted}}">Roman court · traduit de l'allemand · atmosphère contemplative et lumineuse</p>
+</section>
+
+<section aria-labelledby="ressenti" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<h2 id="ressenti" style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 24px">Mon ressenti</h2>
+<span style="font-size: 14px; color: {{c.muted}}">facultatif</span>
+</div>
+<div role="group" aria-labelledby="ressenti" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{feelings}}" as="feel" hint-placeholder-count="4">
+<button aria-pressed="false" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; font-size: 15px; font-weight: 600">{{feel.label}}</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="notes" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="notes" style="margin: 0; font-family: 'Lora', Georgia, serif; font-weight: 400; font-size: 24px">Citations et pensées</h2>
+<div style="border: 1.5px dashed {{c.border}}; border-radius: 24px; padding: 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px">
+<p style="margin: 0; font-size: 15px; color: {{c.muted}}">Rien pour l'instant. Une phrase qui m'a arrêté, une pensée en passant ?</p>
+<button style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.surface}}; color: {{c.ink}}; font-size: 15px; font-weight: 700">Ajouter une note</button>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Thème"},"$preview":{"width":390,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var dark = this.props.dark ?? false;
+    var c = dark
+      ? { bg: '#151413', surface: '#262422', ink: '#EEEAE4', muted: '#A6A099', accent: '#8D3131', accentText: '#EEEAE4', accentSoft: '#3A1E1D', onAccent: '#F5EFE9', border: '#3A3734', track: '#3A3734', bar: '#C46A6A', mark: '#4A2524', shadow: 'rgba(0,0,0,0.35)', shadowStrong: 'rgba(0,0,0,0.5)' }
+      : { bg: '#F5EFE6', surface: '#FBF8F3', ink: '#2A2420', muted: '#6E625A', accent: '#550000', accentText: '#550000', accentSoft: '#EEDDD8', onAccent: '#FBF8F3', border: '#DDD0C0', track: '#E6DACB', bar: '#550000', mark: '#EBD3CD', shadow: 'rgba(60,35,25,0.08)', shadowStrong: 'rgba(60,35,25,0.18)' };
+    return {
+      c: c,
+      themes: [{ label: 'Sagesse' }, { label: 'Recherche de soi' }, { label: 'Expérience' }, { label: 'Paix intérieure' }],
+      feelings: [{ label: "M'a marqué" }, { label: 'Beau moment' }, { label: 'Pas pour moi, pas maintenant' }, { label: 'À relire un jour' }]
+    };
+  }
+}
+</script>
+</body>
+</html>
