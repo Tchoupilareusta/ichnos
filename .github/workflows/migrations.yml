@@ -40,7 +40,7 @@ jobs:
         run: |
           for journal in journal-migrations.txt journal-tests.txt; do
             [ -f "$journal" ] || continue
-            grep -E 'not ok|# Failed|Failed tests?:|Dubious|Parse errors|ERROR|error:|failed' "$journal" | head -8 | while IFS= read -r ligne; do
+            grep -E 'not ok|# Failed|died:|caught:|wanted:|have:|want:|Dubious|Parse errors|ERROR|error:' "$journal" | head -9 | while IFS= read -r ligne; do
               echo "::error title=Migrations::${ligne}"
             done
           done

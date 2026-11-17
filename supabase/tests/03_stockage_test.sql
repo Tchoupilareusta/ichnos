@@ -69,6 +69,11 @@ select results_eq(
 
 set local request.jwt.claim.sub = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
+-- Supabase interdit par défaut toute suppression directe dans les tables du stockage
+-- (il faut passer par son API). On lève ce verrou le temps du test, pour vérifier
+-- que la politique de suppression, elle, ne laisse rien passer.
+set local storage.allow_delete_query = 'true';
+
 select is_empty(
   $$ select 1 from storage.objects where bucket_id = 'couvertures' $$,
   'B ne voit pas la couverture de A'
