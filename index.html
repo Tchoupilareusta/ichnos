@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Ichnos</title>
+    <meta name="description" content="Ma bibliothèque personnelle de lecture." />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Couleur de la barre d'état : suit le thème (mise à jour par l'appli si le thème est forcé) -->
+    <meta name="theme-color" content="#F5EFE6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151413" media="(prefers-color-scheme: dark)" />
+
+    <!-- Installation depuis Safari sur iPhone et iPad -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Ichnos" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Applique le thème choisi avant l'affichage, pour éviter un éclair de la mauvaise couleur -->
+    <script>
+      try {
+        var t = localStorage.getItem('ichnos-theme')
+        if (t === 'clair' || t === 'sombre') {
+          document.documentElement.dataset.theme = t === 'clair' ? 'light' : 'dark'
+          var c = t === 'clair' ? '#F5EFE6' : '#151413'
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = c })
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
