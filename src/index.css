@@ -1,0 +1,171 @@
+@import 'tailwindcss';
+
+/* Polices hébergées avec l'appli (sous-ensemble latin, qui couvre le français, œ compris) */
+@import '@fontsource/lora/latin-400.css';
+@import '@fontsource/lora/latin-500.css';
+@import '@fontsource/lora/latin-400-italic.css';
+@import '@fontsource/nunito/latin-400.css';
+@import '@fontsource/nunito/latin-600.css';
+@import '@fontsource/nunito/latin-700.css';
+
+/* Le thème sombre s'applique quand data-theme="dark", ou quand l'appareil est en sombre
+   et qu'aucun thème clair n'est forcé. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+/* ---------- Jetons de couleur (docs/reference.md §4.2 et maquettes) ---------- */
+:root {
+  color-scheme: light;
+  --fond: #f5efe6;
+  --surface: #fbf8f3;
+  --encre: #2a2420;
+  --discret: #6e625a;
+  --accent: #550000;
+  --accent-texte: #550000;
+  --sur-accent: #fbf8f3;
+  --accent-doux: #eeddd8;
+  --bordure: #ddd0c0;
+  --piste: #e6dacb;
+  --barre: #550000;
+  --surlignage: #ebd3cd;
+  --ombre: rgba(60, 35, 25, 0.08);
+  --ombre-forte: rgba(60, 35, 25, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --fond: #151413;
+    --surface: #262422;
+    --encre: #eeeae4;
+    --discret: #a6a099;
+    --accent: #8d3131;
+    --accent-texte: #eeeae4;
+    --sur-accent: #f5efe9;
+    --accent-doux: #3a1e1d;
+    --bordure: #3a3734;
+    --piste: #3a3734;
+    --barre: #c46a6a;
+    --surlignage: #4a2524;
+    --ombre: rgba(0, 0, 0, 0.35);
+    --ombre-forte: rgba(0, 0, 0, 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --fond: #151413;
+  --surface: #262422;
+  --encre: #eeeae4;
+  --discret: #a6a099;
+  --accent: #8d3131;
+  --accent-texte: #eeeae4;
+  --sur-accent: #f5efe9;
+  --accent-doux: #3a1e1d;
+  --bordure: #3a3734;
+  --piste: #3a3734;
+  --barre: #c46a6a;
+  --surlignage: #4a2524;
+  --ombre: rgba(0, 0, 0, 0.35);
+  --ombre-forte: rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- Jetons Tailwind ---------- */
+@theme inline {
+  --color-*: initial;
+  --color-fond: var(--fond);
+  --color-surface: var(--surface);
+  --color-encre: var(--encre);
+  --color-discret: var(--discret);
+  --color-accent: var(--accent);
+  --color-accent-texte: var(--accent-texte);
+  --color-sur-accent: var(--sur-accent);
+  --color-accent-doux: var(--accent-doux);
+  --color-bordure: var(--bordure);
+  --color-piste: var(--piste);
+  --color-barre: var(--barre);
+  --color-surlignage: var(--surlignage);
+  --color-transparent: transparent;
+
+  --font-titre: 'Lora', Georgia, serif;
+  --font-texte: 'Nunito', system-ui, sans-serif;
+
+  /* Rayons : cartes ~24-28 px, couvertures 12-14 px, boutons en pilule */
+  --radius-couverture: 0.8125rem;
+  --radius-carte: 1.5rem;
+  --radius-panneau: 1.75rem;
+  --radius-pilule: 999px;
+
+  --shadow-douce: 0 10px 30px var(--ombre);
+  --shadow-forte: 0 12px 34px var(--ombre-forte);
+
+  --breakpoint-tablette: 48rem;
+}
+
+/* ---------- Base ---------- */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Respecte la taille de texte choisie sur l'iPhone */
+  @supports (font: -apple-system-body) {
+    html {
+      font: -apple-system-body;
+    }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: var(--font-texte);
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-titre);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  ::selection {
+    background: var(--surlignage);
+    color: var(--encre);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-texte);
+    outline-offset: 3px;
+  }
+}
+
+/* Mouvements réduits : aucune animation ni transition */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
