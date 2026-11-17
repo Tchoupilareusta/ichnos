@@ -3,16 +3,18 @@ import { creerAuthSupabase, type ClientAuth } from './authSupabase'
 type Reponses = {
   session?: { user: { email?: string } } | null
   erreurSession?: object | null
-  erreurDemande?: object | null
-  erreurVerification?: object | null
+  erreurConnexion?: object | null
   erreurDeconnexion?: object | null
 }
 
 type Ecouteur = (evenement: string, session: { user: { email?: string } } | null) => void
 
-/** Faux client Supabase : il note ce qu'on lui demande et répond ce qu'on lui a dit. */
+/**
+ * Faux client Supabase : il note ce qu'on lui demande et répond ce qu'on lui a dit.
+ * Il ne sait ni créer de compte ni envoyer d'e-mail : un appel à ces fonctions ferait échouer le test.
+ */
 function fauxClient(reponses: Reponses = {}) {
-  const appels = { signInWithOtp: [] as unknown[], verifyOtp: [] as unknown[], signOut: [] as unknown[], arrets: 0 }
+  const appels = { signInWithPassword: [] as unknown[], signOut: [] as unknown[], arrets: 0 }
   const ecouteurs: Ecouteur[] = []
   const emettre: Ecouteur = (evenement, session) => ecouteurs.forEach((ecouteur) => ecouteur(evenement, session))
   const client = {
@@ -22,13 +24,9 @@ function fauxClient(reponses: Reponses = {}) {
         ecouteurs.push(ecouteur)
         return { data: { subscription: { unsubscribe: () => void (appels.arrets += 1) } } }
       },
-      signInWithOtp: async (demande: unknown) => {
-        appels.signInWithOtp.push(demande)
-        return { error: reponses.erreurDemande ?? null }
-      },
-      verifyOtp: async (demande: unknown) => {
-        appels.verifyOtp.push(demande)
-        return { error: reponses.erreurVerification ?? null }
+      signInWithPassword: async (demande: unknown) => {
+        appels.signInWithPassword.push(demande)
+        return { error: reponses.erreurConnexion ?? null }
       },
       signOut: async (options: unknown) => {
         appels.signOut.push(options)
@@ -41,52 +39,46 @@ function fauxClient(reponses: Reponses = {}) {
 
 const sansMemoire = () => null
 const ERREUR_RESEAU = { name: 'AuthRetryableFetchError', status: 0 }
+const MOT_DE_PASSE = ' mot de passe d’essai '
 
-describe('demander un code', () => {
-  it('ne crée jamais de compte', async () => {
+describe('se connecter', () => {
+  it('envoie l’adresse nettoyée et le mot de passe tel quel', async () => {
     const { client, appels } = fauxClient()
-    const resultat = await creerAuthSupabase(client, sansMemoire).demanderCode('  moi@exemple.test ')
+    const resultat = await creerAuthSupabase(client, sansMemoire).seConnecter('  moi@exemple.test ', MOT_DE_PASSE)
     expect(resultat).toEqual({ ok: true })
-    expect(appels.signInWithOtp).toEqual([{ email: 'moi@exemple.test', options: { shouldCreateUser: false } }])
+    expect(appels.signInWithPassword).toEqual([{ email: 'moi@exemple.test', password: MOT_DE_PASSE }])
   })
 
-  it('ne révèle pas qu’une adresse est inconnue', async () => {
-    const { client } = fauxClient({ erreurDemande: { status: 422, code: 'otp_disabled' } })
-    expect(await creerAuthSupabase(client, sansMemoire).demanderCode('inconnu@exemple.test')).toEqual({ ok: true })
+  it('refuse une adresse ou un mot de passe incorrects, sans dire lequel', async () => {
+    const { client } = fauxClient({ erreurConnexion: { status: 400, code: 'invalid_credentials' } })
+    expect(await creerAuthSupabase(client, sansMemoire).seConnecter('moi@exemple.test', 'faux')).toEqual({
+      ok: false,
+      echec: 'identifiants',
+    })
   })
 
-  it('signale des demandes trop rapprochées', async () => {
-    const { client } = fauxClient({ erreurDemande: { status: 429, code: 'over_email_send_rate_limit' } })
-    expect(await creerAuthSupabase(client, sansMemoire).demanderCode('moi@exemple.test')).toEqual({ ok: false, echec: 'trop' })
+  it('signale des essais trop rapprochés', async () => {
+    const { client } = fauxClient({ erreurConnexion: { status: 429, code: 'over_request_rate_limit' } })
+    expect(await creerAuthSupabase(client, sansMemoire).seConnecter('moi@exemple.test', 'faux')).toEqual({
+      ok: false,
+      echec: 'trop',
+    })
   })
 
   it('signale l’absence de réseau', async () => {
-    const { client } = fauxClient({ erreurDemande: ERREUR_RESEAU })
-    expect(await creerAuthSupabase(client, sansMemoire).demanderCode('moi@exemple.test')).toEqual({ ok: false, echec: 'reseau' })
+    const { client } = fauxClient({ erreurConnexion: ERREUR_RESEAU })
+    expect(await creerAuthSupabase(client, sansMemoire).seConnecter('moi@exemple.test', MOT_DE_PASSE)).toEqual({
+      ok: false,
+      echec: 'reseau',
+    })
   })
 
   it('signale une panne du service', async () => {
-    const { client } = fauxClient({ erreurDemande: { status: 500, code: 'unexpected_failure' } })
-    expect(await creerAuthSupabase(client, sansMemoire).demanderCode('moi@exemple.test')).toEqual({ ok: false, echec: 'inconnu' })
-  })
-})
-
-describe('vérifier un code', () => {
-  it('envoie l’adresse et le code reçus par e-mail', async () => {
-    const { client, appels } = fauxClient()
-    const resultat = await creerAuthSupabase(client, sansMemoire).verifierCode('moi@exemple.test', '123456')
-    expect(resultat).toEqual({ ok: true })
-    expect(appels.verifyOtp).toEqual([{ email: 'moi@exemple.test', token: '123456', type: 'email' }])
-  })
-
-  it('refuse un code faux ou expiré', async () => {
-    const { client } = fauxClient({ erreurVerification: { status: 403, code: 'otp_expired' } })
-    expect(await creerAuthSupabase(client, sansMemoire).verifierCode('moi@exemple.test', '000000')).toEqual({ ok: false, echec: 'code' })
-  })
-
-  it('signale l’absence de réseau', async () => {
-    const { client } = fauxClient({ erreurVerification: ERREUR_RESEAU })
-    expect(await creerAuthSupabase(client, sansMemoire).verifierCode('moi@exemple.test', '123456')).toEqual({ ok: false, echec: 'reseau' })
+    const { client } = fauxClient({ erreurConnexion: { status: 500, code: 'unexpected_failure' } })
+    expect(await creerAuthSupabase(client, sansMemoire).seConnecter('moi@exemple.test', MOT_DE_PASSE)).toEqual({
+      ok: false,
+      echec: 'inconnu',
+    })
   })
 })
 

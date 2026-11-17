@@ -9,9 +9,6 @@ type ErreurAuth = { status?: number; code?: string; name?: string }
 const estSansReseau = (erreur: ErreurAuth) => erreur.name === 'AuthRetryableFetchError' || erreur.status === 0
 const estTropRapproche = (erreur: ErreurAuth) => erreur.status === 429 || (erreur.code ?? '').includes('rate_limit')
 
-/** Réponses de Supabase quand l'adresse n'a pas de compte (les inscriptions sont fermées). */
-const ADRESSE_SANS_COMPTE = new Set(['otp_disabled', 'signup_disabled', 'user_not_found'])
-
 const echec = (raison: Echec): Resultat => ({ ok: false, echec: raison })
 const REUSSI: Resultat = { ok: true }
 
@@ -19,7 +16,8 @@ const compteDe = (session: { user: { email?: string } } | null): Compte | null =
   session?.user.email ? { email: session.user.email } : null
 
 /**
- * Connexion par code e-mail à 6 chiffres, sur Supabase.
+ * Connexion par e-mail et mot de passe, sur Supabase. L'appli ne crée jamais de compte
+ * et n'envoie aucun e-mail : le compte et son mot de passe se gèrent depuis Supabase.
  * `lireMemoire` rend la session gardée sur l'appareil (texte JSON), pour la consultation hors connexion.
  */
 export function creerAuthSupabase(client: ClientAuth, lireMemoire: () => string | null): Auth {
@@ -49,26 +47,15 @@ export function creerAuthSupabase(client: ClientAuth, lireMemoire: () => string 
       return () => data.subscription.unsubscribe()
     },
 
-    async demanderCode(email) {
-      const { error } = await client.auth.signInWithOtp({
-        email: email.trim(),
-        options: { shouldCreateUser: false },
-      })
-      if (!error) return REUSSI
-      if (estSansReseau(error)) return echec('reseau')
-      if (estTropRapproche(error)) return echec('trop')
-      // Même réponse que pour une adresse connue : on ne révèle pas quelles adresses ont un compte.
-      if (ADRESSE_SANS_COMPTE.has(error.code ?? '')) return REUSSI
-      return echec('inconnu')
-    },
-
-    async verifierCode(email, code) {
-      const { error } = await client.auth.verifyOtp({ email: email.trim(), token: code, type: 'email' })
+    async seConnecter(email, motDePasse) {
+      // Le mot de passe part tel quel : un espace peut en faire partie.
+      const { error } = await client.auth.signInWithPassword({ email: email.trim(), password: motDePasse })
       if (!error) return REUSSI
       if (estSansReseau(error)) return echec('reseau')
       if (estTropRapproche(error)) return echec('trop')
       if ((error.status ?? 0) >= 500) return echec('inconnu')
-      return echec('code')
+      // Supabase répond de la même façon pour une adresse inconnue et pour un mauvais mot de passe.
+      return echec('identifiants')
     },
 
     async deconnecter() {

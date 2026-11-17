@@ -68,11 +68,10 @@ describe('accès réservé', () => {
     expect(screen.queryByText('Ma bibliothèque est encore vide.')).not.toBeInTheDocument()
   })
 
-  it('ouvre la bibliothèque une fois le code vérifié', async () => {
+  it('ouvre la bibliothèque une fois les identifiants acceptés', async () => {
     render(<App auth={authFictif().auth} />)
     fireEvent.change(await screen.findByLabelText('Mon adresse e-mail'), { target: { value: MOI.email } })
-    fireEvent.click(screen.getByRole('button', { name: 'Recevoir mon code' }))
-    fireEvent.change(await screen.findByLabelText('Code reçu par e-mail'), { target: { value: '123456' } })
+    fireEvent.change(screen.getByLabelText('Mon mot de passe'), { target: { value: 'mot de passe d’essai' } })
     fireEvent.click(screen.getByRole('button', { name: 'Ouvrir ma bibliothèque' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'En ce moment' })).toBeInTheDocument()
   })

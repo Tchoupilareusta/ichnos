@@ -17,9 +17,11 @@ export const supabase =
     ? createClient(url, clePublique, {
         auth: {
           storageKey: CLE_SESSION,
+          // Session longue : elle est gardée sur l'appareil et renouvelée toute seule,
+          // jusqu'à ce que je me déconnecte depuis les Réglages.
           persistSession: true,
           autoRefreshToken: true,
-          // Connexion par code saisi dans l'appli : aucun lien à lire dans l'adresse.
+          // Connexion par mot de passe saisi dans l'appli : aucun lien à lire dans l'adresse.
           detectSessionInUrl: false,
         },
       })

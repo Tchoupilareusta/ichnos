@@ -2,7 +2,7 @@
 export type Compte = { email: string }
 
 /** Pourquoi une demande n'a pas abouti. */
-export type Echec = 'code' | 'trop' | 'reseau' | 'inconnu'
+export type Echec = 'identifiants' | 'trop' | 'reseau' | 'inconnu'
 
 export type Resultat = { ok: true } | { ok: false; echec: Echec }
 
@@ -11,7 +11,6 @@ export interface Auth {
   compteActuel(): Promise<Compte | null>
   /** Prévient à chaque connexion ou déconnexion. Rend la fonction qui arrête l'écoute. */
   surChangement(suite: (compte: Compte | null) => void): () => void
-  demanderCode(email: string): Promise<Resultat>
-  verifierCode(email: string, code: string): Promise<Resultat>
+  seConnecter(email: string, motDePasse: string): Promise<Resultat>
   deconnecter(): Promise<Resultat>
 }

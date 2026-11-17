@@ -43,7 +43,7 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Citation du jour sur l'accueil | Retirée. |
 | Avertissements de contenu | Aucun, pour aucune œuvre (choix du propriétaire, remplace la demande du cahier des charges). |
 | Découverte d'œuvres extérieures | Reportée à une version ultérieure. |
-| Connexion | Code à 6 chiffres reçu par e-mail. Inscriptions publiques fermées. |
+| Connexion | E-mail et mot de passe, avec un formulaire que Bitwarden sait remplir sur iPhone. Session longue : elle reste ouverte sur l'appareil jusqu'à la déconnexion. Inscriptions publiques fermées. Pas de lien « mot de passe oublié » : la réinitialisation se fait depuis Supabase. (Remplace, le 17 novembre 2026, le code à 6 chiffres par e-mail : le service d'e-mail gratuit de Supabase ne permet pas d'envoyer un code à la place d'un lien.) |
 | Veille de Supabase | Évitée par une GitHub Action planifiée. |
 | Sauvegardes | Export JSON depuis l'application + copie automatique vers un dépôt GitHub privé. |
 | Outils de développement | Claude Code en local sur Windows. Skills Superpowers et Impeccable installés au niveau utilisateur, pas dans le dépôt. |
@@ -287,7 +287,10 @@ Le fichier du catalogue de départ ne contient que des informations bibliographi
 
 ### 10.2 Sécurité
 
-- Connexion par code e-mail à 6 chiffres. Inscriptions publiques désactivées après création du compte.
+- Connexion par e-mail et mot de passe. Le compte est créé à la main dans Supabase, avec un mot de passe long généré par le gestionnaire de mots de passe ; les inscriptions publiques sont désactivées.
+- L'application ne crée jamais de compte et n'envoie aucun e-mail : ni inscription, ni « mot de passe oublié ». Un mot de passe perdu se réinitialise depuis le tableau de bord Supabase.
+- Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
+- Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub.
 - Politiques de stockage restreintes à l'utilisateur.
@@ -313,7 +316,7 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 |---|---|---|
 | 0 | Préparation : Node.js, Claude Code, comptes, dépôt GitHub, projet Supabase, secrets | — |
 | 1 | Squelette : React, TypeScript, Vite, Tailwind, thème clair/sombre, navigation, déploiement GitHub Pages, base PWA | Opus 5.5, moyen |
-| 2 | Base de données et sécurité : schéma, RLS, stockage, connexion par code, Action de migrations | Fable 5.2, élevé |
+| 2 | Base de données et sécurité : schéma, RLS, stockage, connexion par e-mail et mot de passe, Action de migrations | Fable 5.2, élevé |
 | 3 | Catalogue initial : vérification, étiquettes, synopsis, import | Fable 5.2, élevé |
 | 4 | Bibliothèque et fiches : grille, recherche, filtres, ajout, modification, statuts, possession | Opus 5.5, moyen |
 | 5 | Suivi de lecture : unités, tomes, média associé, mise à jour rapide | Opus 5.5, élevé |
