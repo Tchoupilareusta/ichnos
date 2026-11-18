@@ -1,5 +1,6 @@
 import {
   FILTRES_VIDES,
+  STATUTS,
   comparerTitres,
   correspond,
   filtresDepuisParametres,
@@ -35,6 +36,16 @@ describe('possession d’une série', () => {
     expect(libellePossession('partielle')).toBe('J’en ai une partie')
     expect(libellePossession('possede')).toBe('Je l’ai')
     expect(libellePossession('non_possede')).toBe('Je ne l’ai pas')
+  })
+})
+
+describe('statuts de lecture', () => {
+  it('sont cinq, du plus utile au moins utile, sans « Laissé de côté »', () => {
+    expect(STATUTS.map((s) => s.libelle)).toEqual(['En cours', 'Envie de lire', 'Terminé', 'À découvrir', 'En pause'])
+  })
+
+  it('ignorent dans l’adresse l’ancien statut « abandonne »', () => {
+    expect(filtresDepuisParametres(new URLSearchParams('statut=abandonne'))).toEqual(FILTRES_VIDES)
   })
 })
 

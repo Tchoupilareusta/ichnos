@@ -1,7 +1,7 @@
 // Le vocabulaire de la bibliothèque : valeurs codées de la base (docs/reference.md §6),
 // libellés affichés, et règles de calcul qui ne dépendent ni de la base ni de l'écran.
 
-export type Statut = 'a_decouvrir' | 'envie_de_lire' | 'en_cours' | 'termine' | 'en_pause' | 'abandonne'
+export type Statut = 'en_cours' | 'envie_de_lire' | 'termine' | 'a_decouvrir' | 'en_pause'
 export type Possession = 'possede' | 'a_acheter' | 'non_possede'
 /** Possession affichée : pour une série, « partielle » quand je n'ai qu'une partie des tomes. */
 export type PossessionAffichee = Possession | 'partielle'
@@ -11,13 +11,13 @@ export type GenreEtiquette = 'genre' | 'theme' | 'atmosphere'
 export type Role = 'auteur' | 'traducteur' | 'illustrateur'
 export type TypeMedia = 'anime' | 'film' | 'serie' | 'autre'
 
+/** Cinq statuts, du plus utile au moins utile : cet ordre vaut partout (menus, filtres, listes). */
 export const STATUTS: { valeur: Statut; libelle: string }[] = [
-  { valeur: 'a_decouvrir', libelle: 'À découvrir' },
-  { valeur: 'envie_de_lire', libelle: 'Envie de lire' },
   { valeur: 'en_cours', libelle: 'En cours' },
+  { valeur: 'envie_de_lire', libelle: 'Envie de lire' },
   { valeur: 'termine', libelle: 'Terminé' },
+  { valeur: 'a_decouvrir', libelle: 'À découvrir' },
   { valeur: 'en_pause', libelle: 'En pause' },
-  { valeur: 'abandonne', libelle: 'Laissé de côté' },
 ]
 
 export const POSSESSIONS: { valeur: Possession; libelle: string }[] = [
