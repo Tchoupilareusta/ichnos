@@ -24,6 +24,18 @@ describe('page de relecture du catalogue', () => {
     expect(origine(oeuvre('la-chute')).join(' ')).not.toMatch(/traduit/)
   })
 
+  it('ne dit pas « traduit de l’allemand » pour une traduction faite depuis l’anglais', () => {
+    const frankl = oeuvre('decouvrir-un-sens-a-sa-vie')
+    expect(frankl.original_language).toBe('de')
+    expect(origine(frankl).join(' ')).not.toMatch(/traduit/)
+    expect(ficheHtml('decouvrir-un-sens-a-sa-vie')).toContain('Traduit en français à partir de la version anglaise.')
+  })
+
+  it('affiche « Nous » sous son nouveau titre, avec le rappel de l’ancien', () => {
+    expect(ficheHtml('nous')).toContain('<h2>Nous</h2>')
+    expect(ficheHtml('nous')).toContain('Aussi connu sous le titre « Nous autres »')
+  })
+
   it('met le titre original en premier quand l’édition est en anglais', () => {
     expect(ficheHtml('1984')).toContain('<h2>Nineteen Eighty-Four</h2>')
     expect(origine(oeuvre('1984'))).toEqual(['1984', 'édition en anglais, la langue d’origine', 'première parution en 1949'])

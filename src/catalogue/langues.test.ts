@@ -1,4 +1,25 @@
-import { deLaLangue, nomLangue, traduitDe } from './langues.ts'
+import { deLaLangue, mentionTraduction, nomLangue, traductionIndirecte, traduitDe } from './langues.ts'
+
+describe('mentionTraduction', () => {
+  it('annonce la langue d’origine d’une édition traduite', () => {
+    expect(mentionTraduction('de', 'fr', 'Corinna Gepner')).toBe('traduit de l’allemand')
+    expect(mentionTraduction('ja', 'fr', null)).toBe('traduit du japonais')
+  })
+
+  it('ne dit rien quand l’édition est dans la langue d’origine', () => {
+    expect(mentionTraduction('fr', 'fr')).toBeNull()
+    expect(mentionTraduction('en', 'en')).toBeNull()
+    expect(mentionTraduction(null, 'fr')).toBeNull()
+  })
+
+  it('se tait quand la traduction a été faite à partir d’une autre langue', () => {
+    const traducteur = 'Clifford J. Bacon et Louise Drolet (à partir de la version anglaise)'
+    expect(traductionIndirecte(traducteur)).toBe(true)
+    expect(mentionTraduction('de', 'fr', traducteur)).toBeNull()
+    expect(traductionIndirecte('Josée Kamoun')).toBe(false)
+    expect(traductionIndirecte(null)).toBe(false)
+  })
+})
 
 describe('traduitDe', () => {
   it.each([

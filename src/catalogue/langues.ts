@@ -47,3 +47,22 @@ export function traduitDe(code: string | null | undefined): string | null {
   const nom = nomLangue(code)
   return nom ? `traduit ${deLaLangue(nom)}` : null
 }
+
+/**
+ * Vrai quand le champ « traduction » d'une édition précise lui-même d'où vient le texte
+ * (« … (à partir de la version anglaise) »). Dire en plus « traduit de l’allemand » serait alors faux :
+ * la mention automatique est omise. Cas connu : Découvrir un sens à sa vie, de Viktor Frankl.
+ */
+export function traductionIndirecte(traducteur: string | null | undefined): boolean {
+  return /à partir d[e’']/i.test(traducteur ?? '')
+}
+
+/** La mention à afficher pour une édition traduite, ou rien si elle n'a pas lieu d'être. */
+export function mentionTraduction(
+  langueOrigine: string | null | undefined,
+  langueEdition: string | null | undefined,
+  traducteur?: string | null,
+): string | null {
+  if (!langueOrigine || !langueEdition || langueOrigine === langueEdition) return null
+  return traductionIndirecte(traducteur) ? null : traduitDe(langueOrigine)
+}

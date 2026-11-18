@@ -1,7 +1,7 @@
 // Page de relecture du catalogue de départ : une fiche par œuvre, fabriquée à partir de
 // catalogue/catalogue-initial.json. Outil de préparation (étape 3), hors de l'application.
 // Les règles d'affichage (ordre des titres, « traduit de l’anglais ») sont celles de l'application.
-import { nomLangue, traduitDe } from '../../src/catalogue/langues.ts'
+import { mentionTraduction, nomLangue } from '../../src/catalogue/langues.ts'
 import { titresAffiches } from '../../src/catalogue/titres.ts'
 
 const e = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -18,9 +18,8 @@ export function origine(oeuvre) {
   const edition = oeuvre.editions[0]
   const { secondaire } = titresAffiches(oeuvre, edition.language)
   const langue = oeuvre.original_language
-  let provenance = null
-  if (langue && langue !== edition.language) provenance = traduitDe(langue)
-  else if (langue && langue !== 'fr') provenance = `édition en ${nomLangue(langue) ?? langue}, la langue d’origine`
+  let provenance = mentionTraduction(langue, edition.language, edition.translator)
+  if (langue && langue === edition.language && langue !== 'fr') provenance = `édition en ${nomLangue(langue) ?? langue}, la langue d’origine`
   return [
     secondaire,
     provenance,
@@ -162,13 +161,21 @@ export function pageRelecture(catalogue) {
   </header>
 
   <section class="bloc">
-    <h2>Ce qui demande votre avis</h2>
+    <h2>${general.themes_proposes.length || aTrancher.length ? 'Ce qui demande votre avis' : 'À savoir avant de relire'}</h2>
     <ul>${general.points.map((p) => `<li>${e(p)}</li>`).join('')}</ul>
-    <div class="groupe"><h3>Thèmes que je propose d’ajouter</h3>
+    ${
+      general.themes_proposes.length
+        ? `<div class="groupe"><h3>Thèmes que je propose d’ajouter</h3>
       <p>Ils ne sont pas dans le vocabulaire et ne sont posés sur aucune fiche tant que vous ne les avez pas acceptés.</p>
-      <ul>${general.themes_proposes.map((t) => `<li><b>${e(t.name)}</b> : ${e(t.raison)} Pour ${t.pour.map((k) => lienFiche(parCle[k])).join(', ')}.</li>`).join('')}</ul></div>
-    <div class="groupe"><h3>Fiches avec un choix à faire</h3>
-      <ul>${aTrancher.map((o) => `<li>${lienFiche(o)} : ${e(o.relecture.a_trancher)}</li>`).join('')}</ul></div>
+      <ul>${general.themes_proposes.map((t) => `<li><b>${e(t.name)}</b> : ${e(t.raison)} Pour ${t.pour.map((k) => lienFiche(parCle[k])).join(', ')}.</li>`).join('')}</ul></div>`
+        : ''
+    }
+    ${
+      aTrancher.length
+        ? `<div class="groupe"><h3>Fiches avec un choix à faire</h3>
+      <ul>${aTrancher.map((o) => `<li>${lienFiche(o)} : ${e(o.relecture.a_trancher)}</li>`).join('')}</ul></div>`
+        : ''
+    }
   </section>
 
   <section class="bloc">

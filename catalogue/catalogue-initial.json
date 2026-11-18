@@ -1,42 +1,14 @@
 {
   "version": 1,
-  "etat": "catalogue complet (35 œuvres), en relecture avant l’import",
+  "etat": "catalogue complet (35 œuvres), décisions du 18 novembre 2026 appliquées, en relecture avant l’import",
   "a_propos": "Catalogue de départ d’Ichnos. Informations bibliographiques publiques uniquement : aucun statut de lecture, aucune possession, aucune appréciation, aucune note. Le bloc « relecture » de chaque œuvre (sources, remarques, autres éditions) sert à la vérification et n’est pas importé.",
   "relecture_generale": {
-    "themes_proposes": [
-      {
-        "name": "Nature",
-        "pour": [
-          "l-homme-qui-plantait-des-arbres",
-          "un-psaume-pour-les-recycles-sauvages",
-          "le-baron-perche"
-        ],
-        "raison": "Le lien à la nature est au centre de ces récits, et aucune étiquette ne le dit."
-      },
-      {
-        "name": "Différence",
-        "pour": [
-          "la-maison-au-milieu-de-la-mer-ceruleenne",
-          "des-fleurs-pour-algernon",
-          "la-metamorphose"
-        ],
-        "raison": "Le cahier des charges cite « différence » et « rejet » ; aucun thème existant ne dit le regard porté sur celui qui n’est pas comme les autres."
-      },
-      {
-        "name": "Enfance",
-        "pour": [
-          "le-petit-prince",
-          "momo",
-          "sa-majeste-des-mouches",
-          "prendre-soin-de-l-enfant-interieur"
-        ],
-        "raison": "L’enfance est le sujet ou le point de vue de ces livres."
-      }
-    ],
+    "themes_proposes": [],
     "points": [
-      "Le cahier des charges annonce 30 œuvres mais en liste 32. Avec les 3 mangas ajoutés, le catalogue compte donc 35 œuvres, et non 33.",
-      "Quand la BnF donne un ISBN ancien à 10 caractères, il est écrit ici à 13 chiffres. C’est le même numéro (préfixe 978 et clé recalculée), dans la forme utilisée aujourd’hui.",
-      "Les codes de langue (fr, en, de…) servent à l’application ; les fiches affichent le nom de la langue."
+      "Le catalogue compte 35 œuvres : les 32 du cahier des charges et les 3 mangas ajoutés.",
+      "Les ISBN sont tous écrits à 13 chiffres. Quand la BnF donne un ISBN ancien à 10 caractères, c’est le même numéro dans sa forme actuelle.",
+      "Nature, Différence et Enfance sont créés et posés où vous l’avez demandé. Je les ai aussi posés là où le thème est au centre du livre : Nature sur Un psaume pour les recyclés sauvages ; Différence sur Des fleurs pour Algernon et La Métamorphose ; Enfance sur Sa Majesté des mouches et Prendre soin de l’enfant intérieur.",
+      "Champs laissés vides faute de source fiable : l’ISBN du tome 3 de Vagabond ; l’année d’origine de Prendre soin de l’enfant intérieur et de La Paix en soi, la paix en marche ; le titre original de ce dernier ; le format des deux éditions anglaises d’Orwell ; l’année des Lettres à Lucilius."
     ]
   },
   "tags": {
@@ -49,6 +21,7 @@
       "Fable et allégorie",
       "Science-fiction",
       "Fantasy et merveilleux",
+      "Fantastique sombre",
       "Récit humaniste",
       "Aventure historique",
       "Philosophie",
@@ -277,6 +250,18 @@
       },
       {
         "name": "Connaissance",
+        "is_interest": false
+      },
+      {
+        "name": "Nature",
+        "is_interest": false
+      },
+      {
+        "name": "Différence",
+        "is_interest": false
+      },
+      {
+        "name": "Enfance",
         "is_interest": false
       }
     ]
@@ -776,7 +761,7 @@
       "density": 2,
       "length": "long",
       "genres": [
-        "Fantasy et merveilleux"
+        "Fantastique sombre"
       ],
       "themes": [
         "Désir",
@@ -946,8 +931,7 @@
           "Kazé est devenu Crunchyroll en cours de parution : l’éditeur indiqué est le nom actuel.",
           "Anime : une saison de 12 épisodes (MAPPA, 2022). Un film d’animation est sorti en 2025 ; je ne l’ai pas ajouté."
         ],
-        "autres_editions": [],
-        "a_trancher": "Genre : le vocabulaire n’a ni « horreur » ni « action ». J’ai mis « Fantasy et merveilleux », faute de mieux. Voulez-vous un genre « Fantastique sombre » ?"
+        "autres_editions": []
       }
     },
     {
@@ -1090,7 +1074,8 @@
         "Quête de sens",
         "Acceptation de soi",
         "Paix intérieure",
-        "Beauté des choses simples"
+        "Beauté des choses simples",
+        "Nature"
       ],
       "atmospheres": [
         "Douce",
@@ -1218,7 +1203,8 @@
         "Amitié",
         "Amour",
         "Relations humaines",
-        "Beauté des choses simples"
+        "Beauté des choses simples",
+        "Enfance"
       ],
       "atmospheres": [
         "Poétique",
@@ -1283,7 +1269,8 @@
         "Rapport au temps",
         "Écoute",
         "Amitié",
-        "Beauté des choses simples"
+        "Beauté des choses simples",
+        "Enfance"
       ],
       "atmospheres": [
         "Douce",
@@ -1349,7 +1336,8 @@
         "Acceptation de soi",
         "Compassion",
         "Comprendre l’autre",
-        "Relations humaines"
+        "Relations humaines",
+        "Différence"
       ],
       "atmospheres": [
         "Chaleureuse",
@@ -1475,7 +1463,8 @@
       "themes": [
         "Patience",
         "Espoir",
-        "Beauté des choses simples"
+        "Beauté des choses simples",
+        "Nature"
       ],
       "atmospheres": [
         "Contemplative",
@@ -1736,7 +1725,8 @@
         "Dignité",
         "Comprendre l’autre",
         "Solitude",
-        "Identité"
+        "Identité",
+        "Différence"
       ],
       "atmospheres": [
         "Mélancolique",
@@ -1797,7 +1787,8 @@
       "themes": [
         "Identité",
         "Aliénation",
-        "Solitude"
+        "Solitude",
+        "Différence"
       ],
       "atmospheres": [
         "Oppressante",
@@ -1828,7 +1819,7 @@
           }
         ],
         "remarques": [
-          "« Rejet », dans le cahier des charges, est rendu par Aliénation et Solitude."
+          "« Rejet », dans le cahier des charges, est rendu par Différence, Aliénation et Solitude."
         ],
         "autres_editions": [
           "Folio bilingue n° 14 (2024), nouvelle traduction de Jean-Pierre Lefebvre : ISBN 978-2-07-304276-7, 214 pages."
@@ -2489,8 +2480,7 @@
         ],
         "autres_editions": [
           "Pocket n° 1438 (2017), traduction historique de Jules Castier : ISBN 978-2-266-28303-8, 318 pages."
-        ],
-        "a_trancher": "Deux traductions en poche chez Pocket : la nouvelle de Josée Kamoun (2024), que j’ai proposée, ou celle de Jules Castier, la version historique."
+        ]
       }
     },
     {
@@ -2557,8 +2547,8 @@
       }
     },
     {
-      "key": "nous-autres",
-      "title_fr": "Nous autres",
+      "key": "nous",
+      "title_fr": "Nous",
       "title_original": "Мы",
       "original_language": "ru",
       "first_published_year": 1924,
@@ -2590,26 +2580,26 @@
       ],
       "editions": [
         {
-          "publisher": "Gallimard",
+          "publisher": "Actes Sud",
           "language": "fr",
           "format": "poche",
-          "translator": "B. Cauvet-Duhamel",
-          "isbn": "9782070286485",
-          "page_count": 232
+          "translator": "Hélène Henry",
+          "isbn": "9782330143220",
+          "page_count": 237
         }
       ],
       "volumes": [],
       "media": [],
       "relecture": {
-        "edition_proposee": "Gallimard, collection L’Imaginaire n° 39 (1994), traduction de B. Cauvet-Duhamel, préface de Jorge Semprun.",
+        "edition_proposee": "Actes Sud, collection Babel n° 1733 (2021), traduction d’Hélène Henry.",
         "sources": [
-          {
-            "label": "BnF, L’Imaginaire n° 39",
-            "url": "https://catalogue.bnf.fr/ark:/12148/cb374669455"
-          },
           {
             "label": "BnF, « Nous », Babel n° 1733",
             "url": "https://catalogue.bnf.fr/ark:/12148/cb46709438g"
+          },
+          {
+            "label": "BnF, « Nous autres », L’Imaginaire n° 39",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb374669455"
           },
           {
             "label": "Wikipédia, We (novel)",
@@ -2617,13 +2607,12 @@
           }
         ],
         "remarques": [
-          "Année : le roman, écrit en 1920-1921, a d’abord paru en traduction anglaise en 1924 (Wikipédia).",
-          "ISBN de la BnF : 2-07-028648-7, écrit ici à 13 chiffres (même numéro)."
+          "Aussi connu sous le titre « Nous autres », celui de la première traduction française.",
+          "Année : le roman, écrit en 1920-1921, a d’abord paru en traduction anglaise en 1924 (Wikipédia)."
         ],
         "autres_editions": [
-          "« Nous », Actes Sud, collection Babel n° 1733 (2021), nouvelle traduction d’Hélène Henry : ISBN 978-2-330-14322-0, 237 pages."
-        ],
-        "a_trancher": "Le roman existe sous deux titres : « Nous autres » (Gallimard, traduction de 1929, celle que j’ai proposée puisque c’est le titre de votre liste) ou « Nous » (Actes Sud, traduction de 2017)."
+          "« Nous autres », Gallimard, collection L’Imaginaire n° 39 (1994), traduction de B. Cauvet-Duhamel : ISBN 978-2-07-028648-5, 232 pages."
+        ]
       }
     },
     {
@@ -2651,7 +2640,8 @@
       "themes": [
         "Violence",
         "Pouvoir",
-        "Nature humaine"
+        "Nature humaine",
+        "Enfance"
       ],
       "atmospheres": [
         "Tendue",
@@ -2784,7 +2774,8 @@
         "Compassion",
         "Paix intérieure",
         "Pardon de soi",
-        "Pleine conscience"
+        "Pleine conscience",
+        "Enfance"
       ],
       "atmospheres": [
         "Douce",
@@ -3033,7 +3024,7 @@
           "publisher": "J’ai lu",
           "language": "fr",
           "format": "poche",
-          "translator": "Clifford J. Bacon et Louise Drolet",
+          "translator": "Clifford J. Bacon et Louise Drolet (à partir de la version anglaise)",
           "isbn": "9782290024829",
           "page_count": 177
         }
@@ -3052,11 +3043,12 @@
             "url": "https://en.wikipedia.org/wiki/Man's_Search_for_Meaning"
           }
         ],
-        "remarques": [],
+        "remarques": [
+          "Traduit en français à partir de la version anglaise."
+        ],
         "autres_editions": [
           "Les Éditions de l’Homme (2021), même traduction : ISBN 978-2-7619-5771-7, 139 pages."
-        ],
-        "a_trancher": "Le livre a été écrit en allemand (1946), mais le texte français est traduit de la version anglaise, « Man’s Search for Meaning ». La fiche dira donc « traduit de l’allemand », ce qui n’est pas tout à fait exact. Je peux noter l’anglais comme langue d’origine si vous préférez."
+        ]
       }
     }
   ]
