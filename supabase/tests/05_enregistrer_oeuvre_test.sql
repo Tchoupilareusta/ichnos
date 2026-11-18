@@ -206,7 +206,7 @@ select results_eq(
   'L’œuvre porte ses quatre étiquettes'
 );
 select results_eq(
-  $$ select publisher, language, format, translator, isbn, page_count from public.editions order by publisher $$,
+  $$ select publisher, language, format, translator, isbn, page_count from public.editions order by publisher collate "C" $$,
   $$ values
        ('Test Press', 'en', null, null, null, 200),
        ('Éditeur d’essai', 'fr', 'manga', null, '9780000000002', null::integer) $$,
@@ -339,7 +339,7 @@ select results_eq(
 );
 select results_eq(
   $$ select publisher, (id::text = current_setting('essai.edition')), isbn, page_count
-     from public.editions where work_id = current_setting('essai.serie')::uuid order by publisher $$,
+     from public.editions where work_id = current_setting('essai.serie')::uuid order by publisher collate "C" $$,
   $$ values ('Troisième maison', false, null, null::integer), ('Éditeur corrigé', true, null, 192) $$,
   'L’édition gardée est corrigée sans changer d’identifiant, l’édition absente est retirée, la nouvelle ajoutée'
 );
