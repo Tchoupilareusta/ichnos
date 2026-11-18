@@ -159,7 +159,7 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 
 **`library_entries`** — ma relation à une œuvre (une par œuvre).
 - `work_id`, `edition_id` (facultatif)
-- `reading_status` : à découvrir, envie de lire, en cours, terminé, en pause, abandonné
+- `reading_status` : en cours, envie de lire, terminé, à découvrir, en pause (« abandonné » fusionné dans « en pause » le 18 novembre 2026)
 - `ownership` : possédé, à acheter, non possédé (pour une série, calculé à partir des tomes)
 - `progress_unit` : page, chapitre, tome, lettre, section, pourcentage
 - `progress_current`, `progress_total` (facultatifs)
@@ -167,7 +167,7 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 - `started_at`, `finished_at` (facultatifs)
 
 **`reading_events`** — historique discret, jamais affiché sous forme de statistiques.
-- `entry_id`, `kind` (commencé, progression, mis en pause, repris, terminé, abandonné), `value`, `occurred_at`
+- `entry_id`, `kind` (commencé, progression, mis en pause, repris, terminé), `value`, `occurred_at`
 - Permet aussi les relectures.
 
 **`media`** — médias associés.
