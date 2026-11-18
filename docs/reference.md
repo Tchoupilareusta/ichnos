@@ -2,7 +2,7 @@
 
 *Version 1 — 17 novembre 2026*
 *Mise à jour du 17 novembre 2026 : l'IA comme aide à la suggestion (§2, §7.6, §8.4, §10.2, §11).*
-*Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11).*
+*Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11) ; points reportés aux étapes 9 et 10 (§11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -365,8 +365,13 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil | Fable 5.2, élevé |
 | 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
 | 8 | Accueil final, notes, export, sauvegarde et veille | Opus 5.5, moyen |
-| 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, audit design (Impeccable) | Opus 5.5, moyen |
-| 10 | Revue de sécurité finale | Fable 5.2, élevé |
+| 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, mouvements réduits (voir plus bas), audit design (Impeccable) | Opus 5.5, moyen |
+| 10 | Revue de sécurité finale, dont les alertes `npm audit` (voir plus bas) | Fable 5.2, élevé |
+
+Points reportés :
+
+- **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
+- **Étape 10, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 10, sans forcer.
 
 Signal pour monter l'effort : un fichier oublié, des tests non lancés, une modification abandonnée en cours de route.
 
