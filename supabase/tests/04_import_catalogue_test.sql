@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(31);
+select plan(34);
 
 insert into auth.users (id, email)
 values
@@ -66,6 +66,33 @@ select ok(
 select ok(
   not has_function_privilege('service_role', 'public.importer_catalogue(jsonb)', 'execute'),
   'La clé de service ne peut pas lancer l’import'
+);
+
+-- Les droits accordés sur la fonction, lus tels qu'ils sont enregistrés dans la base.
+-- Sans révocation, PostgreSQL laisse toute fonction exécutable par « public », c'est-à-dire par tout le monde.
+select ok(
+  (select p.proacl is not null from pg_proc p where p.oid = 'public.importer_catalogue(jsonb)'::regprocedure),
+  'Les droits par défaut de la fonction ont été remplacés par des droits explicites'
+);
+select is_empty(
+  $$
+    select a.privilege_type
+    from pg_proc p
+    cross join lateral aclexplode(p.proacl) a
+    where p.oid = 'public.importer_catalogue(jsonb)'::regprocedure
+      and a.grantee in (0, 'anon'::regrole, 'service_role'::regrole) -- 0 désigne « public »
+  $$,
+  'Aucun droit sur l’import n’est accordé à public, à anon ni à service_role'
+);
+select results_eq(
+  $$
+    select a.privilege_type::text
+    from pg_proc p
+    cross join lateral aclexplode(p.proacl) a
+    where p.oid = 'public.importer_catalogue(jsonb)'::regprocedure and a.grantee = 'authenticated'::regrole
+  $$,
+  $$ values ('EXECUTE') $$,
+  'Le rôle authenticated a le droit d’exécuter l’import, et rien d’autre'
 );
 
 set local role anon;
