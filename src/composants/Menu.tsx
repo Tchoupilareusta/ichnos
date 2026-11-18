@@ -1,7 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { IconeCoche } from './Icones'
 
-type Option<T extends string> = { valeur: T; libelle: string }
+type Option<T extends string> = { valeur: T; libelle: string; icone?: ReactNode }
 
 /**
  * Menu à choix unique (statut, possession, tome…) : un bouton qui ouvre une courte liste.
@@ -136,7 +136,10 @@ export function Menu<T extends string>({
                     choisi ? 'bg-accent-doux font-bold text-accent-texte' : 'bg-transparent font-semibold text-encre hover:bg-fond'
                   }`}
                 >
-                  {option.libelle}
+                  <span className="flex items-center gap-3">
+                    {option.icone}
+                    {option.libelle}
+                  </span>
                   {choisi && <IconeCoche taille={18} />}
                 </button>
               </li>
