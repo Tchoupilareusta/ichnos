@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import type { Depot } from '../bibliotheque/depot'
 import type { Auth, Compte } from './auth'
 
 export type EtatSession = { statut: 'chargement' } | { statut: 'deconnecte' } | { statut: 'connecte'; compte: Compte }
@@ -25,11 +26,11 @@ export function useEtatSession(auth: Auth): EtatSession {
   return etat
 }
 
-const ContexteSession = createContext<{ auth: Auth; compte: Compte } | null>(null)
+const ContexteSession = createContext<{ auth: Auth; compte: Compte; depot: Depot } | null>(null)
 
 export const FournisseurSession = ContexteSession.Provider
 
-/** Le compte connecté et le service de connexion, pour les écrans de l'appli. */
+/** Le compte connecté, le service de connexion et la bibliothèque, pour les écrans de l'appli. */
 export function useSession() {
   const session = useContext(ContexteSession)
   if (!session) throw new Error('useSession doit être utilisé dans l’appli connectée')

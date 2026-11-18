@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(116);
+select plan(118);
 
 -- ---------------------------------------------------------------------------
 -- 1. Règles générales
@@ -147,11 +147,33 @@ select is_empty(
     where n.nspname = 'public'
       and (
         has_function_privilege('anon', p.oid, 'execute')
-        or has_function_privilege('authenticated', p.oid, 'execute')
         or has_function_privilege('service_role', p.oid, 'execute')
       )
   $$,
-  'Aucune fonction de public n’est appelable depuis l’API'
+  'Aucune fonction de public n’est appelable sans compte connecté'
+);
+
+-- Toute nouvelle fonction ouverte au compte connecté doit être ajoutée ici, en connaissance de cause.
+select is_empty(
+  $$
+    select p.proname::text
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and has_function_privilege('authenticated', p.oid, 'execute')
+      and p.proname not in ('importer_catalogue')
+  $$,
+  'Le compte connecté ne peut appeler que l’import du catalogue'
+);
+
+select is_empty(
+  $$
+    select p.proname::text
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prosecdef
+  $$,
+  'Aucune fonction ne s’exécute avec des droits supérieurs à ceux de l’appelant'
 );
 
 -- ---------------------------------------------------------------------------

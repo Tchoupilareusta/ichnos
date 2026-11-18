@@ -1,6 +1,7 @@
 # Ichnos — Document de référence
 
 *Version 1 — 17 novembre 2026*
+*Mise à jour du 17 novembre 2026 : l'IA comme aide à la suggestion (§2, §7.6, §8.4, §10.2, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -16,7 +17,8 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 
 - Aucun objectif, compteur de performance, série de jours, badge, classement ni notification.
 - Un livre abandonné ou en pause n'est jamais présenté comme un échec.
-- Aucune fonction sociale, aucune publicité, aucune IA payante.
+- Aucune fonction sociale, aucune publicité.
+- L'IA (API Claude) ne fait que suggérer : rien n'est enregistré sans validation, et l'appli fonctionne entièrement sans elle.
 - Interface entièrement en français.
 - Données privées : rien de personnel dans le dépôt GitHub, aucune clé secrète dans le frontend.
 - Les livres et leurs idées passent avant l'interface.
@@ -37,12 +39,15 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Voix de l'interface | Première personne du propriétaire (« Mon ressenti », « Mon envie du moment »). |
 | Appréciation | Quelques mots plutôt que des étoiles (voir §6.4). Facultative. |
 | Mangas | Possession et progression suivies tome par tome. |
+| Langue de lecture | Français ou anglais. Le catalogue n'ajoute pas d'édition anglaise d'office. Quand j'ajoute un livre par son ISBN, l'édition est celle de mon exemplaire. Pour une œuvre écrite en anglais, « Découvrir ailleurs » indique si la version originale vaut le coup (ex. 1984 et son vocabulaire inventé). Si mon édition est en anglais, le titre original s'affiche en premier. Les fiches (synopsis, étiquettes) restent toujours en français. |
 | Anime | Média associé à l'œuvre (saisons, épisodes), jamais compté comme des livres. |
 | Hors connexion | Consultation possible. Les modifications demandent une connexion. |
 | Couvertures | Recherche automatique, copie dans le stockage Supabase, couverture typographique générée en dernier recours. |
 | Citation du jour sur l'accueil | Retirée. |
 | Avertissements de contenu | Aucun, pour aucune œuvre (choix du propriétaire, remplace la demande du cahier des charges). |
-| Découverte d'œuvres extérieures | Reportée à une version ultérieure. |
+| Découverte d'œuvres extérieures | Mode « Découvrir ailleurs », séparé de « Mon envie du moment », appuyé sur l'API Claude (§7.6). (Remplace, le 17 novembre 2026, le report à une version ultérieure.) |
+| Fiche automatique | À l'ajout d'un livre, l'API Claude propose synopsis et étiquettes, en suggestion modifiable (§8.4). |
+| IA dans l'application | API Claude, modèle Sonnet 5.5. Elle suggère, ne décide jamais et n'enregistre rien (§2). |
 | Connexion | E-mail et mot de passe, avec un formulaire que Bitwarden sait remplir sur iPhone. Session longue : elle reste ouverte sur l'appareil jusqu'à la déconnexion. Inscriptions publiques fermées. Pas de lien « mot de passe oublié » : la réinitialisation se fait depuis Supabase. (Remplace, le 17 novembre 2026, le code à 6 chiffres par e-mail : le service d'e-mail gratuit de Supabase ne permet pas d'envoyer un code à la place d'un lien.) |
 | Veille de Supabase | Évitée par une GitHub Action planifiée. |
 | Sauvegardes | Export JSON depuis l'application + copie automatique vers un dépôt GitHub privé. |
@@ -107,8 +112,8 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 | Accueil | Lectures en cours (carrousel de couvertures cliquables, progression en texte seul, bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre de côté »), une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées. Pas de barre de progression sur l'accueil. |
 | Bibliothèque | Grille de couvertures, recherche, filtres (auteur, genre, thème, atmosphère, statut de lecture, possession). |
 | Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (menus), progression avec barre, synopsis sans spoiler, genre, longueur et atmosphère en une ligne, éditions, appréciation, notes et citations, média associé. |
-| Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». |
-| Ajouter / modifier | Saisie manuelle ou recherche par ISBN, couverture automatique, correction de chaque champ. |
+| Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6). |
+| Ajouter / modifier | Saisie manuelle ou recherche par ISBN, couverture automatique, synopsis et étiquettes proposés en suggestion (§8.4), correction de chaque champ. |
 | Réglages | Thème, export des données, compte, gestion des genres, thèmes et atmosphères. |
 
 Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + et saisie directe.
@@ -191,7 +196,7 @@ Les deux premiers renforcent les thèmes de l'œuvre dans les recommandations. L
 
 ## 7. Recommandations (version 1)
 
-Algorithme déterministe fondé sur les étiquettes, sans IA.
+Algorithme déterministe fondé sur les étiquettes, sans IA. Seul le mode séparé « Découvrir ailleurs » (§7.6) fait appel à l'IA.
 
 ### 7.1 Candidats
 
@@ -228,6 +233,17 @@ Chaque proposition est accompagnée d'une phrase courte construite à partir des
 
 Philosophique → réconfortant → classique existentiel → dystopie → autre chose. Elle oriente le score de contraste, sans jamais devenir une règle.
 
+### 7.6 Découvrir ailleurs
+
+Un mode séparé de « Mon envie du moment », pour trouver des œuvres qui ne sont pas encore dans ma bibliothèque.
+
+- **Ce que l'appli envoie à l'API Claude** (modèle Sonnet 5.5, sortie JSON structurée) : l'envie choisie, mes lectures récentes et appréciées (titres et étiquettes), mes thèmes de cœur (les thèmes marqués centres d'intérêt, §6.1) et les titres déjà présents. Jamais mes notes ni mes citations.
+- **Ce que Claude propose** : 3 œuvres absentes de ma bibliothèque, chacune avec une raison et une fiche en français (synopsis sans spoiler, étiquettes du vocabulaire existant, tonalité, exigence, longueur).
+- **Version originale** : pour une œuvre écrite en anglais, Claude dit si la lire en version originale vaut le coup, avec une raison courte (style, jeux de langue, vocabulaire inventé), ou rien si la traduction convient aussi bien.
+- **Vérification avant affichage** : chaque proposition est vérifiée sur Google Books ou la BnF. L'ISBN, l'éditeur et la couverture viennent toujours de ces sources, jamais de l'IA. Une proposition introuvable dans ces sources n'est pas affichée.
+- **« Ajouter à ma liste »** enregistre l'œuvre en « À découvrir », déjà étiquetée. Rien n'est enregistré sans ce geste.
+- Si l'IA est indisponible ou si la limite de dépense est atteinte, ce mode l'indique simplement ; tout le reste de l'appli fonctionne.
+
 ## 8. Couvertures et métadonnées
 
 ### 8.1 Recherche automatique
@@ -249,9 +265,13 @@ Une couverture typographique générée (titre et auteur sur fond de couleur dou
 
 Les couvertures ne sont jamais enregistrées dans le dépôt GitHub public.
 
+### 8.4 Fiche automatique
+
+À l'ajout d'un livre, les métadonnées publiques sont d'abord récupérées (§8.1). L'API Claude propose ensuite un synopsis et des étiquettes, en suggestion modifiable : rien n'est enregistré tant que la fiche n'est pas validée. Sans l'IA, l'ajout fonctionne de la même façon, avec ces champs à remplir à la main. La fiche est toujours en français, même pour une édition en anglais.
+
 ## 9. Catalogue initial
 
-Les 30 œuvres du cahier des charges, plus 3 mangas ajoutés le 17 novembre 2026, soit 33 œuvres, toutes en « À découvrir » et « Non possédé ». Vinland Saga est une seule œuvre avec 29 tomes et un média associé (anime, 2 saisons de 24 épisodes).
+Les 32 œuvres listées dans le cahier des charges (qui en annonce 30), plus 3 mangas ajoutés le 17 novembre 2026, soit 35 œuvres, toutes en « À découvrir » et « Non possédé ». Vinland Saga est une seule œuvre avec 29 tomes et un média associé (anime, 2 saisons de 24 épisodes).
 
 Ajouts du 17 novembre 2026 (à vérifier à l'étape 3 comme le reste) :
 
@@ -273,6 +293,12 @@ Préparation :
 
 Le fichier du catalogue de départ ne contient que des informations bibliographiques publiques, jamais de statut personnel.
 
+Import (validé le 18 novembre 2026) :
+- Le catalogue est le fichier `catalogue/catalogue-initial.json`. Les thèmes de cœur y sont marqués, la même liste figurant déjà dans le cahier des charges.
+- Il s'installe depuis l'écran Bibliothèque, quand elle est vide, par le bouton « Installer le catalogue de départ ». L'appli appelle alors la fonction `importer_catalogue` de la base, sous le compte connecté.
+- Tout ou rien : à la moindre erreur, rien n'est enregistré. Un second import est refusé dès que la bibliothèque contient des œuvres.
+- « À découvrir », « Non possédé » et « À voir » viennent des valeurs par défaut des tables. Chaque œuvre est reliée à son édition de référence.
+
 ## 10. Technique
 
 ### 10.1 Stack
@@ -292,7 +318,14 @@ Le fichier du catalogue de départ ne contient que des informations bibliographi
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
-- Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub.
+- Une seule fonction de la base est appelable par le compte connecté : `importer_catalogue`. Elle s'exécute avec les droits de l'appelant, donc sous RLS. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
+- Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
+- API Claude (§7.6, §8.4) :
+  - une seule Edge Function porte tous les appels à l'API Claude ;
+  - elle n'est appelable que par le compte connecté ;
+  - la clé API est dans les secrets Supabase, jamais dans le frontend ni dans le dépôt ;
+  - ses journaux ne contiennent aucun contenu personnel ;
+  - une limite de dépense est fixée dans la console Anthropic.
 - Politiques de stockage restreintes à l'utilisateur.
 - Les journaux des GitHub Actions d'un dépôt public sont publics : aucune donnée ni clé ne doit y être affichée.
 
@@ -320,8 +353,9 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 3 | Catalogue initial : vérification, étiquettes, synopsis, import | Fable 5.2, élevé |
 | 4 | Bibliothèque et fiches : grille, recherche, filtres, ajout, modification, statuts, possession | Opus 5.5, moyen |
 | 5 | Suivi de lecture : unités, tomes, média associé, mise à jour rapide | Opus 5.5, élevé |
-| 6 | Couvertures et métadonnées automatiques | Fable 5.2, élevé |
+| 6 | Couvertures, métadonnées automatiques et fiche automatique (§8.4) | Fable 5.2, élevé |
 | 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil | Fable 5.2, élevé |
+| 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
 | 8 | Accueil final, notes, export, sauvegarde et veille | Opus 5.5, moyen |
 | 9 | Finitions : animations, PWA complète, hors ligne, accessibilité, audit design (Impeccable) | Opus 5.5, moyen |
 | 10 | Revue de sécurité finale | Fable 5.2, élevé |
@@ -330,7 +364,6 @@ Signal pour monter l'effort : un fichier oublié, des tests non lancés, une mod
 
 ## 12. Hors périmètre de la version 1
 
-- Découverte d'œuvres extérieures à la bibliothèque.
 - Citation du jour.
 - Statistiques de lecture.
 - Toute fonction sociale.

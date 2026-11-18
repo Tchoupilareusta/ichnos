@@ -1,0 +1,3054 @@
+{
+  "version": 1,
+  "etat": "catalogue validé le 18 novembre 2026 (35 œuvres), prêt pour l’import",
+  "a_propos": "Catalogue de départ d’Ichnos. Informations bibliographiques publiques uniquement : aucun statut de lecture, aucune possession, aucune appréciation, aucune note. Le bloc « relecture » de chaque œuvre (sources, remarques, autres éditions) sert à la vérification et n’est pas importé.",
+  "relecture_generale": {
+    "themes_proposes": [],
+    "points": [
+      "Le catalogue compte 35 œuvres : les 32 du cahier des charges et les 3 mangas ajoutés.",
+      "Les ISBN sont tous écrits à 13 chiffres. Quand la BnF donne un ISBN ancien à 10 caractères, c’est le même numéro dans sa forme actuelle.",
+      "Nature, Différence et Enfance sont créés et posés où vous l’avez demandé. Je les ai aussi posés là où le thème est au centre du livre : Nature sur Un psaume pour les recyclés sauvages ; Différence sur Des fleurs pour Algernon et La Métamorphose ; Enfance sur Sa Majesté des mouches et Prendre soin de l’enfant intérieur.",
+      "Champs laissés vides faute de source fiable : l’ISBN du tome 3 de Vagabond et celui du tome 21 de Chainsaw Man ; l’année d’origine de Prendre soin de l’enfant intérieur et de La Paix en soi, la paix en marche ; le titre original de ce dernier ; le format des deux éditions anglaises d’Orwell ; l’année des Lettres à Lucilius."
+    ]
+  },
+  "tags": {
+    "genre": [
+      "Classique",
+      "Roman philosophique",
+      "Littérature existentielle",
+      "Dystopie",
+      "Critique sociale",
+      "Fable et allégorie",
+      "Science-fiction",
+      "Fantasy et merveilleux",
+      "Fantastique sombre",
+      "Récit humaniste",
+      "Aventure historique",
+      "Philosophie",
+      "Spiritualité",
+      "Essai pratique",
+      "Témoignage",
+      "Humour et parodie"
+    ],
+    "atmosphere": [
+      "Douce",
+      "Chaleureuse",
+      "Sereine",
+      "Contemplative",
+      "Poétique",
+      "Mélancolique",
+      "Introspective",
+      "Onirique",
+      "Ironique",
+      "Drôle",
+      "Épique",
+      "Tendue",
+      "Oppressante",
+      "Dérangeante",
+      "Âpre"
+    ],
+    "theme": [
+      {
+        "name": "Pardon de soi",
+        "is_interest": true
+      },
+      {
+        "name": "Rédemption",
+        "is_interest": true
+      },
+      {
+        "name": "Acceptation de soi",
+        "is_interest": true
+      },
+      {
+        "name": "Paix intérieure",
+        "is_interest": true
+      },
+      {
+        "name": "Compassion",
+        "is_interest": true
+      },
+      {
+        "name": "Comprendre l’autre",
+        "is_interest": true
+      },
+      {
+        "name": "Dépasser ses peurs",
+        "is_interest": true
+      },
+      {
+        "name": "Regrets",
+        "is_interest": true
+      },
+      {
+        "name": "Quête de sens",
+        "is_interest": true
+      },
+      {
+        "name": "Liberté",
+        "is_interest": true
+      },
+      {
+        "name": "Rapport au temps",
+        "is_interest": true
+      },
+      {
+        "name": "Technologie et attention",
+        "is_interest": true
+      },
+      {
+        "name": "Relations humaines",
+        "is_interest": true
+      },
+      {
+        "name": "Beauté des choses simples",
+        "is_interest": true
+      },
+      {
+        "name": "Transformation personnelle",
+        "is_interest": true
+      },
+      {
+        "name": "Absurde",
+        "is_interest": false
+      },
+      {
+        "name": "Culpabilité",
+        "is_interest": false
+      },
+      {
+        "name": "Conscience morale",
+        "is_interest": false
+      },
+      {
+        "name": "Jugement",
+        "is_interest": false
+      },
+      {
+        "name": "Hypocrisie",
+        "is_interest": false
+      },
+      {
+        "name": "Identité",
+        "is_interest": false
+      },
+      {
+        "name": "Aliénation",
+        "is_interest": false
+      },
+      {
+        "name": "Solitude",
+        "is_interest": false
+      },
+      {
+        "name": "Pouvoir",
+        "is_interest": false
+      },
+      {
+        "name": "Totalitarisme",
+        "is_interest": false
+      },
+      {
+        "name": "Surveillance",
+        "is_interest": false
+      },
+      {
+        "name": "Propagande",
+        "is_interest": false
+      },
+      {
+        "name": "Censure",
+        "is_interest": false
+      },
+      {
+        "name": "Conformisme",
+        "is_interest": false
+      },
+      {
+        "name": "Bonheur imposé",
+        "is_interest": false
+      },
+      {
+        "name": "Violence",
+        "is_interest": false
+      },
+      {
+        "name": "Nature humaine",
+        "is_interest": false
+      },
+      {
+        "name": "Solidarité",
+        "is_interest": false
+      },
+      {
+        "name": "Dignité",
+        "is_interest": false
+      },
+      {
+        "name": "Sagesse",
+        "is_interest": false
+      },
+      {
+        "name": "Stoïcisme",
+        "is_interest": false
+      },
+      {
+        "name": "Pleine conscience",
+        "is_interest": false
+      },
+      {
+        "name": "Écoute",
+        "is_interest": false
+      },
+      {
+        "name": "Résilience",
+        "is_interest": false
+      },
+      {
+        "name": "Amour",
+        "is_interest": false
+      },
+      {
+        "name": "Amitié",
+        "is_interest": false
+      },
+      {
+        "name": "Espoir",
+        "is_interest": false
+      },
+      {
+        "name": "Patience",
+        "is_interest": false
+      },
+      {
+        "name": "Courage",
+        "is_interest": false
+      },
+      {
+        "name": "Désir",
+        "is_interest": false
+      },
+      {
+        "name": "Humilité",
+        "is_interest": false
+      },
+      {
+        "name": "Pacifisme",
+        "is_interest": false
+      },
+      {
+        "name": "Responsabilité",
+        "is_interest": false
+      },
+      {
+        "name": "Obsession",
+        "is_interest": false
+      },
+      {
+        "name": "Attente",
+        "is_interest": false
+      },
+      {
+        "name": "Connaissance",
+        "is_interest": false
+      },
+      {
+        "name": "Nature",
+        "is_interest": false
+      },
+      {
+        "name": "Différence",
+        "is_interest": false
+      },
+      {
+        "name": "Enfance",
+        "is_interest": false
+      }
+    ]
+  },
+  "works": [
+    {
+      "key": "vinland-saga",
+      "title_fr": "Vinland Saga",
+      "title_original": "ヴィンランド・サガ",
+      "original_language": "ja",
+      "first_published_year": 2005,
+      "form": "manga",
+      "is_series": true,
+      "authors": [
+        {
+          "name": "Makoto Yukimura",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Au début du XIe siècle, le jeune Islandais Thorfinn grandit parmi des mercenaires vikings, aux côtés de l'homme qu'il s'est juré de tuer. De champs de bataille en mers froides, entre l'Angleterre et le Danemark, il ne vit que pour sa vengeance. Mais que reste-t-il d'un guerrier quand la colère ne suffit plus ? Une fresque historique qui interroge peu à peu la violence, et ce que signifie vraiment être fort.",
+      "tone": 3,
+      "density": 2,
+      "length": "long",
+      "genres": [
+        "Aventure historique"
+      ],
+      "themes": [
+        "Rédemption",
+        "Pardon de soi",
+        "Pacifisme",
+        "Responsabilité",
+        "Transformation personnelle"
+      ],
+      "atmospheres": [
+        "Épique",
+        "Âpre",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "Kurokawa",
+          "language": "fr",
+          "format": "manga",
+          "translator": null,
+          "isbn": null,
+          "page_count": null
+        }
+      ],
+      "volumes": [
+        {
+          "number": 1,
+          "title": null,
+          "isbn": "9782351423554"
+        },
+        {
+          "number": 2,
+          "title": null,
+          "isbn": "9782351423561"
+        },
+        {
+          "number": 3,
+          "title": null,
+          "isbn": "9782351423578"
+        },
+        {
+          "number": 4,
+          "title": null,
+          "isbn": "9782351423585"
+        },
+        {
+          "number": 5,
+          "title": null,
+          "isbn": "9782351423592"
+        },
+        {
+          "number": 6,
+          "title": null,
+          "isbn": "9782351425114"
+        },
+        {
+          "number": 7,
+          "title": null,
+          "isbn": "9782351425350"
+        },
+        {
+          "number": 8,
+          "title": null,
+          "isbn": "9782351425367"
+        },
+        {
+          "number": 9,
+          "title": null,
+          "isbn": "9782351426012"
+        },
+        {
+          "number": 10,
+          "title": null,
+          "isbn": "9782351426814"
+        },
+        {
+          "number": 11,
+          "title": null,
+          "isbn": "9782351427828"
+        },
+        {
+          "number": 12,
+          "title": null,
+          "isbn": "9782351429297"
+        },
+        {
+          "number": 13,
+          "title": null,
+          "isbn": "9782368520796"
+        },
+        {
+          "number": 14,
+          "title": null,
+          "isbn": "9782368520802"
+        },
+        {
+          "number": 15,
+          "title": null,
+          "isbn": "9782368522097"
+        },
+        {
+          "number": 16,
+          "title": null,
+          "isbn": "9782368522738"
+        },
+        {
+          "number": 17,
+          "title": null,
+          "isbn": "9782368524176"
+        },
+        {
+          "number": 18,
+          "title": null,
+          "isbn": "9782368524626"
+        },
+        {
+          "number": 19,
+          "title": null,
+          "isbn": "9782368525869"
+        },
+        {
+          "number": 20,
+          "title": null,
+          "isbn": "9782368526989"
+        },
+        {
+          "number": 21,
+          "title": null,
+          "isbn": "9782368527269"
+        },
+        {
+          "number": 22,
+          "title": null,
+          "isbn": "9782368528402"
+        },
+        {
+          "number": 23,
+          "title": null,
+          "isbn": "9782368529614"
+        },
+        {
+          "number": 24,
+          "title": null,
+          "isbn": "9782368529621"
+        },
+        {
+          "number": 25,
+          "title": null,
+          "isbn": "9782380711516"
+        },
+        {
+          "number": 26,
+          "title": null,
+          "isbn": "9782380713183"
+        },
+        {
+          "number": 27,
+          "title": null,
+          "isbn": "9782380715453"
+        },
+        {
+          "number": 28,
+          "title": null,
+          "isbn": "9791042014810"
+        },
+        {
+          "number": 29,
+          "title": null,
+          "isbn": "9791042019396"
+        }
+      ],
+      "media": [
+        {
+          "kind": "anime",
+          "title": "Vinland Saga",
+          "seasons": 2,
+          "episodes_total": 48
+        }
+      ],
+      "relecture": {
+        "edition_proposee": "Kurokawa, 29 tomes parus de 2009 à 2026 (série terminée).",
+        "sources": [
+          {
+            "label": "BnF, notice de la série chez Kurokawa",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb414177511"
+          },
+          {
+            "label": "BnF, tome 29 (dépôt légal 2026)",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb48816815v"
+          },
+          {
+            "label": "Wikipédia, Vinland Saga (prépublication, fin de la série, anime)",
+            "url": "https://fr.wikipedia.org/wiki/Vinland_Saga"
+          }
+        ],
+        "remarques": [
+          "Les 29 ISBN de tomes viennent chacun d’une notice de la BnF.",
+          "Prépublication au Japon à partir d’avril 2005 ; dernier chapitre paru le 25 juillet 2025 ; 29 tomes au Japon comme en France.",
+          "Anime : saison 1 (2019, Wit Studio) et saison 2 (2023, MAPPA), 24 épisodes chacune, soit 48.",
+          "Kurokawa réédite la série depuis 2025 avec de nouveaux ISBN (tome 1 : 979-10-420-2059-0). Cette réédition est seulement mentionnée ici : l’édition retenue est celle d’origine."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "vagabond",
+      "title_fr": "Vagabond",
+      "title_original": "バガボンド",
+      "original_language": "ja",
+      "first_published_year": 1998,
+      "form": "manga",
+      "is_series": true,
+      "authors": [
+        {
+          "name": "Takehiko Inoue",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Japon, 1600. Au lendemain de la bataille de Sekigahara, le jeune Takezo Shinmen, dix-sept ans, n’a qu’une idée : devenir l’homme le plus fort sous le ciel. Violent, craint de son propre village, il prend la route sous un nouveau nom, Musashi Miyamoto, et défie les plus grandes écoles de sabre du pays. Chaque duel lui apprend pourtant que la force n’est peut-être pas ce qu’il croyait. Une adaptation libre du roman d’Eiji Yoshikawa sur le plus célèbre samouraï du Japon, dessinée au pinceau.",
+      "tone": 2,
+      "density": 2,
+      "length": "long",
+      "genres": [
+        "Aventure historique"
+      ],
+      "themes": [
+        "Quête de sens",
+        "Humilité",
+        "Violence",
+        "Sagesse",
+        "Transformation personnelle"
+      ],
+      "atmospheres": [
+        "Épique",
+        "Contemplative",
+        "Âpre"
+      ],
+      "editions": [
+        {
+          "publisher": "Tonkam",
+          "language": "fr",
+          "format": "manga",
+          "translator": null,
+          "isbn": null,
+          "page_count": null
+        }
+      ],
+      "volumes": [
+        {
+          "number": 1,
+          "title": null,
+          "isbn": "9782845800663"
+        },
+        {
+          "number": 2,
+          "title": null,
+          "isbn": "9782845801158"
+        },
+        {
+          "number": 3,
+          "title": null,
+          "isbn": null
+        },
+        {
+          "number": 4,
+          "title": null,
+          "isbn": "9782845801448"
+        },
+        {
+          "number": 5,
+          "title": null,
+          "isbn": "9782845801554"
+        },
+        {
+          "number": 6,
+          "title": null,
+          "isbn": "9782845801561"
+        },
+        {
+          "number": 7,
+          "title": null,
+          "isbn": "9782845801943"
+        },
+        {
+          "number": 8,
+          "title": null,
+          "isbn": "9782845802001"
+        },
+        {
+          "number": 9,
+          "title": null,
+          "isbn": "9782845802155"
+        },
+        {
+          "number": 10,
+          "title": null,
+          "isbn": "9782845802476"
+        },
+        {
+          "number": 11,
+          "title": null,
+          "isbn": "9782845802766"
+        },
+        {
+          "number": 12,
+          "title": null,
+          "isbn": "9782845802773"
+        },
+        {
+          "number": 13,
+          "title": null,
+          "isbn": "9782845803237"
+        },
+        {
+          "number": 14,
+          "title": null,
+          "isbn": "9782845803749"
+        },
+        {
+          "number": 15,
+          "title": null,
+          "isbn": "9782845803817"
+        },
+        {
+          "number": 16,
+          "title": null,
+          "isbn": "9782845804111"
+        },
+        {
+          "number": 17,
+          "title": null,
+          "isbn": "9782845805378"
+        },
+        {
+          "number": 18,
+          "title": null,
+          "isbn": "9782845805385"
+        },
+        {
+          "number": 19,
+          "title": null,
+          "isbn": "9782845806108"
+        },
+        {
+          "number": 20,
+          "title": null,
+          "isbn": "9782845806122"
+        },
+        {
+          "number": 21,
+          "title": null,
+          "isbn": "9782845807617"
+        },
+        {
+          "number": 22,
+          "title": null,
+          "isbn": "9782845807907"
+        },
+        {
+          "number": 23,
+          "title": null,
+          "isbn": "9782759500000"
+        },
+        {
+          "number": 24,
+          "title": null,
+          "isbn": "9782759500017"
+        },
+        {
+          "number": 25,
+          "title": null,
+          "isbn": "9782759500550"
+        },
+        {
+          "number": 26,
+          "title": null,
+          "isbn": "9782759500567"
+        },
+        {
+          "number": 27,
+          "title": null,
+          "isbn": "9782759501892"
+        },
+        {
+          "number": 28,
+          "title": null,
+          "isbn": "9782759501908"
+        },
+        {
+          "number": 29,
+          "title": null,
+          "isbn": "9782759501915"
+        },
+        {
+          "number": 30,
+          "title": null,
+          "isbn": "9782759503162"
+        },
+        {
+          "number": 31,
+          "title": null,
+          "isbn": "9782759504237"
+        },
+        {
+          "number": 32,
+          "title": null,
+          "isbn": "9782759504244"
+        },
+        {
+          "number": 33,
+          "title": null,
+          "isbn": "9782759505890"
+        },
+        {
+          "number": 34,
+          "title": null,
+          "isbn": "9782759505906"
+        },
+        {
+          "number": 35,
+          "title": null,
+          "isbn": "9782759506286"
+        },
+        {
+          "number": 36,
+          "title": null,
+          "isbn": "9782756055541"
+        },
+        {
+          "number": 37,
+          "title": null,
+          "isbn": "9782756065465"
+        }
+      ],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Tonkam, 37 tomes parus de 2001 à 2014.",
+        "sources": [
+          {
+            "label": "BnF, notice de la série chez Tonkam",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb37136205v"
+          },
+          {
+            "label": "Wikipédia, Vagabond (manga)",
+            "url": "https://fr.wikipedia.org/wiki/Vagabond_(manga)"
+          }
+        ],
+        "remarques": [
+          "Série en pause depuis 2015 : 37 tomes au Japon comme en France. Le nombre de tomes restera modifiable.",
+          "Le tome 3 n’a pas d’ISBN dans sa notice de la BnF : laissé vide. Les 36 autres en viennent.",
+          "Les tomes 1 à 22 portent à la BnF un ISBN à 10 caractères ; il est écrit ici à 13 chiffres (même numéro).",
+          "L’éditeur s’appelle aujourd’hui Delcourt/Tonkam ; les volumes sont parus sous le nom Tonkam."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "chainsaw-man",
+      "title_fr": "Chainsaw Man",
+      "title_original": "チェンソーマン",
+      "original_language": "ja",
+      "first_published_year": 2018,
+      "form": "manga",
+      "is_series": true,
+      "authors": [
+        {
+          "name": "Tatsuki Fujimoto",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Denji, adolescent sans famille, rembourse les dettes laissées par son père en chassant des démons pour la pègre, avec pour seul compagnon Pochita, un petit démon-tronçonneuse. Il ne rêve pas de gloire : il voudrait manger à sa faim et, un jour, serrer une fille dans ses bras. Trahi puis sauvé de justesse, il devient Chainsaw Man et rejoint la Sécurité publique, qui traque les démons pour le compte de l’État. Sous la violence et l’humour noir, la série parle de désir, de solitude et de ce qui fait un être humain.",
+      "tone": 2,
+      "density": 2,
+      "length": "long",
+      "genres": [
+        "Fantastique sombre"
+      ],
+      "themes": [
+        "Désir",
+        "Solitude",
+        "Nature humaine",
+        "Absurde"
+      ],
+      "atmospheres": [
+        "Dérangeante",
+        "Tendue",
+        "Drôle"
+      ],
+      "editions": [
+        {
+          "publisher": "Crunchyroll",
+          "language": "fr",
+          "format": "manga",
+          "translator": null,
+          "isbn": null,
+          "page_count": null
+        }
+      ],
+      "volumes": [
+        {
+          "number": 1,
+          "title": "Chien et tronçonneuse",
+          "isbn": "9782820337825"
+        },
+        {
+          "number": 2,
+          "title": "Tronçonneuse vs chauve-souris",
+          "isbn": "9782820338013"
+        },
+        {
+          "number": 3,
+          "title": "Tuez Denji !",
+          "isbn": "9782820338150"
+        },
+        {
+          "number": 4,
+          "title": "Puissant est le flingue",
+          "isbn": "9782820338358"
+        },
+        {
+          "number": 5,
+          "title": "Mineur",
+          "isbn": "9782820338549"
+        },
+        {
+          "number": 6,
+          "title": "Bam bam bam",
+          "isbn": "9782820340542"
+        },
+        {
+          "number": 7,
+          "title": "En rêve",
+          "isbn": "9782820340672"
+        },
+        {
+          "number": 8,
+          "title": "Méga tohu-bohu",
+          "isbn": "9782820340849"
+        },
+        {
+          "number": 9,
+          "title": "Bain",
+          "isbn": "9782820340986"
+        },
+        {
+          "number": 10,
+          "title": "Moi vouloir être chien",
+          "isbn": "9782820341167"
+        },
+        {
+          "number": 11,
+          "title": "Courage Chainsaw man !",
+          "isbn": "9782820341280"
+        },
+        {
+          "number": 12,
+          "title": "Oiseau et guerre",
+          "isbn": "9782820343697"
+        },
+        {
+          "number": 13,
+          "title": null,
+          "isbn": "9782820343772"
+        },
+        {
+          "number": 14,
+          "title": null,
+          "isbn": "9782820343949"
+        },
+        {
+          "number": 15,
+          "title": "Hors-d’œuvre",
+          "isbn": "9782820348043"
+        },
+        {
+          "number": 16,
+          "title": "Un bonheur normal",
+          "isbn": "9782820350374"
+        },
+        {
+          "number": 17,
+          "title": "Flingues, clous, katanas",
+          "isbn": "9782820348517"
+        },
+        {
+          "number": 18,
+          "title": "Tous des bêtes",
+          "isbn": "9782820348814"
+        },
+        {
+          "number": 19,
+          "title": "Paysage ordinaire",
+          "isbn": "9782820351661"
+        },
+        {
+          "number": 20,
+          "title": "Deux enfants",
+          "isbn": "9782820351678"
+        },
+        {
+          "number": 21,
+          "title": null,
+          "isbn": null
+        },
+        {
+          "number": 22,
+          "title": null,
+          "isbn": "9782820354464"
+        },
+        {
+          "number": 23,
+          "title": null,
+          "isbn": "9782820300348"
+        }
+      ],
+      "media": [
+        {
+          "kind": "anime",
+          "title": "Chainsaw Man",
+          "seasons": 1,
+          "episodes_total": 12
+        }
+      ],
+      "relecture": {
+        "edition_proposee": "Kazé (tomes 1 à 11, 2020-2021), puis Crunchyroll (tomes 12 et suivants).",
+        "sources": [
+          {
+            "label": "BnF, notice de la série",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb465662592"
+          },
+          {
+            "label": "Wikipédia, Chainsaw Man",
+            "url": "https://fr.wikipedia.org/wiki/Chainsaw_Man"
+          },
+          {
+            "label": "Wikidata, Chainsaw Man (manga)",
+            "url": "https://www.wikidata.org/wiki/Q65240543"
+          }
+        ],
+        "remarques": [
+          "Série terminée au Japon : 24 tomes, le dernier paru le 25 mars 2026 (Wikipédia). La BnF en référence 23 en français ; le 24e sera à ajouter à sa parution.",
+          "Tomes 16, 17 et 23 revérifiés à la BnF le 18 novembre 2026 : chaque ISBN correspond bien à son tome. Les numéros ne se suivent pas parce que l’éditeur ne les attribue pas dans l’ordre des tomes ; rien dans les notices n’indique une réimpression.",
+          "Tome 21 : la BnF ne connaît pour l’instant que l’édition sous étui (ISBN 978-2-8203-5510-2, 10,99 €). L’ISBN de l’édition courante n’étant pas vérifié, il est laissé vide.",
+          "Le tome 22 n’a encore qu’une notice succincte à la BnF (ISBN sans pagination).",
+          "Kazé est devenu Crunchyroll en cours de parution : l’éditeur indiqué est le nom actuel.",
+          "Anime : une saison de 12 épisodes (MAPPA, 2022). Un film d’animation est sorti en 2025 ; je ne l’ai pas ajouté."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "elden-ring-le-chemin-vers-l-arbre-monde",
+      "title_fr": "Elden Ring : Le chemin vers l’Arbre-Monde",
+      "title_original": "ELDEN RING 黄金樹への道",
+      "original_language": "ja",
+      "first_published_year": 2022,
+      "form": "manga",
+      "is_series": true,
+      "authors": [
+        {
+          "name": "Nikiichi Tobita",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Un Sans-éclat de la plus basse condition se réveille dans l’Entre-terre en simple pagne, sans arme et sans la moindre idée de ce qu’on attend de lui. Il doit pourtant rejoindre l’Arbre-Monde et devenir Seigneur d’Elden. Sur sa route, les personnages redoutables du jeu vidéo se révèlent bavards, susceptibles ou franchement ridicules. Une parodie affectueuse du jeu Elden Ring, tout en gags et en malchance.",
+      "tone": 5,
+      "density": 1,
+      "length": "long",
+      "genres": [
+        "Humour et parodie",
+        "Fantasy et merveilleux"
+      ],
+      "themes": [
+        "Amitié"
+      ],
+      "atmospheres": [
+        "Drôle",
+        "Chaleureuse"
+      ],
+      "editions": [
+        {
+          "publisher": "Mana Books",
+          "language": "fr",
+          "format": "manga",
+          "translator": null,
+          "isbn": null,
+          "page_count": null
+        }
+      ],
+      "volumes": [
+        {
+          "number": 1,
+          "title": null,
+          "isbn": "9791035503864"
+        },
+        {
+          "number": 2,
+          "title": null,
+          "isbn": "9791035503888"
+        },
+        {
+          "number": 3,
+          "title": null,
+          "isbn": "9791035504892"
+        },
+        {
+          "number": 4,
+          "title": null,
+          "isbn": "9791035505189"
+        },
+        {
+          "number": 5,
+          "title": null,
+          "isbn": "9791035505509"
+        },
+        {
+          "number": 6,
+          "title": null,
+          "isbn": "9791035506575"
+        },
+        {
+          "number": 7,
+          "title": null,
+          "isbn": "9791035506872"
+        },
+        {
+          "number": 8,
+          "title": null,
+          "isbn": "9791035507169"
+        },
+        {
+          "number": 9,
+          "title": null,
+          "isbn": "9791035508760"
+        },
+        {
+          "number": 10,
+          "title": null,
+          "isbn": "9791035508388"
+        }
+      ],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Mana Books, 10 tomes référencés à la BnF (2023-2026), série en cours.",
+        "sources": [
+          {
+            "label": "BnF, notice de la série chez Mana Books",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb47436293k"
+          },
+          {
+            "label": "Wikidata, ELDEN RING 黄金樹への道",
+            "url": "https://www.wikidata.org/wiki/Q117066091"
+          }
+        ],
+        "remarques": [
+          "Série en cours : le nombre de tomes restera modifiable.",
+          "Le tome 10 n’a encore qu’une notice succincte à la BnF (ISBN sans pagination)."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "un-psaume-pour-les-recycles-sauvages",
+      "title_fr": "Un psaume pour les recyclés sauvages",
+      "title_original": "A Psalm for the Wild-Built",
+      "original_language": "en",
+      "first_published_year": 2021,
+      "form": "roman_court",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Becky Chambers",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Sur Panga, les robots ont un jour pris conscience d’eux-mêmes, puis sont partis vivre dans la forêt ; depuis des siècles, plus personne ne les a revus. Dex, moine de thé, parcourt les villages avec sa roulotte pour offrir une tasse et une oreille attentive à qui en a besoin. Pourtant quelque chose manque à Dex, sans que cela porte de nom. En quittant les routes tracées, Dex croise un robot venu poser aux humains une question toute simple : de quoi avez-vous besoin ?",
+      "tone": 5,
+      "density": 1,
+      "length": "court",
+      "genres": [
+        "Science-fiction",
+        "Récit humaniste"
+      ],
+      "themes": [
+        "Quête de sens",
+        "Acceptation de soi",
+        "Paix intérieure",
+        "Beauté des choses simples",
+        "Nature"
+      ],
+      "atmospheres": [
+        "Douce",
+        "Contemplative",
+        "Chaleureuse"
+      ],
+      "editions": [
+        {
+          "publisher": "L’Atalante",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Marie Surgers",
+          "isbn": "9791036001192",
+          "page_count": 133
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "L’Atalante, collection La Dentelle du cygne, 2022, traduction de Marie Surgers.",
+        "sources": [
+          {
+            "label": "BnF, édition L’Atalante 2022",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb47109289x"
+          },
+          {
+            "label": "Wikipédia, A Psalm for the Wild-Built",
+            "url": "https://en.wikipedia.org/wiki/A_Psalm_for_the_Wild-Built"
+          }
+        ],
+        "remarques": [
+          "Suite signalée, non ajoutée : « Une prière pour les cimes timides » (L’Atalante, 2023)."
+        ],
+        "autres_editions": [
+          "« Histoires de moine et de robot » (L’Atalante, 2025) réunit ce livre et sa suite : ISBN 979-10-360-0234-2, 246 pages."
+        ]
+      }
+    },
+    {
+      "key": "siddhartha",
+      "title_fr": "Siddhartha",
+      "title_original": "Siddhartha",
+      "original_language": "de",
+      "first_published_year": 1922,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Hermann Hesse",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Dans l’Inde ancienne, Siddhartha, fils de brahmane admiré de tous, sent que l’enseignement des sages ne suffit pas à apaiser sa soif. Il quitte la maison paternelle avec son ami Govinda pour chercher sa propre voie, auprès des ascètes de la forêt, puis dans le monde et ses plaisirs. Hesse raconte une vie entière passée à apprendre ce qui ne s’enseigne pas, dans une langue simple et limpide comme celle d’un conte.",
+      "tone": 4,
+      "density": 3,
+      "length": "moyen",
+      "genres": [
+        "Roman philosophique",
+        "Spiritualité"
+      ],
+      "themes": [
+        "Quête de sens",
+        "Sagesse",
+        "Paix intérieure",
+        "Transformation personnelle"
+      ],
+      "atmospheres": [
+        "Contemplative",
+        "Sereine",
+        "Poétique"
+      ],
+      "editions": [
+        {
+          "publisher": "Le Livre de poche",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Joseph Delage",
+          "isbn": "9782253008484",
+          "page_count": 217
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Le Livre de poche n° 4204, traduction de Joseph Delage.",
+        "sources": [
+          {
+            "label": "BnF, Le Livre de poche n° 4204",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb34550042r"
+          },
+          {
+            "label": "Wikipédia, Siddhartha (roman)",
+            "url": "https://fr.wikipedia.org/wiki/Siddhartha_(roman)"
+          }
+        ],
+        "remarques": [
+          "La notice de la BnF date de 1975 et porte l’ISBN 2-253-00848-6, écrit ici à 13 chiffres (même numéro). La pagination est celle de cette notice."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "le-petit-prince",
+      "title_fr": "Le Petit Prince",
+      "title_original": null,
+      "original_language": "fr",
+      "first_published_year": 1943,
+      "form": "conte",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Antoine de Saint-Exupéry",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Tombé en panne dans le désert du Sahara, un aviateur voit venir à lui un petit garçon aux cheveux d’or qui lui demande de dessiner un mouton. L’enfant vient d’une planète à peine plus grande qu’une maison, où il a laissé une rose. De rencontre en rencontre, il raconte son voyage et ce que les grandes personnes ont oublié en chemin. Un conte bref, illustré par l’auteur, qui parle d’amitié et de ce qui rend un être unique.",
+      "tone": 4,
+      "density": 1,
+      "length": "court",
+      "genres": [
+        "Fable et allégorie",
+        "Classique"
+      ],
+      "themes": [
+        "Amitié",
+        "Amour",
+        "Relations humaines",
+        "Beauté des choses simples",
+        "Enfance"
+      ],
+      "atmospheres": [
+        "Poétique",
+        "Douce",
+        "Mélancolique"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": null,
+          "isbn": "9782070408504",
+          "page_count": 97
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 3200 (1999), avec les aquarelles de l’auteur.",
+        "sources": [
+          {
+            "label": "BnF, Folio n° 3200",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb37007958t"
+          },
+          {
+            "label": "Wikipédia, Le Petit Prince",
+            "url": "https://fr.wikipedia.org/wiki/Le_Petit_Prince"
+          }
+        ],
+        "remarques": [
+          "ISBN de la BnF : 2-07-040850-7, écrit ici à 13 chiffres (même numéro)."
+        ],
+        "autres_editions": [
+          "Folio junior (Gallimard jeunesse, 2022) : ISBN 978-2-07-515554-0, 113 pages."
+        ]
+      }
+    },
+    {
+      "key": "momo",
+      "title_fr": "Momo",
+      "title_original": "Momo",
+      "original_language": "de",
+      "first_published_year": 1973,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Michael Ende",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Momo, une petite fille venue de nulle part, vit dans les ruines d'un amphithéâtre, au bord d'une grande ville. Elle possède un don rare : elle sait écouter, si bien que chacun repart de chez elle un peu plus lui-même. Le jour où d'étranges hommes en gris persuadent les habitants d'économiser leur temps, la ville devient pressée, efficace et triste. Momo, qui n'a rien d'autre que son temps, est la seule à voir ce qui se passe.",
+      "tone": 4,
+      "density": 1,
+      "length": "moyen",
+      "genres": [
+        "Fantasy et merveilleux",
+        "Fable et allégorie"
+      ],
+      "themes": [
+        "Rapport au temps",
+        "Écoute",
+        "Amitié",
+        "Beauté des choses simples",
+        "Enfance"
+      ],
+      "atmospheres": [
+        "Douce",
+        "Poétique",
+        "Onirique"
+      ],
+      "editions": [
+        {
+          "publisher": "Bayard jeunesse",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Corinna Gepner",
+          "isbn": "9782747024693",
+          "page_count": 430
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Bayard jeunesse, collection Estampille, 2009, traduction de Corinna Gepner.",
+        "sources": [
+          {
+            "label": "BnF, édition Bayard jeunesse 2009",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb41482244m"
+          },
+          {
+            "label": "BnF, édition originale allemande (Thienemann, 1973)",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb39026066d"
+          }
+        ],
+        "remarques": [
+          "Longueur « moyen » : les autres éditions françaises font environ 310 pages ; l'édition Bayard en compte 430 à cause de sa mise en page.",
+          "« Attention », dans le cahier des charges, est rendu par le thème « Écoute »."
+        ],
+        "autres_editions": [
+          "Traduction plus ancienne de Marianne Strauss (Stock, 1980 ; Le Livre de poche jeunesse, 1989), sous le titre long « Momo ou la Mystérieuse histoire des voleurs de temps… »."
+        ]
+      }
+    },
+    {
+      "key": "la-maison-au-milieu-de-la-mer-ceruleenne",
+      "title_fr": "La Maison au milieu de la mer céruléenne",
+      "title_original": "The House in the Cerulean Sea",
+      "original_language": "en",
+      "first_published_year": 2020,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "T. J. Klune",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Linus Baker, fonctionnaire méticuleux et solitaire, inspecte les orphelinats qui accueillent des enfants aux pouvoirs magiques. Sa hiérarchie l’envoie pour un mois sur une île lointaine, évaluer un établissement classé secret et les six enfants jugés dangereux qui y vivent, sous la garde d’un directeur énigmatique. Linus arrive avec son règlement sous le bras. Il découvre une maison pleine de vie, et des questions que son règlement n’avait pas prévues.",
+      "tone": 5,
+      "density": 1,
+      "length": "long",
+      "genres": [
+        "Fantasy et merveilleux",
+        "Récit humaniste"
+      ],
+      "themes": [
+        "Acceptation de soi",
+        "Compassion",
+        "Comprendre l’autre",
+        "Relations humaines",
+        "Différence"
+      ],
+      "atmospheres": [
+        "Chaleureuse",
+        "Douce",
+        "Drôle"
+      ],
+      "editions": [
+        {
+          "publisher": "De Saxus",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Cécile Tasson",
+          "isbn": "9782378761103",
+          "page_count": 476
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "De Saxus, 2021, traduction de Cécile Tasson.",
+        "sources": [
+          {
+            "label": "BnF, édition De Saxus 2021",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb474067413"
+          },
+          {
+            "label": "Wikipédia, The House in the Cerulean Sea",
+            "url": "https://en.wikipedia.org/wiki/The_House_in_the_Cerulean_Sea"
+          }
+        ],
+        "remarques": [
+          "Suite signalée, non ajoutée : « Quelque part de l’autre côté de la mer » (De Saxus, 2025)."
+        ],
+        "autres_editions": [
+          "Éditions PAL (2024), même traduction : ISBN 978-2-38565-024-7, 474 pages."
+        ]
+      }
+    },
+    {
+      "key": "la-bibliotheque-de-minuit",
+      "title_fr": "La Bibliothèque de minuit",
+      "title_original": "The Midnight Library",
+      "original_language": "en",
+      "first_published_year": 2020,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Matt Haig",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Nora Seed a le sentiment d’avoir tout raté et de ne manquer à personne. Une nuit, elle se retrouve dans une bibliothèque aux rayonnages infinis, tenue par la bibliothécaire de son enfance. Chaque livre y contient une vie qu’elle aurait pu mener si elle avait fait un autre choix. Nora peut les ouvrir et les essayer, une à une. Encore faut-il savoir ce qui fait qu’une vie vaut d’être vécue.",
+      "tone": 4,
+      "density": 1,
+      "length": "moyen",
+      "genres": [
+        "Fantasy et merveilleux",
+        "Roman philosophique"
+      ],
+      "themes": [
+        "Regrets",
+        "Acceptation de soi",
+        "Quête de sens"
+      ],
+      "atmospheres": [
+        "Mélancolique",
+        "Douce",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "Le Livre de poche",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Dominique Haas",
+          "isbn": "9782253936367",
+          "page_count": 400
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Le Livre de poche n° 36747 (2023), traduction de Dominique Haas.",
+        "sources": [
+          {
+            "label": "BnF, Le Livre de poche 2023",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb47226252f"
+          },
+          {
+            "label": "Wikipédia, La Bibliothèque de minuit",
+            "url": "https://fr.wikipedia.org/wiki/La_Biblioth%C3%A8que_de_minuit"
+          }
+        ],
+        "remarques": [],
+        "autres_editions": [
+          "Mazarine (2022), grand format, même traduction : ISBN 978-2-86374-873-2, 408 pages."
+        ]
+      }
+    },
+    {
+      "key": "l-homme-qui-plantait-des-arbres",
+      "title_fr": "L’Homme qui plantait des arbres",
+      "title_original": null,
+      "original_language": "fr",
+      "first_published_year": 1953,
+      "form": "nouvelle",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Jean Giono",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "En 1913, un jeune randonneur traverse une région déserte et battue par le vent, en Haute-Provence. Il y rencontre un berger silencieux, Elzéard Bouffier, qui chaque jour trie cent glands et les plante, seul, sans rien attendre de personne. Le narrateur reviendra le voir au fil des années. En quelques dizaines de pages, Giono raconte ce que peuvent la patience et l’obstination tranquille d’un seul homme.",
+      "tone": 5,
+      "density": 1,
+      "length": "court",
+      "genres": [
+        "Récit humaniste",
+        "Fable et allégorie"
+      ],
+      "themes": [
+        "Patience",
+        "Espoir",
+        "Beauté des choses simples",
+        "Nature"
+      ],
+      "atmospheres": [
+        "Contemplative",
+        "Sereine"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "broché",
+          "translator": null,
+          "isbn": "9782070744619",
+          "page_count": 40
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Blanche, 1996.",
+        "sources": [
+          {
+            "label": "Gallimard, fiche de l’édition de 1996",
+            "url": "https://www.gallimard.fr/catalogue/l-homme-qui-plantait-des-arbres/9782070744619"
+          },
+          {
+            "label": "BnF, édition Gallimard 1996",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb35802183q"
+          },
+          {
+            "label": "Wikipédia, L’Homme qui plantait des arbres",
+            "url": "https://fr.wikipedia.org/wiki/L%E2%80%99Homme_qui_plantait_des_arbres"
+          }
+        ],
+        "remarques": [
+          "ISBN et pagination viennent du site de Gallimard : la notice BnF de 1996 n’a pas d’ISBN et compte 33 pages.",
+          "« Bonté », dans le cahier des charges, n’a pas d’étiquette à lui : il se retrouve dans Patience et Espoir."
+        ],
+        "autres_editions": [
+          "Folio+ collège n° 10 (2016), texte intégral avec dossier : ISBN 978-2-07-079402-7, 92 pages.",
+          "Folio cadet Les classiques (2018), illustré par Olivier Desvaux : ISBN 978-2-07-509266-1, 50 pages."
+        ]
+      }
+    },
+    {
+      "key": "jonathan-livingston-le-goeland",
+      "title_fr": "Jonathan Livingston le goéland",
+      "title_original": "Jonathan Livingston Seagull",
+      "original_language": "en",
+      "first_published_year": 1970,
+      "form": "conte",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Richard Bach",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Pour les goélands, voler ne sert qu’à trouver à manger. Jonathan Livingston, lui, aime voler pour voler : il s’exerce seul, loin du clan, à aller plus vite et plus haut qu’aucun oiseau avant lui. Cette passion lui vaut d’être rejeté par les siens. Une fable très courte sur le goût d’apprendre, la liberté de suivre sa propre voie et ce que l’on doit ensuite aux autres.",
+      "tone": 5,
+      "density": 1,
+      "length": "court",
+      "genres": [
+        "Fable et allégorie",
+        "Spiritualité"
+      ],
+      "themes": [
+        "Liberté",
+        "Courage",
+        "Compassion",
+        "Quête de sens"
+      ],
+      "atmospheres": [
+        "Poétique",
+        "Sereine"
+      ],
+      "editions": [
+        {
+          "publisher": "Librio",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Pierre Clostermann et François Rosso",
+          "isbn": "9782290429211",
+          "page_count": 73
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Librio n° 2 (2025), traduction de Pierre Clostermann, et de François Rosso pour la quatrième partie.",
+        "sources": [
+          {
+            "label": "BnF, Librio n° 2, 2025",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb48612415f"
+          },
+          {
+            "label": "Wikipédia, Jonathan Livingston le goéland",
+            "url": "https://fr.wikipedia.org/wiki/Jonathan_Livingston_le_go%C3%A9land"
+          }
+        ],
+        "remarques": [],
+        "autres_editions": [
+          "Flammarion (2015), avec les photographies de Russell Munson : ISBN 978-2-08-134828-8, 153 pages."
+        ]
+      }
+    },
+    {
+      "key": "le-prophete",
+      "title_fr": "Le Prophète",
+      "title_original": "The Prophet",
+      "original_language": "en",
+      "first_published_year": 1923,
+      "form": "poesie",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Khalil Gibran",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Après douze ans passés dans la cité d’Orphalèse, Almustafa voit enfin arriver le navire qui doit le ramener sur son île natale. Avant son départ, les habitants lui demandent de leur parler une dernière fois : de l’amour, du mariage, des enfants, du travail, de la joie et de la peine, de la liberté, de la mort. Vingt-six courts textes en prose poétique, à lire dans l’ordre ou au hasard.",
+      "tone": 4,
+      "density": 2,
+      "length": "court",
+      "genres": [
+        "Spiritualité",
+        "Classique"
+      ],
+      "themes": [
+        "Sagesse",
+        "Amour",
+        "Quête de sens",
+        "Paix intérieure"
+      ],
+      "atmospheres": [
+        "Poétique",
+        "Sereine",
+        "Contemplative"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Anne Wade Minkowski",
+          "isbn": "9782072722721",
+          "page_count": 131
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio classique (2017), traduction d’Anne Wade Minkowski, préface d’Adonis.",
+        "sources": [
+          {
+            "label": "BnF, Folio classique 2017",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb452547860"
+          },
+          {
+            "label": "Wikipédia, The Prophet (book)",
+            "url": "https://en.wikipedia.org/wiki/The_Prophet_(book)"
+          }
+        ],
+        "remarques": [
+          "Il existe de nombreuses traductions de ce texte ; j’ai proposé celle du Folio."
+        ],
+        "autres_editions": [
+          "Points (2023), suivi du « Jardin du prophète », traduction de Camille Aboussouan et Claire Dubois : ISBN 979-10-414-1033-0, 152 pages."
+        ]
+      }
+    },
+    {
+      "key": "le-baron-perche",
+      "title_fr": "Le Baron perché",
+      "title_original": "Il barone rampante",
+      "original_language": "it",
+      "first_published_year": 1957,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Italo Calvino",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "En 1767, en Ligurie, le jeune baron Côme, douze ans, refuse le plat d’escargots qu’on lui impose à table. Il grimpe dans un chêne du jardin et déclare qu’il n’en descendra plus. Ce qui ressemble à un caprice devient une manière de vivre : d’arbre en arbre, Côme chasse, lit, aime, et regarde le monde d’un peu plus haut. Son frère cadet raconte, avec tendresse et malice, cette vie à part qui ne tourne pourtant jamais le dos aux autres.",
+      "tone": 4,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Classique",
+        "Fable et allégorie"
+      ],
+      "themes": [
+        "Liberté",
+        "Identité",
+        "Relations humaines",
+        "Amour"
+      ],
+      "atmospheres": [
+        "Drôle",
+        "Poétique"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Martin Rueff",
+          "isbn": "9782072823626",
+          "page_count": 377
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 5458 (2019), nouvelle traduction de Martin Rueff.",
+        "sources": [
+          {
+            "label": "BnF, Folio n° 5458",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb456922483"
+          },
+          {
+            "label": "Wikipédia, Le Baron perché",
+            "url": "https://fr.wikipedia.org/wiki/Le_Baron_perch%C3%A9"
+          }
+        ],
+        "remarques": [
+          "« Individualité », dans le cahier des charges, est rendu par Liberté et Identité."
+        ],
+        "autres_editions": [
+          "Traduction plus ancienne de Juliette Bertrand, revue par Mario Fusco, encore disponible en Folio junior (2016) : ISBN 978-2-07-057884-9, 372 pages."
+        ]
+      }
+    },
+    {
+      "key": "des-fleurs-pour-algernon",
+      "title_fr": "Des fleurs pour Algernon",
+      "title_original": "Flowers for Algernon",
+      "original_language": "en",
+      "first_published_year": 1966,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Daniel Keyes",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Charlie Gordon, trente-deux ans, balaie le sol d’une boulangerie et suit des cours du soir pour adultes : il voudrait tant devenir intelligent. Des chercheurs lui proposent une opération expérimentale, déjà tentée avec succès sur une souris de laboratoire nommée Algernon. Charlie tient le journal de ce qui lui arrive, avec ses mots à lui. À mesure qu’il change, son regard sur les autres, et le leur sur lui, changent aussi.",
+      "tone": 2,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Science-fiction",
+        "Récit humaniste"
+      ],
+      "themes": [
+        "Dignité",
+        "Comprendre l’autre",
+        "Solitude",
+        "Identité",
+        "Différence"
+      ],
+      "atmospheres": [
+        "Mélancolique",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "J’ai lu",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Georges H. Gallet",
+          "isbn": "9782290418505",
+          "page_count": 542
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "J’ai lu n° 10047 (2025), traduction de Georges H. Gallet.",
+        "sources": [
+          {
+            "label": "BnF, J’ai lu 2025",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb485871780"
+          },
+          {
+            "label": "Wikipédia, Des fleurs pour Algernon",
+            "url": "https://fr.wikipedia.org/wiki/Des_fleurs_pour_Algernon"
+          }
+        ],
+        "remarques": [
+          "Cette édition ajoute au roman un essai de l’auteur et la nouvelle d’origine, d’où ses 542 pages. Le roman seul est de longueur moyenne."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "la-metamorphose",
+      "title_fr": "La Métamorphose",
+      "title_original": "Die Verwandlung",
+      "original_language": "de",
+      "first_published_year": 1915,
+      "form": "roman_court",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Franz Kafka",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Un matin, Gregor Samsa, représentant de commerce, se réveille dans son lit transformé en un énorme insecte. Sa première inquiétude est d’être en retard au travail. Derrière la porte de sa chambre, ses parents et sa sœur, qu’il faisait vivre jusque-là, doivent apprendre à cohabiter avec lui. Kafka raconte l’impensable sur le ton le plus ordinaire, et c’est ce calme qui trouble.",
+      "tone": 1,
+      "density": 3,
+      "length": "court",
+      "genres": [
+        "Classique",
+        "Littérature existentielle"
+      ],
+      "themes": [
+        "Identité",
+        "Aliénation",
+        "Solitude",
+        "Différence"
+      ],
+      "atmospheres": [
+        "Oppressante",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Claude David",
+          "isbn": "9782070462872",
+          "page_count": 129
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio classique (2014), traduction de Claude David.",
+        "sources": [
+          {
+            "label": "BnF, Folio classique 2014",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb442564499"
+          },
+          {
+            "label": "Wikipédia, La Métamorphose",
+            "url": "https://fr.wikipedia.org/wiki/La_M%C3%A9tamorphose"
+          }
+        ],
+        "remarques": [
+          "« Rejet », dans le cahier des charges, est rendu par Différence, Aliénation et Solitude."
+        ],
+        "autres_editions": [
+          "Folio bilingue n° 14 (2024), nouvelle traduction de Jean-Pierre Lefebvre : ISBN 978-2-07-304276-7, 214 pages."
+        ]
+      }
+    },
+    {
+      "key": "la-peste",
+      "title_fr": "La Peste",
+      "title_original": null,
+      "original_language": "fr",
+      "first_published_year": 1947,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Albert Camus",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Oran, dans les années 1940. Des rats viennent mourir par milliers dans les rues, puis une fièvre se déclare parmi les habitants. Le docteur Rieux est l’un des premiers à oser prononcer le mot de peste. La ville est fermée, et chacun, séparé de ceux qu’il aime, doit choisir sa manière de tenir. Une chronique sobre sur ce que les hommes font, ensemble ou seuls, face à un mal qui les dépasse.",
+      "tone": 2,
+      "density": 3,
+      "length": "moyen",
+      "genres": [
+        "Classique",
+        "Littérature existentielle"
+      ],
+      "themes": [
+        "Solidarité",
+        "Absurde",
+        "Responsabilité",
+        "Nature humaine"
+      ],
+      "atmospheres": [
+        "Oppressante",
+        "Âpre"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": null,
+          "isbn": "9782070360420",
+          "page_count": 368
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 42.",
+        "sources": [
+          {
+            "label": "Gallimard, fiche de l’édition Folio n° 42",
+            "url": "https://www.gallimard.fr/catalogue/la-peste/9782070360420"
+          },
+          {
+            "label": "BnF, Folio n° 42 (1972)",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb35224736q"
+          },
+          {
+            "label": "Wikipédia, La Peste",
+            "url": "https://fr.wikipedia.org/wiki/La_Peste"
+          }
+        ],
+        "remarques": [
+          "Pagination : 368 pages selon Gallimard pour l’édition en vente ; la notice BnF de 1972 en compte 313. J’ai retenu celle de l’éditeur."
+        ],
+        "autres_editions": [
+          "Folioplus classiques n° 119 (2007), avec dossier : ISBN 978-2-07-034957-9."
+        ]
+      }
+    },
+    {
+      "key": "l-etranger",
+      "title_fr": "L’Étranger",
+      "title_original": null,
+      "original_language": "fr",
+      "first_published_year": 1942,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Albert Camus",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Meursault, modeste employé de bureau à Alger, apprend la mort de sa mère et assiste à l’enterrement sans verser une larme. Il raconte ses journées comme elles viennent, la chaleur, la mer, une liaison, un voisin douteux, d’une voix égale qui ne commente rien. Un jour, sur une plage écrasée de soleil, cette vie sans histoires bascule. Le roman interroge ce que la société exige de nous : agir, mais aussi ressentir comme il faut.",
+      "tone": 2,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Classique",
+        "Littérature existentielle"
+      ],
+      "themes": [
+        "Absurde",
+        "Jugement",
+        "Conformisme",
+        "Solitude"
+      ],
+      "atmospheres": [
+        "Âpre",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": null,
+          "isbn": "9782070360024",
+          "page_count": 192
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 2.",
+        "sources": [
+          {
+            "label": "Gallimard, fiche de l’édition Folio n° 2",
+            "url": "https://www.gallimard.fr/catalogue/l-etranger/9782070360024"
+          },
+          {
+            "label": "BnF, Folio n° 2 (1971)",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb35224436w"
+          },
+          {
+            "label": "Wikipédia, L’Étranger",
+            "url": "https://fr.wikipedia.org/wiki/L%E2%80%99%C3%89tranger"
+          }
+        ],
+        "remarques": [
+          "ISBN et pagination viennent du site de Gallimard : la notice BnF de 1971 n’a pas d’ISBN."
+        ],
+        "autres_editions": [
+          "Folioplus classiques n° 40 (2005), avec dossier : ISBN 978-2-07-030602-2."
+        ]
+      }
+    },
+    {
+      "key": "la-chute",
+      "title_fr": "La Chute",
+      "title_original": null,
+      "original_language": "fr",
+      "first_published_year": 1956,
+      "form": "roman_court",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Albert Camus",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Dans un bar d'Amsterdam, un ancien avocat parisien aborde un inconnu et se met à lui parler. Soir après soir, Jean-Baptiste Clamence raconte l'homme admiré qu'il était, généreux, brillant, sûr de sa vertu, puis l'instant où cette belle image s'est fissurée. Un monologue ironique et troublant, où celui qui se confesse semble tendre un miroir à celui qui l'écoute.",
+      "tone": 2,
+      "density": 4,
+      "length": "court",
+      "genres": [
+        "Classique",
+        "Littérature existentielle"
+      ],
+      "themes": [
+        "Culpabilité",
+        "Jugement",
+        "Hypocrisie",
+        "Conscience morale",
+        "Solitude"
+      ],
+      "atmospheres": [
+        "Ironique",
+        "Introspective",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": null,
+          "isbn": "9782070360109",
+          "page_count": 160
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 10.",
+        "sources": [
+          {
+            "label": "Gallimard, fiche de l'édition Folio n° 10",
+            "url": "https://www.gallimard.fr/catalogue/la-chute/9782070360109"
+          },
+          {
+            "label": "BnF, édition originale (Gallimard, 1956)",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb31902884m"
+          },
+          {
+            "label": "BnF, Folio n° 10 (1971)",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb352243269"
+          }
+        ],
+        "remarques": [
+          "L'ISBN du Folio vient du site de Gallimard : la notice BnF de 1971 n'en porte pas.",
+          "Pagination : 160 pages selon Gallimard, 159 selon la BnF. J'ai retenu celle de l'éditeur."
+        ],
+        "autres_editions": [
+          "Folioplus classiques n° 125 (2008), avec dossier : ISBN 978-2-07-034961-6, 212 pages."
+        ]
+      }
+    },
+    {
+      "key": "crime-et-chatiment",
+      "title_fr": "Crime et Châtiment",
+      "title_original": "Преступление и наказание",
+      "original_language": "ru",
+      "first_published_year": 1866,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Fiodor Dostoïevski",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Saint-Pétersbourg, un été étouffant. Raskolnikov, ancien étudiant sans le sou, s’est persuadé que certains hommes ont le droit de franchir les limites de la morale ordinaire. Pour s’en donner la preuve, il prépare le meurtre d’une vieille prêteuse sur gages. Le roman s’attache moins au crime qu’à ce qui suit : la fièvre, le soupçon, et une conscience qui refuse de se taire.",
+      "tone": 2,
+      "density": 4,
+      "length": "long",
+      "genres": [
+        "Classique",
+        "Roman philosophique"
+      ],
+      "themes": [
+        "Culpabilité",
+        "Rédemption",
+        "Conscience morale"
+      ],
+      "atmospheres": [
+        "Oppressante",
+        "Tendue",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "D. Ergaz et V. Pozner",
+          "isbn": "9782072843235",
+          "page_count": 895
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio classique (2019), traduction de D. Ergaz et V. Pozner, suivi du « Journal de Raskolnikov ».",
+        "sources": [
+          {
+            "label": "BnF, Folio classique 2019",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb45757969j"
+          },
+          {
+            "label": "Wikipédia, Crime et Châtiment",
+            "url": "https://fr.wikipedia.org/wiki/Crime_et_Ch%C3%A2timent"
+          }
+        ],
+        "remarques": [
+          "Paru en feuilleton en 1866, puis en volume en 1867.",
+          "Plusieurs traductions existent ; j’ai proposé celle du Folio, en un seul volume."
+        ],
+        "autres_editions": [
+          "Actes Sud, collection Babel, traduction d’André Markowicz, en deux volumes (2002).",
+          "Le Livre de poche, traduction d’Élisabeth Guertik."
+        ]
+      }
+    },
+    {
+      "key": "le-desert-des-tartares",
+      "title_fr": "Le Désert des Tartares",
+      "title_original": "Il deserto dei Tartari",
+      "original_language": "it",
+      "first_published_year": 1940,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Dino Buzzati",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Le jeune lieutenant Giovanni Drogo rejoint sa première affectation : le fort Bastiani, citadelle perdue à la frontière, face à un désert d’où l’ennemi pourrait surgir un jour. Il compte n’y rester que quelques mois. Mais la routine militaire, la beauté austère des lieux et l’espoir d’un grand événement qui donnerait un sens à tout le retiennent. Un roman sur l’attente, et sur le temps qui passe pendant qu’on attend.",
+      "tone": 2,
+      "density": 3,
+      "length": "moyen",
+      "genres": [
+        "Classique",
+        "Littérature existentielle"
+      ],
+      "themes": [
+        "Rapport au temps",
+        "Attente",
+        "Regrets",
+        "Quête de sens"
+      ],
+      "atmospheres": [
+        "Mélancolique",
+        "Contemplative",
+        "Onirique"
+      ],
+      "editions": [
+        {
+          "publisher": "Pocket",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Michel Arnaud",
+          "isbn": "9782266346832",
+          "page_count": 267
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Pocket (2024), traduction de Michel Arnaud.",
+        "sources": [
+          {
+            "label": "BnF, Pocket 2024",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb47598417x"
+          },
+          {
+            "label": "Wikipédia, Le Désert des Tartares",
+            "url": "https://fr.wikipedia.org/wiki/Le_D%C3%A9sert_des_Tartares"
+          }
+        ],
+        "remarques": [],
+        "autres_editions": [
+          "Robert Laffont, collection Pavillons (2021), même traduction : ISBN 978-2-221-15741-1, 362 pages."
+        ]
+      }
+    },
+    {
+      "key": "le-joueur-d-echecs",
+      "title_fr": "Le Joueur d’échecs",
+      "title_original": "Schachnovelle",
+      "original_language": "de",
+      "first_published_year": 1943,
+      "form": "nouvelle",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Stefan Zweig",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Sur un paquebot qui relie New York à Buenos Aires voyage le champion du monde d’échecs, Czentovic, génie fruste et arrogant. Quelques passagers le défient pour passer le temps. En pleine partie, un inconnu discret intervient et tient tête au champion. D’où cet homme, qui dit n’avoir pas touché un échiquier depuis vingt ans, tire-t-il une telle science du jeu ? La réponse est le cœur de cette nouvelle, la dernière de Zweig.",
+      "tone": 2,
+      "density": 2,
+      "length": "court",
+      "genres": [
+        "Classique"
+      ],
+      "themes": [
+        "Solitude",
+        "Obsession",
+        "Résilience"
+      ],
+      "atmospheres": [
+        "Tendue",
+        "Oppressante",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "Le Livre de poche",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Brigitte Vergne-Cain et Gérard Rudent",
+          "isbn": "9782253174073",
+          "page_count": 123
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Le Livre de poche n° 7309 (2012), traduction de Brigitte Vergne-Cain et Gérard Rudent.",
+        "sources": [
+          {
+            "label": "BnF, Le Livre de poche n° 7309",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb43725388s"
+          },
+          {
+            "label": "Wikipédia, Le Joueur d’échecs",
+            "url": "https://fr.wikipedia.org/wiki/Le_Joueur_d%E2%80%99%C3%A9checs"
+          }
+        ],
+        "remarques": [
+          "Année : 1943 selon Wikipédia (parution posthume) ; d’autres sources donnent 1942.",
+          "« Isolement » et « psychologie », dans le cahier des charges, sont rendus par Solitude, Obsession et Résilience."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "le-gai-savoir",
+      "title_fr": "Le Gai Savoir",
+      "title_original": "Die fröhliche Wissenschaft",
+      "original_language": "de",
+      "first_published_year": 1882,
+      "form": "philosophie",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Friedrich Nietzsche",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "En près de quatre cents aphorismes, quelques poèmes et un prélude en vers, Nietzsche invite à une pensée légère et dansante, guérie de l’esprit de pesanteur. Il y examine la morale, la science, l’art et la religion, et y formule pour la première fois quelques-unes de ses idées les plus célèbres. Un livre à picorer plutôt qu’à lire d’une traite, qui cherche moins à convaincre qu’à apprendre à dire oui à la vie.",
+      "tone": 4,
+      "density": 5,
+      "length": "long",
+      "genres": [
+        "Philosophie",
+        "Classique"
+      ],
+      "themes": [
+        "Liberté",
+        "Quête de sens",
+        "Connaissance"
+      ],
+      "atmospheres": [
+        "Ironique",
+        "Poétique"
+      ],
+      "editions": [
+        {
+          "publisher": "Flammarion",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Patrick Wotling",
+          "isbn": "9782081510852",
+          "page_count": 530
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Flammarion, collection GF n° 1619 (2020), traduction de Patrick Wotling.",
+        "sources": [
+          {
+            "label": "BnF, GF n° 1619",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb465589714"
+          },
+          {
+            "label": "Wikipédia, Le Gai Savoir",
+            "url": "https://fr.wikipedia.org/wiki/Le_Gai_Savoir"
+          }
+        ],
+        "remarques": [
+          "« Valeurs » et « affirmation de la vie », dans le cahier des charges, sont rendus par Liberté, Quête de sens et Connaissance."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "1984",
+      "title_fr": "1984",
+      "title_original": "Nineteen Eighty-Four",
+      "original_language": "en",
+      "first_published_year": 1949,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "George Orwell",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "À Londres, dans un État où le Parti surveille chaque geste et réécrit sans cesse le passé, Winston Smith travaille à corriger les archives pour qu'elles donnent toujours raison au pouvoir. Un jour, il commence à tenir un journal, acte minuscule et déjà impardonnable. Le roman suit cette tentative de garder une pensée à soi dans un monde qui prétend décider de ce qui est vrai.",
+      "tone": 1,
+      "density": 3,
+      "length": "moyen",
+      "genres": [
+        "Dystopie",
+        "Classique"
+      ],
+      "themes": [
+        "Totalitarisme",
+        "Surveillance",
+        "Liberté",
+        "Propagande"
+      ],
+      "atmospheres": [
+        "Oppressante",
+        "Tendue",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "William Collins (HarperCollins)",
+          "language": "en",
+          "format": null,
+          "translator": null,
+          "isbn": "9780008442613",
+          "page_count": 384
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "William Collins (HarperCollins), collection Collins Classics, 2021, en anglais.",
+        "sources": [
+          {
+            "label": "Open Library, notice de l’ISBN 9780008442613",
+            "url": "https://openlibrary.org/books/OL35558418M"
+          },
+          {
+            "label": "Wikidata, Nineteen Eighty-Four (roman de 1949)",
+            "url": "https://www.wikidata.org/wiki/Q208460"
+          }
+        ],
+        "remarques": [
+          "Éditeur, collection, année et pagination viennent d’Open Library, seule source à connaître cet ISBN : la BnF n’a pas de notice, et Google Books ne répondait pas le jour de la vérification (quota dépassé).",
+          "Open Library cite deux noms d’éditeur, « HarperCollins Publishers Limited » et « William Collins ». Le format n’y figure pas : laissé vide.",
+          "Comme l’édition est en anglais, le titre original s’affiche en premier."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "la-ferme-des-animaux",
+      "title_fr": "La Ferme des animaux",
+      "title_original": "Animal Farm",
+      "original_language": "en",
+      "first_published_year": 1945,
+      "form": "roman_court",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "George Orwell",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Lassés d’être exploités, les animaux de la ferme du Manoir chassent leur fermier et décident de se gouverner eux-mêmes. Tous seront égaux, et les fruits du travail reviendront à ceux qui travaillent. Les cochons, plus instruits, se chargent d’organiser cette vie nouvelle. Peu à peu, les beaux principes peints sur le mur de la grange se mettent à changer. Une fable brève et mordante sur la façon dont une révolution peut être confisquée.",
+      "tone": 2,
+      "density": 1,
+      "length": "court",
+      "genres": [
+        "Fable et allégorie",
+        "Critique sociale"
+      ],
+      "themes": [
+        "Pouvoir",
+        "Propagande",
+        "Totalitarisme",
+        "Hypocrisie"
+      ],
+      "atmospheres": [
+        "Ironique",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "Penguin Books",
+          "language": "en",
+          "format": null,
+          "translator": null,
+          "isbn": "9780140817690",
+          "page_count": 128
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Penguin Books, collection Penguin Student Editions, 2005, en anglais.",
+        "sources": [
+          {
+            "label": "Open Library, notice de l’ISBN 9780140817690",
+            "url": "https://openlibrary.org/books/OL7357649M"
+          },
+          {
+            "label": "Wikipédia, La Ferme des animaux",
+            "url": "https://fr.wikipedia.org/wiki/La_Ferme_des_animaux"
+          }
+        ],
+        "remarques": [
+          "Éditeur, collection, année et pagination viennent d’Open Library, seule source à connaître cet ISBN : la BnF n’a pas de notice, et Google Books ne répondait pas le jour de la vérification (quota dépassé).",
+          "Open Library indique une édition annotée pour étudiants (Penguin Student Editions, sous la direction de Ronald Carter). Le format n’y figure pas : laissé vide.",
+          "Comme l’édition est en anglais, le titre original s’affiche en premier.",
+          "« Corruption », dans le cahier des charges, est rendu par Pouvoir et Hypocrisie."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "le-meilleur-des-mondes",
+      "title_fr": "Le Meilleur des mondes",
+      "title_original": "Brave New World",
+      "original_language": "en",
+      "first_published_year": 1932,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Aldous Huxley",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Dans l’État mondial, les êtres humains sont fabriqués en flacons, répartis en castes dès avant la naissance et conditionnés à aimer la place qui leur est assignée. Plus de guerre, plus de vieillesse visible, plus de chagrin : une pilule suffit à dissiper la moindre contrariété. Bernard Marx, lui, se sent mal à l’aise dans ce bonheur obligatoire. Un voyage dans une réserve où l’on vit encore à l’ancienne va mettre ce monde parfait face à un regard étranger.",
+      "tone": 2,
+      "density": 3,
+      "length": "moyen",
+      "genres": [
+        "Dystopie",
+        "Science-fiction"
+      ],
+      "themes": [
+        "Bonheur imposé",
+        "Liberté",
+        "Conformisme",
+        "Technologie et attention"
+      ],
+      "atmospheres": [
+        "Dérangeante",
+        "Ironique"
+      ],
+      "editions": [
+        {
+          "publisher": "Pocket",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Josée Kamoun",
+          "isbn": "9782266346849",
+          "page_count": 349
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Pocket (2024), nouvelle traduction de Josée Kamoun.",
+        "sources": [
+          {
+            "label": "BnF, Pocket 2024, traduction Kamoun",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb47598491b"
+          },
+          {
+            "label": "BnF, Pocket n° 1438, traduction Castier",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb453542932"
+          },
+          {
+            "label": "Wikipédia, Le Meilleur des mondes",
+            "url": "https://fr.wikipedia.org/wiki/Le_Meilleur_des_mondes"
+          }
+        ],
+        "remarques": [
+          "« Conditionnement », dans le cahier des charges, est rendu par Bonheur imposé et Conformisme."
+        ],
+        "autres_editions": [
+          "Pocket n° 1438 (2017), traduction historique de Jules Castier : ISBN 978-2-266-28303-8, 318 pages."
+        ]
+      }
+    },
+    {
+      "key": "fahrenheit-451",
+      "title_fr": "Fahrenheit 451",
+      "title_original": "Fahrenheit 451",
+      "original_language": "en",
+      "first_published_year": 1953,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Ray Bradbury",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Guy Montag est pompier. Dans son monde, ce métier ne consiste plus à éteindre les incendies mais à brûler les livres, interdits parce qu’ils rendent les gens inquiets et différents. Montag fait son travail sans se poser de questions, entre une épouse absorbée par ses écrans muraux et des collègues satisfaits. Jusqu’au soir où une jeune voisine lui demande simplement s’il est heureux.",
+      "tone": 2,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Dystopie",
+        "Science-fiction"
+      ],
+      "themes": [
+        "Censure",
+        "Connaissance",
+        "Technologie et attention",
+        "Conformisme"
+      ],
+      "atmospheres": [
+        "Tendue",
+        "Poétique",
+        "Oppressante"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Jacques Chambon et Henri Robillot",
+          "isbn": "9782072892950",
+          "page_count": 236
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio SF (2020), traduction de Jacques Chambon et Henri Robillot.",
+        "sources": [
+          {
+            "label": "BnF, Folio SF 2020",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb46634351n"
+          },
+          {
+            "label": "Wikipédia, Fahrenheit 451",
+            "url": "https://fr.wikipedia.org/wiki/Fahrenheit_451"
+          }
+        ],
+        "remarques": [
+          "« Distraction », dans le cahier des charges, est rendu par Technologie et attention."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "nous",
+      "title_fr": "Nous",
+      "title_original": "Мы",
+      "original_language": "ru",
+      "first_published_year": 1924,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Evgueni Zamiatine",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Dans l’État Unique, des siècles après notre époque, les citoyens portent des numéros en guise de noms et vivent dans des immeubles de verre, sous le regard de tous. Les heures de travail, de repos et d’amour sont fixées par des Tables. D-503, ingénieur et bon citoyen, tient un journal à la gloire de cet ordre mathématique. Sa rencontre avec I-330, une femme qui ne respecte pas les règles, y introduit une inconnue qu’il ne sait pas résoudre. Écrit vers 1920, ce roman a ouvert la voie aux grandes dystopies du XXe siècle.",
+      "tone": 2,
+      "density": 3,
+      "length": "moyen",
+      "genres": [
+        "Dystopie",
+        "Science-fiction"
+      ],
+      "themes": [
+        "Totalitarisme",
+        "Conformisme",
+        "Surveillance",
+        "Liberté"
+      ],
+      "atmospheres": [
+        "Oppressante",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "Actes Sud",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Hélène Henry",
+          "isbn": "9782330143220",
+          "page_count": 237
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Actes Sud, collection Babel n° 1733 (2021), traduction d’Hélène Henry.",
+        "sources": [
+          {
+            "label": "BnF, « Nous », Babel n° 1733",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb46709438g"
+          },
+          {
+            "label": "BnF, « Nous autres », L’Imaginaire n° 39",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb374669455"
+          },
+          {
+            "label": "Wikipédia, We (novel)",
+            "url": "https://en.wikipedia.org/wiki/We_(novel)"
+          }
+        ],
+        "remarques": [
+          "Aussi connu sous le titre « Nous autres », celui de la première traduction française.",
+          "Année : le roman, écrit en 1920-1921, a d’abord paru en traduction anglaise en 1924 (Wikipédia)."
+        ],
+        "autres_editions": [
+          "« Nous autres », Gallimard, collection L’Imaginaire n° 39 (1994), traduction de B. Cauvet-Duhamel : ISBN 978-2-07-028648-5, 232 pages."
+        ]
+      }
+    },
+    {
+      "key": "sa-majeste-des-mouches",
+      "title_fr": "Sa Majesté des mouches",
+      "title_original": "Lord of the Flies",
+      "original_language": "en",
+      "first_published_year": 1954,
+      "form": "roman",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "William Golding",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Un avion s’écrase sur une île déserte du Pacifique. Seuls survivants : des garçons de six à douze ans, sans un adulte. Ils élisent un chef, fixent des règles, entretiennent un feu pour être secourus. Mais la peur d’une bête que personne n’a vraiment vue grandit, et avec elle la tentation d’un autre genre d’ordre. Golding observe, pas à pas, ce qui reste des bonnes manières quand plus rien n’oblige à les garder.",
+      "tone": 1,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Classique",
+        "Fable et allégorie"
+      ],
+      "themes": [
+        "Violence",
+        "Pouvoir",
+        "Nature humaine",
+        "Enfance"
+      ],
+      "atmospheres": [
+        "Tendue",
+        "Âpre",
+        "Dérangeante"
+      ],
+      "editions": [
+        {
+          "publisher": "Gallimard",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Lola Tranec",
+          "isbn": "9782070447251",
+          "page_count": 310
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Gallimard, collection Folio n° 5431 (2012), traduction de Lola Tranec, préface de Stephen King.",
+        "sources": [
+          {
+            "label": "BnF, Folio n° 5431",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb42682404d"
+          },
+          {
+            "label": "Wikipédia, Sa Majesté des mouches",
+            "url": "https://fr.wikipedia.org/wiki/Sa_Majest%C3%A9_des_mouches"
+          }
+        ],
+        "remarques": [],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "lettres-a-lucilius",
+      "title_fr": "Lettres à Lucilius",
+      "title_original": "Epistulae morales ad Lucilium",
+      "original_language": "la",
+      "first_published_year": null,
+      "form": "philosophie",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Sénèque",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "À la fin de sa vie, retiré des affaires de Rome, Sénèque écrit à son ami Lucilius cent vingt-quatre lettres. Il part de petits faits du quotidien, un voyage, une maladie, le vacarme d'un établissement de bains, et en tire des conseils pour mieux vivre : user de son temps, apprivoiser la peur, distinguer ce qui dépend de soi. Une philosophie stoïcienne à hauteur d'homme, qui se lit une lettre à la fois.",
+      "tone": 4,
+      "density": 3,
+      "length": "long",
+      "genres": [
+        "Philosophie",
+        "Classique"
+      ],
+      "themes": [
+        "Stoïcisme",
+        "Sagesse",
+        "Dépasser ses peurs",
+        "Rapport au temps",
+        "Paix intérieure"
+      ],
+      "atmospheres": [
+        "Sereine",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "Flammarion",
+          "language": "fr",
+          "format": "grand format",
+          "translator": "Maxime Rovere",
+          "isbn": "9782080455314",
+          "page_count": 805
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Flammarion, 2025, traduction intégrale de Maxime Rovere (les 124 lettres).",
+        "sources": [
+          {
+            "label": "BnF, édition Flammarion 2025",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb48629959b"
+          },
+          {
+            "label": "Librairie Mollat, « texte intégral »",
+            "url": "https://www.mollat.com/livres/3375242/seneque-lettres-a-lucilius-texte-integral"
+          },
+          {
+            "label": "Wikidata, Epistulae morales ad Lucilium",
+            "url": "https://www.wikidata.org/wiki/Q720535"
+          }
+        ],
+        "remarques": [
+          "Année de première parution laissée vide : les lettres ont été écrites vers 63-64 apr. J.-C., sans date d’édition unique.",
+          "Édition intégrale (les 124 lettres), en grand format. Le caractère intégral vient de la fiche du libraire Mollat, pas de la BnF."
+        ],
+        "autres_editions": [
+          "GF Flammarion n° 599 (2017), lettres 1 à 29 seulement, traduction de Marie-Ange Jourdan-Gueyer : ISBN 978-2-08-140449-6, 200 pages.",
+          "Robert Laffont, collection Bouquins (1993), « Entretiens, Lettres à Lucilius », édition de Paul Veyne, intégrale avec d'autres œuvres : ISBN 2-221-07127-1, 1 103 pages.",
+          "Arléa poche (2010), « Apprendre à vivre », choix de lettres traduit par Alain Golomb : ISBN 978-2-86959-904-8, 291 pages."
+        ]
+      }
+    },
+    {
+      "key": "prendre-soin-de-l-enfant-interieur",
+      "title_fr": "Prendre soin de l’enfant intérieur",
+      "title_original": "Reconciliation: Healing the Inner Child",
+      "original_language": "en",
+      "first_published_year": null,
+      "form": "essai",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Thich Nhat Hanh",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Pour le moine zen Thich Nhat Hanh, chacun porte en soi un enfant blessé, que l’on préfère souvent ne pas écouter. Ce livre propose de se tourner vers lui avec douceur plutôt que de le fuir : respirer, marcher, reconnaître ses émotions, parler avec bienveillance à soi et à ses proches. Des enseignements simples, puis des exercices et des témoignages, pour apaiser les vieilles peines sans chercher à les effacer.",
+      "tone": 4,
+      "density": 1,
+      "length": "moyen",
+      "genres": [
+        "Spiritualité",
+        "Essai pratique"
+      ],
+      "themes": [
+        "Compassion",
+        "Paix intérieure",
+        "Pardon de soi",
+        "Pleine conscience",
+        "Enfance"
+      ],
+      "atmospheres": [
+        "Douce",
+        "Sereine"
+      ],
+      "editions": [
+        {
+          "publisher": "Pocket",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Bénédicte Genot",
+          "isbn": "9782266254267",
+          "page_count": 221
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Pocket, collection Évolution (2015), traduction de Bénédicte Genot. Sous-titre : « Faire la paix avec soi ».",
+        "sources": [
+          {
+            "label": "BnF, Pocket 2015",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb44324574v"
+          }
+        ],
+        "remarques": [
+          "Année de première parution laissée vide : je n’ai pas trouvé de source fiable pour l’édition d’origine."
+        ],
+        "autres_editions": [
+          "Belfond (2014), grand format, même traduction : ISBN 978-2-7144-5319-8, 203 pages."
+        ]
+      }
+    },
+    {
+      "key": "la-paix-en-soi-la-paix-en-marche",
+      "title_fr": "La Paix en soi, la paix en marche",
+      "title_original": null,
+      "original_language": "en",
+      "first_published_year": null,
+      "form": "essai",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Thich Nhat Hanh",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Moine zen vietnamien engagé pour la paix depuis la guerre qui a ravagé son pays, Thich Nhat Hanh défend ici une idée simple : la paix dans le monde commence par celle que chacun cultive en soi. Il montre comment la pleine conscience, la parole aimante et l’écoute profonde peuvent désamorcer la colère et la violence, dans la famille, au travail, dans la cité. Un livre de pratique autant que de réflexion, nourri d’histoires vécues.",
+      "tone": 5,
+      "density": 1,
+      "length": "moyen",
+      "genres": [
+        "Spiritualité",
+        "Essai pratique"
+      ],
+      "themes": [
+        "Pleine conscience",
+        "Compassion",
+        "Paix intérieure",
+        "Pacifisme"
+      ],
+      "atmospheres": [
+        "Sereine",
+        "Douce"
+      ],
+      "editions": [
+        {
+          "publisher": "Albin Michel",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Marianne Coulin",
+          "isbn": "9782226172907",
+          "page_count": 187
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Albin Michel (2006), traduction de Marianne Coulin.",
+        "sources": [
+          {
+            "label": "BnF, Albin Michel 2006",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb40235673h"
+          }
+        ],
+        "remarques": [
+          "Titre original et année de première parution laissés vides : la notice de la BnF dit seulement « traduit de l’anglais ».",
+          "ISBN de la BnF : 2-226-17290-4, écrit ici à 13 chiffres (même numéro)."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "les-mots-sont-des-fenetres",
+      "title_fr": "Les mots sont des fenêtres (ou bien ce sont des murs)",
+      "title_original": "Nonviolent Communication: A Language of Life",
+      "original_language": "en",
+      "first_published_year": 1999,
+      "form": "essai",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Marshall B. Rosenberg",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Pourquoi une conversation tourne-t-elle si vite au reproche ou au silence ? Le psychologue américain Marshall Rosenberg propose une méthode en quatre temps, la Communication NonViolente : observer sans juger, dire ce que l’on ressent, reconnaître le besoin qui se cache derrière, formuler une demande claire. De nombreux dialogues tirés de sa pratique montrent comment s’exprimer sans attaquer et écouter sans se sentir accusé.",
+      "tone": 4,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Essai pratique"
+      ],
+      "themes": [
+        "Écoute",
+        "Comprendre l’autre",
+        "Compassion",
+        "Relations humaines"
+      ],
+      "atmospheres": [
+        "Chaleureuse",
+        "Sereine"
+      ],
+      "editions": [
+        {
+          "publisher": "La Découverte",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Annette Cesotti et Christiane Secretan",
+          "isbn": "9782707188793",
+          "page_count": 318
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "La Découverte (2016), traduction d’Annette Cesotti et Christiane Secretan. Sous-titre : « Introduction à la communication non violente ».",
+        "sources": [
+          {
+            "label": "BnF, La Découverte 2016",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb450470460"
+          },
+          {
+            "label": "Open Library, Nonviolent Communication (1999)",
+            "url": "https://openlibrary.org/works/OL2018966W"
+          }
+        ],
+        "remarques": [
+          "« Empathie » et « communication », dans le cahier des charges, sont rendus par Écoute, Comprendre l’autre et Compassion."
+        ],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "reussir-sa-vie-grace-au-minimalisme-digital",
+      "title_fr": "Réussir (sa vie) grâce au minimalisme digital",
+      "title_original": "Digital Minimalism",
+      "original_language": "en",
+      "first_published_year": 2019,
+      "form": "essai",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Cal Newport",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Professeur d’informatique, Cal Newport part d’un constat : nos téléphones et nos réseaux ont été conçus pour capter le plus possible de notre attention. Plutôt que quelques astuces, il propose une philosophie d’usage : ne garder que les outils qui servent vraiment ce à quoi l’on tient, et se passer sans regret du reste. Il décrit une cure de trente jours pour faire le tri, puis des pistes pour retrouver la solitude, la conversation et des loisirs qui en valent la peine.",
+      "tone": 4,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Essai pratique"
+      ],
+      "themes": [
+        "Technologie et attention",
+        "Rapport au temps",
+        "Solitude"
+      ],
+      "atmospheres": [
+        "Sereine",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "Alisio",
+          "language": "fr",
+          "format": "broché",
+          "translator": "Michel Le Séac’h",
+          "isbn": "9782379350481",
+          "page_count": 253
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "Alisio (2020), traduction de Michel Le Séac’h. Sous-titre : « Moins de technologie, plus de concentration ».",
+        "sources": [
+          {
+            "label": "BnF, Alisio 2020",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb46892054z"
+          },
+          {
+            "label": "Open Library, Digital Minimalism (2019)",
+            "url": "https://openlibrary.org/works/OL19541830W"
+          }
+        ],
+        "remarques": [],
+        "autres_editions": []
+      }
+    },
+    {
+      "key": "decouvrir-un-sens-a-sa-vie",
+      "title_fr": "Découvrir un sens à sa vie",
+      "title_original": "… trotzdem Ja zum Leben sagen. Ein Psychologe erlebt das Konzentrationslager",
+      "original_language": "de",
+      "first_published_year": 1946,
+      "form": "essai",
+      "is_series": false,
+      "authors": [
+        {
+          "name": "Viktor E. Frankl",
+          "role": "auteur"
+        }
+      ],
+      "synopsis": "Psychiatre viennois, Viktor Frankl a été déporté de 1942 à 1945 dans plusieurs camps de concentration, dont Auschwitz. Dans la première partie, il raconte cette expérience en observateur, attentif à ce qui permet à certains de tenir quand tout leur a été pris. Dans la seconde, il présente la logothérapie, l’approche qu’il en a tirée : l’être humain a d’abord besoin de trouver un sens à ce qu’il vit, y compris à l’épreuve.",
+      "tone": 3,
+      "density": 2,
+      "length": "moyen",
+      "genres": [
+        "Témoignage",
+        "Philosophie"
+      ],
+      "themes": [
+        "Résilience",
+        "Quête de sens",
+        "Dignité",
+        "Liberté"
+      ],
+      "atmospheres": [
+        "Âpre",
+        "Introspective"
+      ],
+      "editions": [
+        {
+          "publisher": "J’ai lu",
+          "language": "fr",
+          "format": "poche",
+          "translator": "Clifford J. Bacon et Louise Drolet (à partir de la version anglaise)",
+          "isbn": "9782290024829",
+          "page_count": 177
+        }
+      ],
+      "volumes": [],
+      "media": [],
+      "relecture": {
+        "edition_proposee": "J’ai lu, collection Bien-être (2013), traduction de Clifford J. Bacon et Louise Drolet. Titre complet : « Découvrir un sens à sa vie avec la logothérapie ».",
+        "sources": [
+          {
+            "label": "BnF, J’ai lu 2013",
+            "url": "https://catalogue.bnf.fr/ark:/12148/cb43544405c"
+          },
+          {
+            "label": "Wikipédia, Man's Search for Meaning",
+            "url": "https://en.wikipedia.org/wiki/Man's_Search_for_Meaning"
+          }
+        ],
+        "remarques": [
+          "Traduit en français à partir de la version anglaise."
+        ],
+        "autres_editions": [
+          "Les Éditions de l’Homme (2021), même traduction : ISBN 978-2-7619-5771-7, 139 pages."
+        ]
+      }
+    }
+  ]
+}
