@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { App } from '../App'
 import { depotFictif, oeuvreFictive } from '../bibliotheque/depot.fictif'
 import { authFictif } from '../session/auth.fictif'
-import { texteConfirmationTomes, titreConfirmationTomes } from './Fiche'
+import { texteConfirmationTomes, titreConfirmationTomes } from '../bibliotheque/tomes'
 
 const SIDDHARTHA = oeuvreFictive({
   id: 'sid',

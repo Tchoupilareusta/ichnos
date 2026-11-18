@@ -78,6 +78,7 @@ const EXIGENCES = [
   { valeur: '5', libelle: 'Exigeante' },
 ]
 const INCONNU = { valeur: '', libelle: 'Je ne sais pas' }
+const INDICATIONS: Record<GenreEtiquette, string> = { genre: 'Un genre…', theme: 'Un thème…', atmosphere: 'Une atmosphère…' }
 
 const optionsLangues = (actuelle: string) => [
   { valeur: '', libelle: 'Inconnue' },
@@ -436,7 +437,6 @@ function Etiquettes({
     .filter((e) => e.genre === genre && !choisies.some((c) => c.nom === e.nom))
     .map((e) => e.nom)
     .sort((a, b) => a.localeCompare(b, 'fr'))
-  const singulier = GENRES_ETIQUETTES.find((g) => g.valeur === genre)?.libelle.toLocaleLowerCase('fr') ?? ''
 
   function ajouter() {
     const nom = saisie.trim().replace(/\s+/g, ' ')
@@ -488,7 +488,7 @@ function Etiquettes({
               ajouter()
             }
           }}
-          placeholder={`Choisir ou créer un ${singulier}`}
+          placeholder={INDICATIONS[genre]}
           autoComplete="off"
           enterKeyHint="done"
           className={`${CHAMP} min-w-0 flex-1`}

@@ -94,7 +94,7 @@ function AppReservee({ auth, depot }: { auth: Auth; depot: Depot }) {
           <HorsConnexion />
           <BarreLaterale ecran={ongletDe(ecran)} />
           {/* Une adresse, un écran neuf : la bibliothèque relit ses filtres, le formulaire repart de la fiche. */}
-          <Contenu key={`${ecran}/${route.id ?? ''}`} />
+          <Contenu key={`${ecran}/${route.id ?? ''}?${route.parametres}`} />
           <BarreDuBas ecran={ongletDe(ecran)} />
         </FournisseurRoute>
       </FournisseurSession>

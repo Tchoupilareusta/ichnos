@@ -14,6 +14,7 @@ import {
   type Possession,
 } from '../bibliotheque/modele'
 import { EchecDepot, useModifierOeuvre, useOeuvre } from '../bibliotheque/requetes'
+import { texteConfirmationTomes, titreConfirmationTomes } from '../bibliotheque/tomes'
 import { Bouton } from '../composants/Bouton'
 import { ChampTexte, Pastilles } from '../composants/Champs'
 import { Dialogue } from '../composants/Dialogue'
@@ -163,9 +164,11 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   }
 
   return (
-    <div className="flex flex-col gap-10 tablette:grid tablette:grid-cols-[minmax(12rem,17rem)_minmax(0,1fr)] tablette:items-start tablette:gap-x-12">
-      {/* En-tête : couverture, titres, auteur, thèmes, statut et possession */}
-      <div className="flex flex-col items-center gap-[1.375rem] text-center tablette:sticky tablette:top-[calc(env(safe-area-inset-top)+1.5rem)] tablette:row-span-2 tablette:items-stretch">
+    // iPhone : une colonne centrée, comme la maquette. iPad en portrait : couverture et en-tête côte à côte,
+    // sections en dessous. Écran large (iPad en paysage) : les sections passent dans la colonne de droite.
+    <div className="flex flex-col gap-10 tablette:grid tablette:grid-cols-[minmax(9rem,12.5rem)_minmax(0,1fr)] tablette:items-start tablette:gap-x-10 min-[72rem]:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] min-[72rem]:gap-x-14">
+      {/* Couverture : elle reste visible pendant la lecture de la fiche sur grand écran */}
+      <div className="flex flex-col items-center tablette:items-stretch min-[72rem]:sticky min-[72rem]:top-[calc(env(safe-area-inset-top)+1.5rem)] min-[72rem]:row-span-2">
         <Couverture
           titre={principal}
           auteur={auteurs.join(', ') || null}
@@ -174,77 +177,78 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         />
       </div>
 
-      <div className="flex flex-col gap-10 tablette:min-w-0">
-        <div className="-mt-4 flex flex-col items-center gap-[1.375rem] text-center tablette:mt-0 tablette:items-start tablette:text-left">
-          <div className="flex flex-col gap-1.5">
-            <h1 className="m-0 font-titre text-[2.25rem] leading-[1.05] tablette:text-[2.75rem]">{principal}</h1>
-            {auteurs.length > 0 && <p className="m-0 text-[1.0625rem]">{auteurs.join(', ')}</p>}
-            {illustrateurs.length > 0 && <p className="m-0 text-sm text-discret">Illustrations : {illustrateurs.join(', ')}</p>}
-            {repere.length > 0 && <p className="m-0 text-sm text-discret">{repere.join(' · ')}</p>}
-          </div>
-
-          {themes.length > 0 && (
-            <ul
-              aria-label="Thèmes"
-              className="m-0 flex max-w-[20rem] list-none flex-wrap justify-center gap-x-3.5 gap-y-1.5 p-0 font-titre text-[1.1875rem] leading-[1.35] italic tablette:max-w-[65ch] tablette:justify-start"
-            >
-              {themes.map((theme) => (
-                <li key={theme}>
-                  <span
-                    className="rounded-[3px] px-[5px] [box-decoration-break:clone]"
-                    style={{
-                      background: 'linear-gradient(transparent 14%, var(--surlignage) 14%, var(--surlignage) 90%, transparent 90%)',
-                    }}
-                  >
-                    {theme}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="flex flex-col items-center gap-3 tablette:items-start">
-            <div className="flex flex-wrap justify-center gap-2.5">
-              <Menu
-                nom={`Statut de lecture : ${libelleStatut(oeuvre.statut)}. Changer`}
-                contenuBouton={
-                  <>
-                    {libelleStatut(oeuvre.statut)}
-                    <IconeChevronBas taille={16} />
-                  </>
-                }
-                classeBouton={PASTILLE_DOUCE}
-                options={STATUTS}
-                valeur={oeuvre.statut}
-                onChoisir={(valeur) => modifier.statut.mutate(valeur)}
-                desactive={!enLigne}
-              />
-              <Menu
-                nom={`Possession : ${libellePossession(possession)}. Changer`}
-                contenuBouton={
-                  <>
-                    {libellePossession(possession)}
-                    <IconeChevronBas taille={16} />
-                  </>
-                }
-                classeBouton={PASTILLE_CLAIRE}
-                options={POSSESSIONS}
-                valeur={possession === 'partielle' ? null : possession}
-                onChoisir={choisirPossession}
-                desactive={!enLigne}
-              />
-            </div>
-            {!enLigne && (
-              <p className="m-0 max-w-[30ch] text-sm text-discret tablette:max-w-none">
-                Je pourrai changer le statut et la possession au retour du réseau.
-              </p>
-            )}
-            <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
-              {derniereErreur ? MESSAGES_ECRITURE[derniereErreur] : ''}
-            </p>
-          </div>
+      {/* En-tête : titres, auteur, thèmes, statut et possession */}
+      <div className="-mt-4 flex min-w-0 flex-col items-center gap-[1.375rem] text-center tablette:mt-0 tablette:items-start tablette:self-center tablette:text-left min-[72rem]:self-start">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="m-0 font-titre text-[2.25rem] leading-[1.05] tablette:text-[2.75rem]">{principal}</h1>
+          {auteurs.length > 0 && <p className="m-0 text-[1.0625rem]">{auteurs.join(', ')}</p>}
+          {illustrateurs.length > 0 && <p className="m-0 text-sm text-discret">Illustrations : {illustrateurs.join(', ')}</p>}
+          {repere.length > 0 && <p className="m-0 text-sm text-discret">{repere.join(' · ')}</p>}
         </div>
 
+        {themes.length > 0 && (
+          <ul
+            aria-label="Thèmes"
+            className="m-0 flex max-w-[20rem] list-none flex-wrap justify-center gap-x-3.5 gap-y-1.5 p-0 font-titre text-[1.1875rem] leading-[1.35] italic tablette:max-w-[65ch] tablette:justify-start"
+          >
+            {themes.map((theme) => (
+              <li key={theme}>
+                <span
+                  className="rounded-[3px] px-[5px] [box-decoration-break:clone]"
+                  style={{
+                    background: 'linear-gradient(transparent 14%, var(--surlignage) 14%, var(--surlignage) 90%, transparent 90%)',
+                  }}
+                >
+                  {theme}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex flex-col items-center gap-3 tablette:items-start">
+          <div className="flex flex-wrap justify-center gap-2.5 tablette:justify-start">
+            <Menu
+              nom={`Statut de lecture : ${libelleStatut(oeuvre.statut)}. Changer`}
+              contenuBouton={
+                <>
+                  {libelleStatut(oeuvre.statut)}
+                  <IconeChevronBas taille={16} />
+                </>
+              }
+              classeBouton={PASTILLE_DOUCE}
+              options={STATUTS}
+              valeur={oeuvre.statut}
+              onChoisir={(valeur) => modifier.statut.mutate(valeur)}
+              desactive={!enLigne}
+            />
+            <Menu
+              nom={`Possession : ${libellePossession(possession)}. Changer`}
+              contenuBouton={
+                <>
+                  {libellePossession(possession)}
+                  <IconeChevronBas taille={16} />
+                </>
+              }
+              classeBouton={PASTILLE_CLAIRE}
+              options={POSSESSIONS}
+              valeur={possession === 'partielle' ? null : possession}
+              onChoisir={choisirPossession}
+              desactive={!enLigne}
+            />
+          </div>
+          {!enLigne && (
+            <p className="m-0 max-w-[30ch] text-sm text-discret tablette:max-w-none">
+              Je pourrai changer le statut et la possession au retour du réseau.
+            </p>
+          )}
+          <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
+            {derniereErreur ? MESSAGES_ECRITURE[derniereErreur] : ''}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-10 tablette:col-span-2 min-[72rem]:col-span-1 min-[72rem]:col-start-2">
         <Resume oeuvre={oeuvre} edition={edition} />
         <MonEdition oeuvre={oeuvre} edition={edition} enLigne={enLigne} choisir={(valeur) => modifier.monEdition.mutate(valeur)} />
         {avecTomes && (
@@ -303,20 +307,6 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
       </Dialogue>
     </div>
   )
-}
-
-export function titreConfirmationTomes(tomes: Tome[], possession: Possession) {
-  const libelle = POSSESSIONS.find((p) => p.valeur === possession)?.libelle ?? ''
-  return tomes.length === 1 ? `Marquer le tome comme « ${libelle} » ?` : `Marquer les ${tomes.length} tomes comme « ${libelle} » ?`
-}
-
-export function texteConfirmationTomes(tomes: Tome[], possession: Possession) {
-  const changent = tomes.filter((t) => t.possession !== possession).length
-  const deja = tomes.length - changent
-  if (changent === 0) return 'Tous les tomes le sont déjà : rien ne changera.'
-  const partie = changent === 1 ? '1 tome va changer' : `${changent} tomes vont changer`
-  if (deja === 0) return `${partie.charAt(0).toUpperCase()}${partie.slice(1)}.`
-  return `${partie.charAt(0).toUpperCase()}${partie.slice(1)} ; ${deja === 1 ? 'l’autre l’est' : `les ${deja} autres le sont`} déjà.`
 }
 
 function Section({ titre, children, complement }: { titre: string; children: ReactNode; complement?: ReactNode }) {

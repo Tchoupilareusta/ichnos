@@ -289,7 +289,7 @@ function PanneauFiltres({
   const liste = (valeurs: string[], tous: string) => [{ valeur: '', libelle: tous }, ...valeurs.map((v) => ({ valeur: v, libelle: v }))]
   return (
     <div className="flex flex-col gap-5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce tablette:p-6">
-      <div className="grid grid-cols-1 gap-4 tablette:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-4">
         <ChampListe
           libelle="Auteur"
           value={filtres.auteur ?? ''}
@@ -343,7 +343,7 @@ function PanneauFiltres({
 
 function Grille({ oeuvres }: { oeuvres: OeuvreListee[] }) {
   return (
-    <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(9.25rem,40vw),1fr))] gap-x-5 gap-y-8 p-0 tablette:gap-x-7 tablette:gap-y-10">
+    <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(8.75rem,40vw),1fr))] gap-x-5 gap-y-8 p-0 tablette:gap-x-6 tablette:gap-y-10">
       {oeuvres.map((oeuvre) => (
         <li key={oeuvre.id} className="min-w-0">
           <a href={LIENS.oeuvre(oeuvre.id)} className="group flex flex-col gap-3 text-encre no-underline">
