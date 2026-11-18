@@ -29,6 +29,14 @@ const NOMS: Record<string, string> = {
   cs: 'tchèque',
 }
 
+/** Les langues proposées dans les formulaires, le français et l'anglais d'abord. */
+export const LANGUES: { code: string; nom: string }[] = Object.entries(NOMS)
+  .map(([code, nom]) => ({ code, nom }))
+  .sort((a, b) => {
+    const rang = (code: string) => (code === 'fr' ? 0 : code === 'en' ? 1 : 2)
+    return rang(a.code) - rang(b.code) || a.nom.localeCompare(b.nom, 'fr')
+  })
+
 // Le h de « hébreu » est muet (de l’hébreu) ; celui de « hongrois » ou « hindi » est aspiré (du hongrois).
 const H_MUETS = ['hébreu']
 

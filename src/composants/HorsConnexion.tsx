@@ -1,19 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEnLigne } from '../navigation/useEnLigne'
 
 /** Bandeau discret quand l'appareil n'a plus de connexion. */
 export function HorsConnexion() {
-  const [enLigne, setEnLigne] = useState(() => navigator.onLine)
-
-  useEffect(() => {
-    const maj = () => setEnLigne(navigator.onLine)
-    window.addEventListener('online', maj)
-    window.addEventListener('offline', maj)
-    return () => {
-      window.removeEventListener('online', maj)
-      window.removeEventListener('offline', maj)
-    }
-  }, [])
-
+  const enLigne = useEnLigne()
   return (
     <div role="status" aria-live="polite">
       {!enLigne && (
