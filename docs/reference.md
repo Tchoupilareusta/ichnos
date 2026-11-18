@@ -293,6 +293,12 @@ Préparation :
 
 Le fichier du catalogue de départ ne contient que des informations bibliographiques publiques, jamais de statut personnel.
 
+Import (validé le 18 novembre 2026) :
+- Le catalogue est le fichier `catalogue/catalogue-initial.json`. Les thèmes de cœur y sont marqués, la même liste figurant déjà dans le cahier des charges.
+- Il s'installe depuis l'écran Bibliothèque, quand elle est vide, par le bouton « Installer le catalogue de départ ». L'appli appelle alors la fonction `importer_catalogue` de la base, sous le compte connecté.
+- Tout ou rien : à la moindre erreur, rien n'est enregistré. Un second import est refusé dès que la bibliothèque contient des œuvres.
+- « À découvrir », « Non possédé » et « À voir » viennent des valeurs par défaut des tables. Chaque œuvre est reliée à son édition de référence.
+
 ## 10. Technique
 
 ### 10.1 Stack
@@ -312,6 +318,7 @@ Le fichier du catalogue de départ ne contient que des informations bibliographi
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
+- Une seule fonction de la base est appelable par le compte connecté : `importer_catalogue`. Elle s'exécute avec les droits de l'appelant, donc sous RLS. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
 - API Claude (§7.6, §8.4) :
   - une seule Edge Function porte tous les appels à l'API Claude ;
