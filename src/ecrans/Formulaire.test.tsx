@@ -132,6 +132,38 @@ describe('modification d’une œuvre', () => {
     expect(faux.oeuvres()[0].statut).toBe('en_cours')
   })
 
+  it('supprime l’œuvre depuis son bas de page, après confirmation, puis ouvre la bibliothèque', async () => {
+    const faux = depotFictif({ oeuvres: [oeuvreFictive({ id: 'sid', titreFr: 'Siddhartha' })] })
+    await ouvrir(faux, '#/oeuvre/sid/modifier')
+    const bouton = screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' })
+    fireEvent.click(bouton)
+    const dialogue = screen.getByRole('dialog', { name: 'Supprimer « Siddhartha » ?' })
+    expect(dialogue).toHaveTextContent('Ce geste ne se défait pas.')
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Garder' }))
+    expect(faux.appels.ecritures).toHaveLength(0)
+
+    fireEvent.click(bouton)
+    await act(async () => fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Supprimer' })))
+    expect(faux.appels.ecritures).toEqual([{ action: 'suppression', id: 'sid', valeur: undefined }])
+    expect(faux.oeuvres()).toHaveLength(0)
+    await act(async () => {})
+    expect(window.location.hash).toBe('#/bibliotheque')
+  })
+
+  it('ne propose pas de supprimer une œuvre qu’on est en train d’ajouter', async () => {
+    await ouvrir(depotFictif(), '#/ajouter')
+    expect(screen.queryByRole('button', { name: /Supprimer/ })).not.toBeInTheDocument()
+  })
+
+  it('grise la suppression hors connexion', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
+    await ouvrir(depotFictif({ oeuvres: [oeuvreFictive({ id: 'sid', titreFr: 'Siddhartha' })] }), '#/oeuvre/sid/modifier')
+    const bouton = screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' })
+    expect(bouton).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(bouton)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('prévient quand des tomes vont être retirés', async () => {
     const faux = depotFictif({
       oeuvres: [

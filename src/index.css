@@ -116,6 +116,16 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    /* Ce qui reçoit le focus (clavier, VoiceOver, champ de formulaire) s'arrête sous la
+       Dynamic Island et au-dessus de la barre de navigation, jamais dessous. */
+    scroll-padding-top: calc(env(safe-area-inset-top) + 1rem);
+    scroll-padding-bottom: calc(max(env(safe-area-inset-bottom), 1rem) + 6rem);
+  }
+
+  @media (width >= 48rem) {
+    html {
+      scroll-padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+    }
   }
 
   /* Respecte la taille de texte choisie sur l'iPhone */

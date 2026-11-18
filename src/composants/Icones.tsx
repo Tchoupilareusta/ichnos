@@ -1,7 +1,7 @@
 // Icônes reprises des maquettes validées. Toujours décoratives : le texte voisin les nomme.
-type Props = { taille?: number }
+export type Props = { taille?: number }
 
-function Svg({ taille = 22, epaisseur = 1.8, children }: Props & { epaisseur?: number; children: React.ReactNode }) {
+export function Svg({ taille = 22, epaisseur = 1.8, children }: Props & { epaisseur?: number; children: React.ReactNode }) {
   return (
     <svg
       width={taille}

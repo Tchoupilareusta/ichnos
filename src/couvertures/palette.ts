@@ -41,13 +41,16 @@ export function contraste(a: string, b: string): number {
   return (clair + 0.05) / (sombre + 0.05)
 }
 
+/** Largeur utile du titre, en part de la couverture (marges de 11 % de chaque côté). */
+export const LARGEUR_UTILE = 78
+/** Chasse d'une lettre large de Lora (M, m, w), en em : une majoration prudente. */
+export const CHASSE_MAX = 0.62
+
 /** Taille du titre, en part de la largeur de la couverture : plus le titre est long, plus il est petit. */
 export function echelleTitre(titre: string): number {
   const longueur = titre.length
   const motLePlusLong = Math.max(...titre.split(/\s+/).map((mot) => mot.length))
-  let echelle = longueur <= 12 ? 14 : longueur <= 22 ? 12 : longueur <= 36 ? 10.5 : 9.5
-  // Un mot très long doit tenir sur une ligne sans être coupé n'importe où.
-  if (motLePlusLong >= 10) echelle = Math.min(echelle, 11)
-  if (motLePlusLong >= 13) echelle = Math.min(echelle, 9.5)
-  return echelle
+  const echelle = longueur <= 12 ? 14 : longueur <= 22 ? 12 : longueur <= 36 ? 10.5 : 9.5
+  // Le mot le plus long tient entier sur une ligne : jamais « Métamorphos / e ».
+  return Math.floor(Math.min(echelle, LARGEUR_UTILE / (motLePlusLong * CHASSE_MAX)) * 10) / 10
 }

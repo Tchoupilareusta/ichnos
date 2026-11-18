@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { EchecInstallation, EchecLecture, OeuvreListee } from '../bibliotheque/depot'
 import {
@@ -6,19 +6,16 @@ import {
   POSSESSIONS,
   STATUTS,
   correspond,
-  filtresActifs,
   filtresDepuisParametres,
-  libellePossession,
-  libelleStatut,
   parametresDepuisFiltres,
   type Filtres,
-  type Possession,
-  type Statut,
 } from '../bibliotheque/modele'
 import { CLES, useOeuvres } from '../bibliotheque/requetes'
 import { Bouton } from '../composants/Bouton'
 import { ChampListe } from '../composants/Champs'
+import { Feuille } from '../composants/Feuille'
 import { IconeFermer, IconeFiltres, IconeRecherche } from '../composants/Icones'
+import { IconePossession, IconeStatut } from '../composants/IconesLecture'
 import { EtatVide, Page, TitrePage } from '../composants/Page'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
@@ -130,8 +127,7 @@ export function Bibliotheque() {
 function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
   const route = useRoute()
   const [filtres, setFiltresBruts] = useState<Filtres>(() => filtresDepuisParametres(route.parametres))
-  const [panneauOuvert, setPanneauOuvert] = useState(false)
-  const idPanneau = useId()
+  const [feuille, setFeuille] = useState(false)
 
   function setFiltres(suivants: Filtres) {
     setFiltresBruts(suivants)
@@ -171,74 +167,106 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
     [oeuvres, filtres],
   )
 
-  const envies = filtres.statut === 'envie_de_lire'
-  const pastilles = pastillesActives(filtres)
+  const facettesActives = pastillesFacettes(filtres)
+  const seulementEnvies =
+    filtres.statut === 'envie_de_lire' && !filtres.recherche.trim() && !filtres.possession && facettesActives.length === 0
+  const seulementRecherche = !!filtres.recherche.trim() && !filtres.statut && !filtres.possession && facettesActives.length === 0
+  const toutEffacer = () => setFiltres(FILTRES_VIDES)
 
   return (
     <div className="flex flex-col gap-7">
-      <div className="flex flex-col gap-4">
-        <div role="search">
-          <label className="relative block">
-            <span className="sr-only">Chercher un titre ou un auteur</span>
-            <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-discret">
-              <IconeRecherche taille={20} />
-            </span>
-            <input
-              type="search"
-              value={filtres.recherche}
-              onChange={(e) => changer('recherche', e.target.value)}
-              placeholder="Un titre, un auteur…"
-              enterKeyHint="search"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              className="h-13 w-full max-w-xl rounded-pilule border border-bordure bg-surface pr-5 pl-13 text-base text-encre shadow-douce placeholder:text-discret"
-            />
-          </label>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-col gap-3.5">
+        <div className="flex max-w-2xl items-center gap-2.5">
+          <div role="search" className="min-w-0 flex-1">
+            <label className="relative block">
+              <span className="sr-only">Chercher un titre ou un auteur</span>
+              <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-discret">
+                <IconeRecherche taille={20} />
+              </span>
+              <input
+                type="search"
+                value={filtres.recherche}
+                onChange={(e) => changer('recherche', e.target.value)}
+                placeholder="Un titre, un auteur…"
+                enterKeyHint="search"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="h-13 w-full rounded-pilule border border-bordure bg-surface pr-5 pl-13 text-base text-encre shadow-douce placeholder:text-discret"
+              />
+            </label>
+          </div>
           <button
             type="button"
-            aria-pressed={envies}
-            onClick={() => changer('statut', envies ? null : 'envie_de_lire')}
-            className={`flex min-h-11 cursor-pointer items-center rounded-pilule px-4.5 text-[0.9375rem] transition-colors duration-200 ${
-              envies ? 'border border-accent bg-accent font-bold text-sur-accent' : 'border border-bordure bg-surface font-semibold text-encre'
+            aria-haspopup="dialog"
+            onClick={() => setFeuille(true)}
+            className={`flex h-13 shrink-0 cursor-pointer items-center gap-2 rounded-pilule px-4.5 text-[0.9375rem] font-semibold shadow-douce ${
+              facettesActives.length > 0 ? 'border border-transparent bg-accent-doux text-accent-texte' : 'border border-bordure bg-surface text-encre'
             }`}
           >
-            Ma liste d’envies
-          </button>
-          <button
-            type="button"
-            aria-expanded={panneauOuvert}
-            aria-controls={idPanneau}
-            onClick={() => setPanneauOuvert(!panneauOuvert)}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-pilule border border-bordure bg-surface px-4.5 text-[0.9375rem] font-semibold text-encre"
-          >
             <IconeFiltres taille={18} />
-            {panneauOuvert ? 'Masquer les filtres' : 'Filtres'}
+            Filtres
           </button>
         </div>
 
-        <div id={idPanneau} hidden={!panneauOuvert}>
-          <PanneauFiltres filtres={filtres} facettes={facettes} changer={changer} effacer={() => setFiltres(FILTRES_VIDES)} />
-        </div>
+        {/* Les deux filtres de tous les jours, toujours à portée : un appui choisit, un second retire. */}
+        <RangeePastilles libelle="Statut de lecture" defile>
+          {STATUTS.map(({ valeur, libelle }) => {
+            const choisi = filtres.statut === valeur
+            return (
+              <PastilleFiltre
+                key={valeur}
+                choisi={choisi}
+                onClick={() => changer('statut', choisi ? null : valeur)}
+                icone={<IconeStatut statut={valeur} taille={19} />}
+                nom={valeur === 'envie_de_lire' ? 'Envie de lire, ma liste d’envies' : undefined}
+              >
+                {libelle}
+              </PastilleFiltre>
+            )
+          })}
+        </RangeePastilles>
+        <RangeePastilles libelle="Possession" defile>
+          {POSSESSIONS.map(({ valeur, libelle }) => {
+            const choisi = filtres.possession === valeur
+            return (
+              <PastilleFiltre
+                key={valeur}
+                choisi={choisi}
+                onClick={() => changer('possession', choisi ? null : valeur)}
+                icone={<IconePossession possession={valeur} />}
+              >
+                {libelle}
+              </PastilleFiltre>
+            )
+          })}
+        </RangeePastilles>
 
-        {pastilles.length > 0 && (
-          <ul aria-label="Filtres actifs" className="m-0 flex list-none flex-wrap gap-2 p-0">
-            {pastilles.map(({ cle, texte }) => (
+        {facettesActives.length > 0 && (
+          <ul aria-label="Autres filtres choisis" className="m-0 flex list-none flex-wrap items-center gap-2 p-0">
+            {facettesActives.map(({ cle, texte }) => (
               <li key={cle}>
                 <button
                   type="button"
                   onClick={() => changer(cle, null)}
                   aria-label={`Retirer le filtre ${texte}`}
-                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-pilule bg-accent-doux pr-3 pl-4 text-[0.9375rem] font-semibold text-accent-texte"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-pilule border-0 bg-accent-doux pr-3 pl-4 text-[0.9375rem] font-semibold text-accent-texte"
                 >
                   {texte}
                   <IconeFermer taille={16} />
                 </button>
               </li>
             ))}
+            <li>
+              <button
+                type="button"
+                onClick={toutEffacer}
+                aria-label="Tout effacer : la recherche et les filtres"
+                className="flex min-h-11 cursor-pointer items-center border-0 bg-transparent px-2 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4"
+              >
+                Tout effacer
+              </button>
+            </li>
           </ul>
         )}
       </div>
@@ -248,99 +276,112 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
       ) : (
         <EtatVide
           action={
-            <Bouton variante="secondaire" onClick={() => setFiltres(FILTRES_VIDES)}>
-              Tout afficher
+            <Bouton variante="secondaire" onClick={toutEffacer}>
+              Tout effacer
             </Bouton>
           }
         >
-          {/* Annoncé par VoiceOver dès qu'une recherche ne trouve plus rien. */}
+          {/* Annoncé par VoiceOver dès que plus rien ne correspond. */}
           <span role="status">
-            {envies && !filtres.recherche && pastilles.length === 0
+            {seulementEnvies
               ? 'Ma liste d’envies est vide pour l’instant. Sur une fiche, le statut « Envie de lire » y range une œuvre.'
-              : 'Rien dans ma bibliothèque ne correspond à cette recherche.'}
+              : seulementRecherche
+                ? 'Rien dans ma bibliothèque ne correspond à cette recherche.'
+                : 'Rien ne correspond à ces filtres.'}
           </span>
         </EtatVide>
       )}
+
+      <Feuille ouvert={feuille} titre="Plus de filtres" fermer={() => setFeuille(false)} libelleFermer="Voir mes livres">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(14rem,100%),1fr))] gap-4">
+          <ChampListe
+            libelle="Genre"
+            value={filtres.genre ?? ''}
+            onChange={(e) => changer('genre', e.target.value || null)}
+            options={liste(facettes.genre, 'Tous')}
+          />
+          <ChampListe
+            libelle="Thème"
+            value={filtres.theme ?? ''}
+            onChange={(e) => changer('theme', e.target.value || null)}
+            options={liste(facettes.theme, 'Tous')}
+          />
+          <ChampListe
+            libelle="Atmosphère"
+            value={filtres.atmosphere ?? ''}
+            onChange={(e) => changer('atmosphere', e.target.value || null)}
+            options={liste(facettes.atmosphere, 'Toutes')}
+          />
+          <ChampListe
+            libelle="Auteur"
+            value={filtres.auteur ?? ''}
+            onChange={(e) => changer('auteur', e.target.value || null)}
+            options={liste(facettes.auteur, 'Tous')}
+          />
+        </div>
+      </Feuille>
     </div>
   )
 }
 
-type CleFacette = 'auteur' | 'genre' | 'theme' | 'atmosphere' | 'statut' | 'possession'
+const liste = (valeurs: string[], tous: string) => [{ valeur: '', libelle: tous }, ...valeurs.map((v) => ({ valeur: v, libelle: v }))]
 
-function pastillesActives(filtres: Filtres): { cle: CleFacette; texte: string }[] {
-  const liste: { cle: CleFacette; texte: string }[] = []
-  if (filtres.auteur) liste.push({ cle: 'auteur', texte: filtres.auteur })
-  if (filtres.genre) liste.push({ cle: 'genre', texte: filtres.genre })
-  if (filtres.theme) liste.push({ cle: 'theme', texte: filtres.theme })
-  if (filtres.atmosphere) liste.push({ cle: 'atmosphere', texte: filtres.atmosphere })
-  if (filtres.statut && filtres.statut !== 'envie_de_lire') liste.push({ cle: 'statut', texte: libelleStatut(filtres.statut) })
-  if (filtres.possession) liste.push({ cle: 'possession', texte: libellePossession(filtres.possession) })
-  return liste
+type CleFacette = 'genre' | 'theme' | 'atmosphere' | 'auteur'
+
+/** Les filtres de la feuille « Plus de filtres » qui sont choisis, dans l'ordre de la feuille. */
+function pastillesFacettes(filtres: Filtres): { cle: CleFacette; texte: string }[] {
+  return (['genre', 'theme', 'atmosphere', 'auteur'] as const)
+    .filter((cle) => filtres[cle])
+    .map((cle) => ({ cle, texte: filtres[cle] as string }))
 }
 
-function PanneauFiltres({
-  filtres,
-  facettes,
-  changer,
-  effacer,
-}: {
-  filtres: Filtres
-  facettes: Record<'auteur' | 'genre' | 'theme' | 'atmosphere', string[]>
-  changer: <K extends keyof Filtres>(cle: K, valeur: Filtres[K]) => void
-  effacer: () => void
-}) {
-  const liste = (valeurs: string[], tous: string) => [{ valeur: '', libelle: tous }, ...valeurs.map((v) => ({ valeur: v, libelle: v }))]
+/**
+ * Une rangée de pastilles. Sur un iPhone étroit, elle défile à l’horizontale jusqu’au
+ * bord de l'écran ; sur iPad, tout tient sur la largeur.
+ */
+function RangeePastilles({ libelle, defile = false, children }: { libelle: string; defile?: boolean; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce tablette:p-6">
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-4">
-        <ChampListe
-          libelle="Auteur"
-          value={filtres.auteur ?? ''}
-          onChange={(e) => changer('auteur', e.target.value || null)}
-          options={liste(facettes.auteur, 'Tous les auteurs')}
-        />
-        <ChampListe
-          libelle="Genre"
-          value={filtres.genre ?? ''}
-          onChange={(e) => changer('genre', e.target.value || null)}
-          options={liste(facettes.genre, 'Tous les genres')}
-        />
-        <ChampListe
-          libelle="Thème"
-          value={filtres.theme ?? ''}
-          onChange={(e) => changer('theme', e.target.value || null)}
-          options={liste(facettes.theme, 'Tous les thèmes')}
-        />
-        <ChampListe
-          libelle="Atmosphère"
-          value={filtres.atmosphere ?? ''}
-          onChange={(e) => changer('atmosphere', e.target.value || null)}
-          options={liste(facettes.atmosphere, 'Toutes les atmosphères')}
-        />
-        <ChampListe
-          libelle="Statut de lecture"
-          value={filtres.statut ?? ''}
-          onChange={(e) => changer('statut', (e.target.value || null) as Statut | null)}
-          options={[{ valeur: '', libelle: 'Tous les statuts' }, ...STATUTS.map((s) => ({ valeur: s.valeur, libelle: s.libelle }))]}
-        />
-        <ChampListe
-          libelle="Possession"
-          value={filtres.possession ?? ''}
-          onChange={(e) => changer('possession', (e.target.value || null) as Possession | null)}
-          aide="Une série où j’ai des tomes, ou des tomes à acheter, apparaît dans « Je l’ai » ou « À acheter »."
-          options={[{ valeur: '', libelle: 'Toutes' }, ...POSSESSIONS.map((p) => ({ valeur: p.valeur, libelle: p.libelle }))]}
-        />
-      </div>
-      {filtresActifs(filtres) && (
-        <button
-          type="button"
-          onClick={effacer}
-          className="flex min-h-11 cursor-pointer items-center self-start border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4"
-        >
-          Effacer la recherche et les filtres
-        </button>
-      )}
+    <div
+      role="group"
+      aria-label={libelle}
+      className={
+        defile
+          ? '-mx-6 -my-1 flex gap-2 overflow-x-auto px-6 py-1 [scrollbar-width:none] tablette:mx-0 tablette:flex-wrap tablette:overflow-visible tablette:px-0 [&::-webkit-scrollbar]:hidden'
+          : 'flex flex-wrap gap-2'
+      }
+    >
+      {children}
     </div>
+  )
+}
+
+function PastilleFiltre({
+  choisi,
+  onClick,
+  icone,
+  nom,
+  children,
+}: {
+  choisi: boolean
+  onClick: () => void
+  icone: ReactNode
+  /** Nom lu par VoiceOver, quand il dit plus que le mot affiché (il commence toujours par lui). */
+  nom?: string
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={choisi}
+      aria-label={nom}
+      onClick={onClick}
+      className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-pilule pr-3.5 pl-3 text-[0.9375rem] whitespace-nowrap transition-colors duration-200 ${
+        choisi ? 'border border-accent bg-accent font-bold text-sur-accent' : 'border border-bordure bg-surface font-semibold text-encre'
+      }`}
+    >
+      {icone}
+      {children}
+    </button>
   )
 }
 

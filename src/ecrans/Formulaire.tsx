@@ -15,7 +15,7 @@ import {
   type Erreurs,
 } from '../bibliotheque/formulaire'
 import { FORMES, GENRES_ETIQUETTES, LONGUEURS, ROLES, TYPES_MEDIA, type GenreEtiquette, type Role, type TypeMedia } from '../bibliotheque/modele'
-import { useEnregistrerOeuvre, useOeuvre, useVocabulaire } from '../bibliotheque/requetes'
+import { useEnregistrerOeuvre, useModifierOeuvre, useOeuvre, useVocabulaire } from '../bibliotheque/requetes'
 import { Bouton } from '../composants/Bouton'
 import { CHAMP, ChampListe, ChampLong, ChampTexte, Pastilles } from '../composants/Champs'
 import { Dialogue } from '../composants/Dialogue'
@@ -294,6 +294,8 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
         </div>
       </form>
 
+      {initial && <Suppression oeuvre={initial} enLigne={enLigne} />}
+
       <Dialogue
         ouvert={abandon}
         titre="Abandonner mes modifications ?"
@@ -308,6 +310,59 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
         <p className="m-0">Ce que j’ai saisi ici ne sera pas enregistré.</p>
       </Dialogue>
     </Page>
+  )
+}
+
+const ECHECS_SUPPRESSION: Record<string, string> = {
+  reseau: 'Pas de connexion à internet : l’œuvre n’a pas été supprimée.',
+  introuvable: 'Cette œuvre n’est déjà plus dans ma bibliothèque.',
+  invalide: 'La suppression n’a pas été acceptée : rien n’a été retiré.',
+  inconnu: 'La suppression n’a pas abouti, et rien n’a été retiré. Je réessaie dans un instant.',
+}
+
+/**
+ * Supprimer l'œuvre : rangé ici, au bas de « Modifier », plutôt qu'en fin de fiche.
+ * La fiche se lit et se termine sur l'œuvre ; ce geste, rare et définitif, reste à l'écart.
+ */
+function Suppression({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: boolean }) {
+  const { suppression } = useModifierOeuvre(oeuvre.id)
+  const [ouvert, setOuvert] = useState(false)
+  const nom = oeuvre.titreFr
+
+  return (
+    <section aria-label="Supprimer l’œuvre" className="flex max-w-3xl flex-col gap-2 border-t border-bordure pt-8">
+      <button
+        type="button"
+        aria-disabled={!enLigne || undefined}
+        onClick={() => enLigne && setOuvert(true)}
+        className="flex min-h-11 cursor-pointer items-center self-start border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60"
+      >
+        Supprimer cette œuvre de ma bibliothèque
+      </button>
+      <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
+        {suppression.error ? ECHECS_SUPPRESSION[suppression.error.echec] : ''}
+      </p>
+      <Dialogue
+        ouvert={ouvert}
+        titre={`Supprimer « ${nom} » ?`}
+        confirmer="Supprimer"
+        annuler="Garder"
+        occupe={suppression.isPending}
+        onAnnuler={() => setOuvert(false)}
+        onConfirmer={() =>
+          suppression.mutate(undefined, {
+            // La fiche n'existe plus : la bibliothèque prend la place de cet écran.
+            onSuccess: () => remplacer(LIENS.bibliotheque),
+            onSettled: () => setOuvert(false),
+          })
+        }
+      >
+        <p className="m-0">
+          L’œuvre quittera ma bibliothèque, avec ses éditions{oeuvre.estSerie ? ', ses tomes' : ''}, mes notes et mon historique de lecture.
+          Ce geste ne se défait pas.
+        </p>
+      </Dialogue>
+    </section>
   )
 }
 

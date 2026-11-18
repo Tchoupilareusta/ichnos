@@ -146,25 +146,67 @@ describe('recherche et filtres', () => {
     expect(window.location.hash).toBe('#/bibliotheque?q=ende')
   })
 
-  it('« Ma liste d’envies » est un filtre sur le statut « Envie de lire »', async () => {
+  it('« Envie de lire » est ma liste d’envies : une pastille toujours visible, qui se retire d’un second appui', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    const envies = screen.getByRole('button', { name: 'Ma liste d’envies' })
+    const statuts = screen.getByRole('group', { name: 'Statut de lecture' })
+    const envies = within(statuts).getByRole('button', { name: 'Envie de lire, ma liste d’envies' })
     fireEvent.click(envies)
     expect(envies).toHaveAttribute('aria-pressed', 'true')
     expect(titresAffiches()).toEqual(['#/oeuvre/etr'])
-    fireEvent.click(envies)
+    expect(window.location.hash).toBe('#/bibliotheque?statut=envie_de_lire')
+    // Un autre statut remplace le premier : une seule pastille choisie à la fois.
+    fireEvent.click(within(statuts).getByRole('button', { name: 'En cours' }))
+    expect(envies).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(within(statuts).getByRole('button', { name: 'En cours' }))
     expect(titresAffiches()).toHaveLength(3)
   })
 
   it('« À acheter » retrouve aussi la série où il manque des tomes', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    fireEvent.click(screen.getByRole('button', { name: 'Filtres' }))
-    fireEvent.change(screen.getByLabelText('Possession'), { target: { value: 'a_acheter' } })
+    const possession = screen.getByRole('group', { name: 'Possession' })
+    fireEvent.click(within(possession).getByRole('button', { name: 'À acheter' }))
     expect(titresAffiches()).toEqual(['#/oeuvre/momo', '#/oeuvre/vin'])
-    fireEvent.change(screen.getByLabelText('Possession'), { target: { value: 'possede' } })
+    fireEvent.click(within(possession).getByRole('button', { name: 'Je l’ai' }))
     expect(titresAffiches()).toEqual(['#/oeuvre/vin'])
-    fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Je l’ai' }))
+    fireEvent.click(within(possession).getByRole('button', { name: 'Je l’ai' }))
     expect(titresAffiches()).toHaveLength(3)
+  })
+
+  it('range les filtres du plus utile au moins utile : statut et possession en pastilles, le reste dans une feuille', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    expect(within(screen.getByRole('main')).getAllByRole('group').map((g) => g.getAttribute('aria-label'))).toEqual([
+      'Statut de lecture',
+      'Possession',
+    ])
+    expect(
+      within(screen.getByRole('group', { name: 'Statut de lecture' }))
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['En cours', 'Envie de lire', 'Terminé', 'À découvrir', 'En pause'])
+    const bouton = screen.getByRole('button', { name: 'Filtres' })
+    expect(bouton).toHaveAttribute('aria-haspopup', 'dialog')
+    fireEvent.click(bouton)
+    const feuille = screen.getByRole('dialog', { name: 'Plus de filtres' })
+    const champs = within(feuille).getAllByRole('combobox').map((champ) => (champ as HTMLSelectElement).labels?.[0]?.textContent)
+    expect(champs).toEqual(['Genre', 'Thème', 'Atmosphère', 'Auteur'])
+    // Pas de phrase d'aide : la feuille ne contient que les quatre listes et le bouton.
+    expect(feuille.querySelectorAll('p')).toHaveLength(0)
+  })
+
+  it('montre les autres filtres choisis, et de quoi tout effacer', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'camus' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtres' }))
+    fireEvent.change(screen.getByLabelText('Thème'), { target: { value: 'Absurde' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Voir mes livres' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(titresAffiches()).toEqual(['#/oeuvre/etr'])
+    const choisis = screen.getByRole('list', { name: 'Autres filtres choisis' })
+    expect(within(choisis).getByRole('button', { name: 'Retirer le filtre Absurde' })).toBeInTheDocument()
+    fireEvent.click(within(choisis).getByRole('button', { name: /^Tout effacer/ }))
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+    expect(titresAffiches()).toHaveLength(3)
+    expect(screen.queryByRole('list', { name: 'Autres filtres choisis' })).not.toBeInTheDocument()
   })
 
   it('retrouve les filtres de l’adresse (au retour depuis une fiche)', async () => {
@@ -177,15 +219,21 @@ describe('recherche et filtres', () => {
 
   it('le dit simplement quand ma liste d’envies est vide', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION.filter((o) => o.statut !== 'envie_de_lire') }))
-    fireEvent.click(screen.getByRole('button', { name: 'Ma liste d’envies' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Envie de lire, ma liste d’envies' }))
     expect(screen.getByText(/Ma liste d’envies est vide pour l’instant./)).toBeInTheDocument()
   })
 
-  it('dit calmement quand rien ne correspond, et propose de tout afficher', async () => {
+  it('dit calmement quand rien ne correspond, et propose de tout effacer', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'zzz' } })
     expect(screen.getByText('Rien dans ma bibliothèque ne correspond à cette recherche.')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Tout afficher' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tout effacer' }))
     expect(titresAffiches()).toHaveLength(3)
+  })
+
+  it('parle de filtres, pas de recherche, quand ce sont les filtres qui ne donnent rien', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Statut de lecture' })).getByRole('button', { name: 'En pause' }))
+    expect(screen.getByText('Rien ne correspond à ces filtres.')).toBeInTheDocument()
   })
 })

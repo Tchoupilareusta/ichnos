@@ -3,6 +3,7 @@
 *Version 1 — 17 novembre 2026*
 *Mise à jour du 17 novembre 2026 : l'IA comme aide à la suggestion (§2, §7.6, §8.4, §10.2, §11).*
 *Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11) ; points reportés aux étapes 9 et 10 (§11).*
+*Mise à jour du 18 novembre 2026 : corrections après essai sur iPhone : cinq statuts, libellés de possession, ordre des filtres, allègement de la bibliothèque et de la fiche, icônes ; ajout d'une œuvre à l'étape 6 (§2, §3, §5, §6, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -17,7 +18,7 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 ## 2. Principes non négociables
 
 - Aucun objectif, compteur de performance, série de jours, badge, classement ni notification.
-- Un livre abandonné ou en pause n'est jamais présenté comme un échec.
+- Un livre en pause n'est jamais présenté comme un échec.
 - Aucune fonction sociale, aucune publicité.
 - L'IA (API Claude) ne fait que suggérer : rien n'est enregistré sans validation, et l'appli fonctionne entièrement sans elle.
 - Interface entièrement en français.
@@ -35,8 +36,12 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Navigation mobile | Barre du bas : Accueil · Bibliothèque · Découvrir, plus un bouton « Ajouter ». |
 | Navigation iPad et ordinateur | Barre latérale, grille de couvertures plus large. |
 | Notes et citations | Rangées dans la fiche de chaque œuvre. Pas d'onglet dédié. |
-| Liste d'envies | Filtre de la bibliothèque, pas d'onglet dédié : c'est le statut « Envie de lire » (ce que j'ai envie de lire, pas ce que je veux acheter). « À acheter » reste un filtre de possession séparé, qui sert de liste de courses. |
-| Libellés de possession | « Je l'ai », « À acheter », « Pas à moi ». |
+| Liste d'envies | Filtre de la bibliothèque, pas d'onglet dédié : c'est la pastille « Envie de lire » (ce que j'ai envie de lire, pas ce que je veux acheter). « À acheter » reste un filtre de possession séparé, qui sert de liste de courses. |
+| Libellés de possession | « Je l'ai », « À acheter », « Je ne l'ai pas » (remplace « Pas à moi » le 18 novembre 2026 ; seul le libellé change, pas la valeur en base). |
+| Statuts de lecture | Cinq statuts, toujours dans cet ordre (menus, filtres, listes) : « En cours », « Envie de lire », « Terminé », « À découvrir », « En pause ». « En pause » veut dire « je ne lis pas ce livre en ce moment », sans jugement. (Le 18 novembre 2026, « Laissé de côté », c'est-à-dire abandonné, est fusionné dans « En pause » : la différence n'était pas claire.) |
+| Ordre des filtres | Du plus utile au moins utile : statut, possession, genre, thème, atmosphère, auteur. Statut et possession sont des pastilles toujours visibles en haut de la bibliothèque (un appui choisit, un second retire) ; les quatre autres sont dans une feuille « Plus de filtres » qui monte du bas de l'écran (fenêtre centrée sur iPad). |
+| Icônes | Toujours accompagnées d'un mot, jamais seules ; VoiceOver lit le mot. Statuts : un même livre dessiné pour Ichnos, dans cinq états (ouvert pour « En cours », cœur sur la couverture pour « Envie de lire », coche pour « Terminé », étincelle pour « À découvrir », livre ouvert posé à l'envers pour « En pause »). Possession : le code de la grille des tomes (cercle plein, pointillé, vide, à moitié plein). |
+| Légèreté | Une phrase d'explication seulement là où elle sert (hors connexion, états vides, confirmations). Ce que je range (ISBN, traducteur, suppression) passe après ce que je lis. |
 | Voix de l'interface | Première personne du propriétaire (« Mon ressenti », « Mon envie du moment »). |
 | Appréciation | Quelques mots plutôt que des étoiles (voir §6.4). Facultative. |
 | Mangas | Possession et progression suivies tome par tome. La possession de la série se calcule à partir des tomes : « J'en ai une partie » quand je n'ai pas tous les tomes (§6.2). |
@@ -111,11 +116,11 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 
 | Écran | Contenu |
 |---|---|
-| Accueil | Lectures en cours (carrousel de couvertures cliquables, progression en texte seul, bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre de côté »), une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées. Pas de barre de progression sur l'accueil. |
-| Bibliothèque | Grille de couvertures, recherche, filtres (auteur, genre, thème, atmosphère, statut de lecture, possession). |
-| Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (menus), progression avec barre, synopsis sans spoiler, genre, longueur et atmosphère en une ligne, éditions, appréciation, notes et citations, média associé. |
+| Accueil | Lectures en cours (carrousel de couvertures cliquables, progression en texte seul, bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre en pause »), une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées. Pas de barre de progression sur l'accueil. |
+| Bibliothèque | Grille de couvertures, recherche, pastilles de statut et de possession, feuille « Plus de filtres » (genre, thème, atmosphère, auteur). |
+| Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre, synopsis sans spoiler, genre, longueur et atmosphère en une ligne, mon édition en une ligne (traduction et ISBN dans « Détails »), appréciation, notes et citations, média associé en une ligne. La fiche se termine sur l'œuvre, jamais sur la suppression. |
 | Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6). |
-| Ajouter / modifier | Saisie manuelle ou recherche par ISBN, couverture automatique, synopsis et étiquettes proposés en suggestion (§8.4), correction de chaque champ. |
+| Ajouter / modifier | Saisie manuelle ou recherche par ISBN, couverture automatique, synopsis et étiquettes proposés en suggestion (§8.4), correction de chaque champ. La suppression d'une œuvre se fait au bas de « Modifier », après confirmation. |
 | Réglages | Thème, export des données, compte, gestion des genres, thèmes et atmosphères. |
 
 Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + et saisie directe.
@@ -156,7 +161,7 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 
 **`library_entries`** — ma relation à une œuvre (une par œuvre).
 - `work_id`, `edition_id` (facultatif)
-- `reading_status` : à découvrir, envie de lire, en cours, terminé, en pause, abandonné
+- `reading_status` : en cours, envie de lire, terminé, à découvrir, en pause (« abandonné » fusionné dans « en pause » le 18 novembre 2026)
 - `ownership` : possédé, à acheter, non possédé (pour une série, calculé à partir des tomes)
 - `progress_unit` : page, chapitre, tome, lettre, section, pourcentage
 - `progress_current`, `progress_total` (facultatifs)
@@ -164,7 +169,7 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 - `started_at`, `finished_at` (facultatifs)
 
 **`reading_events`** — historique discret, jamais affiché sous forme de statistiques.
-- `entry_id`, `kind` (commencé, progression, mis en pause, repris, terminé, abandonné), `value`, `occurred_at`
+- `entry_id`, `kind` (commencé, progression, mis en pause, repris, terminé), `value`, `occurred_at`
 - Permet aussi les relectures.
 
 **`media`** — médias associés.
@@ -182,9 +187,9 @@ Ils sont indépendants : un livre peut être « Terminé » et « Non possédé 
 
 Possession d'une série (validé le 18 novembre 2026), calculée à partir de ses tomes :
 - tous les tomes possédés : « Je l'ai » ; une partie seulement : « J'en ai une partie » ;
-- aucun tome possédé : « À acheter » si au moins un tome est à acheter, sinon « Pas à moi ».
+- aucun tome possédé : « À acheter » si au moins un tome est à acheter, sinon « Je ne l'ai pas ».
 - Dans les filtres, une série apparaît dans « Je l'ai » dès qu'un tome est possédé, et dans « À acheter » dès qu'un tome est à acheter. C'est voulu : on retrouve ainsi les séries où il manque des tomes.
-- Sur la fiche : la grille des tomes change un tome ou une plage (« les tomes 1 à 8 ») ; le menu de possession applique un choix à tous les tomes, toujours après une confirmation qui dit combien de tomes vont changer.
+- Sur la fiche : la pastille de possession d'une série résume (« J'en ai une partie ») et mène à « Mes tomes ». La grille change un tome ou une plage (« les tomes 1 à 8 ») ; le menu « Tous les tomes » applique un choix à tous, toujours après une confirmation qui dit combien de tomes vont changer.
 
 ### 6.3 Progression et éditions
 
@@ -370,6 +375,8 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 
 Points reportés :
 
+- **Étape 5, accueil.** Les lectures « En cours » apparaissent sur l'accueil, chacune avec le bouton « Où j'en suis » (§5).
+- **Étape 6, deux manières d'ajouter une œuvre.** Automatique avec l'ISBN à 13 chiffres (l'édition de mon exemplaire) ; ou avec le seul titre quand je n'ai pas encore d'édition précise : la fiche commune à toutes les éditions est remplie (synopsis, étiquettes, auteur), sans ISBN ni pagination. La saisie manuelle de l'étape 4 reste disponible comme deuxième option.
 - **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
 - **Étape 10, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 10, sans forcer.
 
