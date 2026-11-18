@@ -1,4 +1,4 @@
-import { PALETTE, contraste, echelleTitre, teinteDe } from './palette'
+import { CHASSE_MAX, LARGEUR_UTILE, PALETTE, contraste, echelleTitre, teinteDe } from './palette'
 
 describe('couvertures générées', () => {
   it.each(PALETTE.map((t) => [t.fond, t.texte]))('fond %s, texte %s : contraste d’au moins 4,5:1', (fond, texte) => {
@@ -18,6 +18,14 @@ describe('couvertures générées', () => {
 
   it('réduit le titre quand il s’allonge', () => {
     expect(echelleTitre('Momo')).toBeGreaterThan(echelleTitre('La Maison au milieu de la mer céruléenne'))
-    expect(echelleTitre('Siddhartha')).toBeLessThanOrEqual(11)
+    expect(echelleTitre('Siddhartha')).toBeLessThanOrEqual(13)
   })
+
+  it.each(['La Métamorphose', 'Siddhartha', 'Transformation', 'Les Misérables', 'Momo'])(
+    '« %s » : le mot le plus long tient sur une ligne',
+    (titre) => {
+      const mot = Math.max(...titre.split(' ').map((m) => m.length))
+      expect(echelleTitre(titre) * mot * CHASSE_MAX).toBeLessThanOrEqual(LARGEUR_UTILE)
+    },
+  )
 })
