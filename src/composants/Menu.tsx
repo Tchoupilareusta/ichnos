@@ -27,6 +27,7 @@ export function Menu<T extends string>({
 }) {
   const [ouvert, setOuvert] = useState(false)
   const [decalage, setDecalage] = useState(0)
+  const [versLeHaut, setVersLeHaut] = useState(false)
   const bouton = useRef<HTMLButtonElement>(null)
   const liste = useRef<HTMLUListElement>(null)
   const cadre = useRef<HTMLDivElement>(null)
@@ -39,8 +40,10 @@ export function Menu<T extends string>({
     if (rendreLeFocus) bouton.current?.focus()
   }
 
-  // À l'ouverture : la liste reste dans l'écran, et le focus va sur le choix actuel.
+  // À l'ouverture : la liste reste dans l'écran (au besoin au-dessus du bouton, car la barre
+  // de navigation couvre le bas), avant d'être affichée.
   useLayoutEffect(() => {
+    if (!ouvert) setVersLeHaut(false)
     if (!ouvert || !liste.current) return
     const rect = liste.current.getBoundingClientRect()
     const marge = 16
@@ -49,8 +52,16 @@ export function Menu<T extends string>({
     if (rect.right > largeur - marge) suivant = largeur - marge - rect.right
     else if (rect.left < marge) suivant = marge - rect.left
     setDecalage(suivant)
+    const cadreRect = cadre.current?.getBoundingClientRect()
+    const bas = window.innerHeight - 112
+    setVersLeHaut(!!cadreRect && rect.bottom > bas && cadreRect.top - rect.height > 16)
+  }, [ouvert])
+
+  // Puis le focus va sur le choix actuel, une fois la liste à sa place : la page ne saute pas.
+  useEffect(() => {
+    if (!ouvert) return
     const items = elements()
-    ;(items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0])?.focus()
+    ;(items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0])?.focus({ preventScroll: true })
   }, [ouvert])
 
   useEffect(() => {
@@ -107,7 +118,7 @@ export function Menu<T extends string>({
           aria-label={nom.replace(/\.\s*Changer$/, '')}
           onKeyDown={clavier}
           style={{ translate: `${decalage}px 0` }}
-          className="absolute top-[calc(100%+0.5rem)] left-0 z-40 m-0 flex max-h-[min(24rem,60dvh)] min-w-[14rem] list-none flex-col overflow-y-auto rounded-carte border border-bordure bg-surface p-1.5 text-left shadow-forte"
+          className={`absolute ${versLeHaut ? 'bottom-[calc(100%+0.5rem)]' : 'top-[calc(100%+0.5rem)]'} left-0 z-40 m-0 flex max-h-[min(24rem,60dvh)] min-w-[14rem] list-none flex-col overflow-y-auto rounded-carte border border-bordure bg-surface p-1.5 text-left shadow-forte`}
         >
           {options.map((option) => {
             const choisi = option.valeur === valeur

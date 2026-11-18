@@ -175,6 +175,12 @@ describe('recherche et filtres', () => {
     expect(screen.getByRole('button', { name: 'Retirer le filtre Absurde' })).toBeInTheDocument()
   })
 
+  it('le dit simplement quand ma liste d’envies est vide', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION.filter((o) => o.statut !== 'envie_de_lire') }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ma liste d’envies' }))
+    expect(screen.getByText(/Ma liste d’envies est vide pour l’instant./)).toBeInTheDocument()
+  })
+
   it('dit calmement quand rien ne correspond, et propose de tout afficher', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'zzz' } })
