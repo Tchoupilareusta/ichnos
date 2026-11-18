@@ -6,7 +6,6 @@ import {
   POSSESSIONS,
   STATUTS,
   correspond,
-  filtresActifs,
   filtresDepuisParametres,
   libellePossession,
   libelleStatut,
@@ -220,12 +219,10 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
           </button>
         </div>
 
-        <div id={idPanneau} hidden={!panneauOuvert}>
-          <PanneauFiltres filtres={filtres} facettes={facettes} changer={changer} effacer={() => setFiltres(FILTRES_VIDES)} />
-        </div>
-
+        {/* Les filtres actifs juste sous les boutons, au-dessus du panneau : ils restent en vue,
+            jamais en bas d'écran sous la barre de navigation. */}
         {pastilles.length > 0 && (
-          <ul aria-label="Filtres actifs" className="m-0 flex list-none flex-wrap gap-2 p-0">
+          <ul aria-label="Filtres actifs" className="m-0 flex list-none flex-wrap items-center gap-2 p-0">
             {pastilles.map(({ cle, texte }) => (
               <li key={cle}>
                 <button
@@ -239,8 +236,22 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
                 </button>
               </li>
             ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => setFiltres(FILTRES_VIDES)}
+                aria-label="Tout effacer : la recherche et les filtres"
+                className="flex min-h-11 cursor-pointer items-center border-0 bg-transparent px-2 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4"
+              >
+                Tout effacer
+              </button>
+            </li>
           </ul>
         )}
+
+        <div id={idPanneau} hidden={!panneauOuvert}>
+          <PanneauFiltres filtres={filtres} facettes={facettes} changer={changer} />
+        </div>
       </div>
 
       {resultats.length > 0 ? (
@@ -269,12 +280,12 @@ type CleFacette = 'auteur' | 'genre' | 'theme' | 'atmosphere' | 'statut' | 'poss
 
 function pastillesActives(filtres: Filtres): { cle: CleFacette; texte: string }[] {
   const liste: { cle: CleFacette; texte: string }[] = []
-  if (filtres.auteur) liste.push({ cle: 'auteur', texte: filtres.auteur })
+  if (filtres.statut && filtres.statut !== 'envie_de_lire') liste.push({ cle: 'statut', texte: libelleStatut(filtres.statut) })
+  if (filtres.possession) liste.push({ cle: 'possession', texte: libellePossession(filtres.possession) })
   if (filtres.genre) liste.push({ cle: 'genre', texte: filtres.genre })
   if (filtres.theme) liste.push({ cle: 'theme', texte: filtres.theme })
   if (filtres.atmosphere) liste.push({ cle: 'atmosphere', texte: filtres.atmosphere })
-  if (filtres.statut && filtres.statut !== 'envie_de_lire') liste.push({ cle: 'statut', texte: libelleStatut(filtres.statut) })
-  if (filtres.possession) liste.push({ cle: 'possession', texte: libellePossession(filtres.possession) })
+  if (filtres.auteur) liste.push({ cle: 'auteur', texte: filtres.auteur })
   return liste
 }
 
@@ -282,22 +293,27 @@ function PanneauFiltres({
   filtres,
   facettes,
   changer,
-  effacer,
 }: {
   filtres: Filtres
   facettes: Record<'auteur' | 'genre' | 'theme' | 'atmosphere', string[]>
   changer: <K extends keyof Filtres>(cle: K, valeur: Filtres[K]) => void
-  effacer: () => void
 }) {
   const liste = (valeurs: string[], tous: string) => [{ valeur: '', libelle: tous }, ...valeurs.map((v) => ({ valeur: v, libelle: v }))]
   return (
     <div className="flex flex-col gap-5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce tablette:p-6">
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-4">
         <ChampListe
-          libelle="Auteur"
-          value={filtres.auteur ?? ''}
-          onChange={(e) => changer('auteur', e.target.value || null)}
-          options={liste(facettes.auteur, 'Tous les auteurs')}
+          libelle="Statut de lecture"
+          value={filtres.statut ?? ''}
+          onChange={(e) => changer('statut', (e.target.value || null) as Statut | null)}
+          options={[{ valeur: '', libelle: 'Tous les statuts' }, ...STATUTS.map((s) => ({ valeur: s.valeur, libelle: s.libelle }))]}
+        />
+        <ChampListe
+          libelle="Possession"
+          value={filtres.possession ?? ''}
+          onChange={(e) => changer('possession', (e.target.value || null) as Possession | null)}
+          aide="Une série où j’ai des tomes, ou des tomes à acheter, apparaît dans « Je l’ai » ou « À acheter »."
+          options={[{ valeur: '', libelle: 'Toutes' }, ...POSSESSIONS.map((p) => ({ valeur: p.valeur, libelle: p.libelle }))]}
         />
         <ChampListe
           libelle="Genre"
@@ -318,28 +334,12 @@ function PanneauFiltres({
           options={liste(facettes.atmosphere, 'Toutes les atmosphères')}
         />
         <ChampListe
-          libelle="Statut de lecture"
-          value={filtres.statut ?? ''}
-          onChange={(e) => changer('statut', (e.target.value || null) as Statut | null)}
-          options={[{ valeur: '', libelle: 'Tous les statuts' }, ...STATUTS.map((s) => ({ valeur: s.valeur, libelle: s.libelle }))]}
-        />
-        <ChampListe
-          libelle="Possession"
-          value={filtres.possession ?? ''}
-          onChange={(e) => changer('possession', (e.target.value || null) as Possession | null)}
-          aide="Une série où j’ai des tomes, ou des tomes à acheter, apparaît dans « Je l’ai » ou « À acheter »."
-          options={[{ valeur: '', libelle: 'Toutes' }, ...POSSESSIONS.map((p) => ({ valeur: p.valeur, libelle: p.libelle }))]}
+          libelle="Auteur"
+          value={filtres.auteur ?? ''}
+          onChange={(e) => changer('auteur', e.target.value || null)}
+          options={liste(facettes.auteur, 'Tous les auteurs')}
         />
       </div>
-      {filtresActifs(filtres) && (
-        <button
-          type="button"
-          onClick={effacer}
-          className="flex min-h-11 cursor-pointer items-center self-start border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4"
-        >
-          Effacer la recherche et les filtres
-        </button>
-      )}
     </div>
   )
 }

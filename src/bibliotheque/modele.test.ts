@@ -34,7 +34,7 @@ describe('possession d’une série', () => {
   it('se dit à la première personne', () => {
     expect(libellePossession('partielle')).toBe('J’en ai une partie')
     expect(libellePossession('possede')).toBe('Je l’ai')
-    expect(libellePossession('non_possede')).toBe('Pas à moi')
+    expect(libellePossession('non_possede')).toBe('Je ne l’ai pas')
   })
 })
 
@@ -67,7 +67,7 @@ describe('recherche et filtres', () => {
   it('garde les filtres dans l’adresse, et ignore une valeur inconnue', () => {
     const filtres = { ...FILTRES_VIDES, recherche: 'momo', statut: 'envie_de_lire' as const, theme: 'Temps' }
     const parametres = parametresDepuisFiltres(filtres)
-    expect(parametres.toString()).toBe('q=momo&theme=Temps&statut=envie_de_lire')
+    expect(parametres.toString()).toBe('q=momo&statut=envie_de_lire&theme=Temps')
     expect(filtresDepuisParametres(parametres)).toEqual(filtres)
     expect(filtresDepuisParametres(new URLSearchParams('statut=nimporte&possession=tout'))).toEqual(FILTRES_VIDES)
   })

@@ -23,7 +23,7 @@ export const STATUTS: { valeur: Statut; libelle: string }[] = [
 export const POSSESSIONS: { valeur: Possession; libelle: string }[] = [
   { valeur: 'possede', libelle: 'Je l’ai' },
   { valeur: 'a_acheter', libelle: 'À acheter' },
-  { valeur: 'non_possede', libelle: 'Pas à moi' },
+  { valeur: 'non_possede', libelle: 'Je ne l’ai pas' },
 ]
 
 export const FORMES: { valeur: Forme; libelle: string }[] = [
@@ -164,10 +164,7 @@ export function correspond(oeuvre: OeuvreFiltrable, filtres: Filtres): boolean {
   return true
 }
 
-export const filtresActifs = (filtres: Filtres) =>
-  !!(filtres.recherche.trim() || filtres.auteur || filtres.genre || filtres.theme || filtres.atmosphere || filtres.statut || filtres.possession)
-
-const CLES_FILTRES = ['auteur', 'genre', 'theme', 'atmosphere', 'statut', 'possession'] as const
+const CLES_FILTRES = ['statut', 'possession', 'genre', 'theme', 'atmosphere', 'auteur'] as const
 
 /** Les filtres vivent dans l'adresse (« #/bibliotheque?statut=envie_de_lire ») : « Retour » les retrouve. */
 export function filtresDepuisParametres(parametres: URLSearchParams): Filtres {

@@ -83,7 +83,7 @@ describe('fiche d’une œuvre', () => {
     expect(faux.appels.ecritures).toContainEqual({ action: 'statut', id: 'sid', valeur: 'envie_de_lire' })
     expect(await screen.findByRole('button', { name: 'Statut de lecture : Envie de lire. Changer' })).toBeInTheDocument()
 
-    await choisirDansMenu(/Possession : Pas à moi/, 'Je l’ai')
+    await choisirDansMenu(/Possession : Je ne l’ai pas/, 'Je l’ai')
     expect(faux.appels.ecritures).toContainEqual({ action: 'possession', id: 'sid', valeur: 'possede' })
     expect(await screen.findByRole('button', { name: 'Possession : Je l’ai. Changer' })).toBeInTheDocument()
   })
@@ -114,7 +114,7 @@ describe('série', () => {
     expect(screen.getByRole('button', { name: 'Possession : J’en ai une partie. Changer' })).toBeInTheDocument()
     const tomes = screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
     expect(within(tomes).getAllByRole('button')).toHaveLength(3)
-    await choisirDansMenu(/^Tome 3 : Pas à moi/, 'Je l’ai')
+    await choisirDansMenu(/^Tome 3 : Je ne l’ai pas/, 'Je l’ai')
     expect(faux.appels.ecritures).toContainEqual({ action: 'possessionTomes', id: 'vin', valeur: { choix: { de: 3, a: 3 }, possession: 'possede' } })
   })
 

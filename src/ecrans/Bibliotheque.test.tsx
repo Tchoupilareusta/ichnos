@@ -167,6 +167,26 @@ describe('recherche et filtres', () => {
     expect(titresAffiches()).toHaveLength(3)
   })
 
+  it('range les filtres du plus utile au moins utile : statut et possession d’abord, l’auteur en dernier', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filtres' }))
+    const champs = within(screen.getByRole('main')).getAllByRole('combobox').map((champ) => (champ as HTMLSelectElement).labels?.[0]?.textContent)
+    expect(champs).toEqual(['Statut de lecture', 'Possession', 'Genre', 'Thème', 'Atmosphère', 'Auteur'])
+  })
+
+  it('montre les filtres actifs au-dessus du panneau, avec de quoi tout effacer', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filtres' }))
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'momo' } })
+    fireEvent.change(screen.getByLabelText('Possession'), { target: { value: 'a_acheter' } })
+    const actifs = screen.getByRole('list', { name: 'Filtres actifs' })
+    expect(actifs.compareDocumentPosition(screen.getByLabelText('Statut de lecture')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    fireEvent.click(within(actifs).getByRole('button', { name: /^Tout effacer/ }))
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+    expect(titresAffiches()).toHaveLength(3)
+    expect(screen.queryByRole('list', { name: 'Filtres actifs' })).not.toBeInTheDocument()
+  })
+
   it('retrouve les filtres de l’adresse (au retour depuis une fiche)', async () => {
     window.location.hash = '#/bibliotheque?theme=Absurde'
     render(<App auth={authFictif({ compte: { email: 'moi@exemple.test' } }).auth} depot={depotFictif({ oeuvres: COLLECTION }).depot} />)
