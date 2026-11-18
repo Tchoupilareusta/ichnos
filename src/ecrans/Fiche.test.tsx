@@ -54,6 +54,7 @@ const choisirDansMenu = async (nomBouton: RegExp, choix: string) => {
 
 beforeEach(() => {
   window.location.hash = ''
+  Element.prototype.scrollIntoView = () => {}
   window.scrollTo = () => {}
   Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true })
 })
@@ -69,7 +70,7 @@ describe('fiche d’une œuvre', () => {
     expect(within(themes).queryByRole('button')).not.toBeInTheDocument()
     expect(screen.getByText('Un fils de brahmane cherche par lui-même.')).toBeInTheDocument()
     expect(
-      screen.getByText('Roman court · lecture courte · traduit de l’allemand · atmosphère contemplative et lumineuse'),
+      screen.getByText('Roman court · lecture courte · traduit de l’allemand · contemplative, lumineuse'),
     ).toBeInTheDocument()
     expect(document.title).toBe('Siddhartha · Ichnos')
   })
@@ -94,8 +95,9 @@ describe('fiche d’une œuvre', () => {
     })
     await ouvrirFiche(faux, 'sid')
     expect(screen.getByRole('heading', { level: 1, name: 'Siddhartha (fr)' })).toBeInTheDocument()
-    expect(screen.getByText('Le Livre de Poche')).toBeInTheDocument()
-    expect(screen.getByText('Joseph Delage')).toBeInTheDocument()
+    // Mon édition tient en une ligne ; traduction et ISBN se déplient.
+    expect(screen.getByText('Le Livre de Poche · poche · français')).toBeInTheDocument()
+    expect(screen.getByText('Détails').closest('details')).toHaveTextContent('Joseph Delage')
     await choisirDansMenu(/Mon édition : Le Livre de Poche/, 'Penguin · anglais')
     expect(faux.appels.ecritures).toContainEqual({ action: 'monEdition', id: 'sid', valeur: 'e2' })
     expect(await screen.findByRole('heading', { level: 1, name: 'Siddhartha (en)' })).toBeInTheDocument()
@@ -103,7 +105,8 @@ describe('fiche d’une œuvre', () => {
 
   it('ne montre pas un champ d’édition inconnu', async () => {
     await ouvrirFiche(depotFictif({ oeuvres: [SIDDHARTHA] }), 'sid')
-    expect(screen.queryByText('Pages')).not.toBeInTheDocument()
+    expect(screen.queryByText(/pages/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /édition/ })).not.toBeInTheDocument()
   })
 })
 
@@ -111,7 +114,11 @@ describe('série', () => {
   it('calcule « J’en ai une partie » et change un tome à la fois', async () => {
     const faux = depotFictif({ oeuvres: [SERIE] })
     await ouvrirFiche(faux, 'vin')
-    expect(screen.getByRole('button', { name: 'Possession : J’en ai une partie. Changer' })).toBeInTheDocument()
+    // Une série se règle tome par tome : la pastille résume et mène aux tomes, sans menu.
+    const resume = screen.getByRole('button', { name: 'Possession : J’en ai une partie. Voir mes tomes' })
+    expect(resume).not.toHaveAttribute('aria-haspopup')
+    fireEvent.click(resume)
+    expect(document.activeElement).toBe(document.getElementById('mes-tomes'))
     const tomes = screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
     expect(within(tomes).getAllByRole('button')).toHaveLength(3)
     await choisirDansMenu(/^Tome 3 : Je ne l’ai pas/, 'Je l’ai')
@@ -121,19 +128,19 @@ describe('série', () => {
   it('demande confirmation avant de changer tous les tomes, en disant combien vont changer', async () => {
     const faux = depotFictif({ oeuvres: [SERIE] })
     await ouvrirFiche(faux, 'vin')
-    await choisirDansMenu(/Possession : J’en ai une partie/, 'Je l’ai')
+    await choisirDansMenu(/^Tous les tomes/, 'Je l’ai')
     const dialogue = screen.getByRole('dialog', { name: 'Marquer les 3 tomes comme « Je l’ai » ?' })
     expect(dialogue).toHaveTextContent('2 tomes vont changer ; l’autre l’est déjà.')
     expect(faux.appels.ecritures).toHaveLength(0)
     await act(async () => fireEvent.click(within(dialogue).getByRole('button', { name: 'Confirmer' })))
     expect(faux.appels.ecritures).toEqual([{ action: 'possessionTomes', id: 'vin', valeur: { choix: 'tous', possession: 'possede' } }])
-    expect(await screen.findByRole('button', { name: 'Possession : Je l’ai. Changer' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Possession : Je l’ai. Voir mes tomes' })).toBeInTheDocument()
   })
 
   it('change une plage de tomes', async () => {
     const faux = depotFictif({ oeuvres: [SERIE] })
     await ouvrirFiche(faux, 'vin')
-    fireEvent.click(screen.getByRole('button', { name: 'Changer plusieurs tomes à la fois' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Changer plusieurs tomes' }))
     fireEvent.change(screen.getByLabelText('Du tome'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('Au tome'), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('radio', { name: 'À acheter' }))
@@ -148,7 +155,7 @@ describe('série', () => {
   it('refuse une plage hors des tomes', async () => {
     const faux = depotFictif({ oeuvres: [SERIE] })
     await ouvrirFiche(faux, 'vin')
-    fireEvent.click(screen.getByRole('button', { name: 'Changer plusieurs tomes à la fois' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Changer plusieurs tomes' }))
     fireEvent.change(screen.getByLabelText('Au tome'), { target: { value: '9' } })
     fireEvent.click(screen.getByRole('button', { name: 'Appliquer' }))
     expect(screen.getAllByRole('alert').some((a) => a.textContent?.startsWith('Choisir des tomes entre 1 et 3'))).toBe(true)
@@ -157,7 +164,7 @@ describe('série', () => {
 
   it('montre le média associé', async () => {
     await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
-    expect(screen.getByText('2 saisons · 48 épisodes')).toBeInTheDocument()
+    expect(screen.getByText('Anime · 2 saisons · 48 épisodes')).toBeInTheDocument()
   })
 
   it('formule la confirmation sans erreur de nombre', () => {
@@ -170,23 +177,9 @@ describe('série', () => {
 })
 
 describe('suppression', () => {
-  it('demande confirmation, puis supprime et quitte la fiche', async () => {
-    const faux = depotFictif({ oeuvres: [SIDDHARTHA] })
-    await ouvrirFiche(faux, 'sid')
-    fireEvent.click(screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' }))
-    const dialogue = screen.getByRole('dialog', { name: 'Supprimer « Siddhartha » ?' })
-    expect(dialogue).toHaveTextContent('Ce geste ne se défait pas.')
-
-    fireEvent.click(within(dialogue).getByRole('button', { name: 'Garder' }))
-    expect(faux.appels.ecritures).toHaveLength(0)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' }))
-    await act(async () => fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Supprimer' })))
-    expect(faux.appels.ecritures).toEqual([{ action: 'suppression', id: 'sid', valeur: undefined }])
-    expect(faux.oeuvres()).toHaveLength(0)
-    // Retour à la page précédente (la bibliothèque, d'où je venais) : la fiche supprimée ne reste pas affichée.
-    await act(async () => new Promise((fin) => setTimeout(fin, 20)))
-    expect(window.location.hash).not.toBe('#/oeuvre/sid')
+  it('ne se fait plus depuis la fiche, qui se termine sur l’œuvre', async () => {
+    await ouvrirFiche(depotFictif({ oeuvres: [SIDDHARTHA] }), 'sid')
+    expect(screen.queryByRole('button', { name: /Supprimer/ })).not.toBeInTheDocument()
   })
 })
 
@@ -201,7 +194,6 @@ describe('hors connexion', () => {
     fireEvent.click(statut)
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(screen.getByText('Je pourrai changer le statut et la possession au retour du réseau.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' })).toHaveAttribute('aria-disabled', 'true')
   })
 })
 

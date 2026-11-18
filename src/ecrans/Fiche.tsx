@@ -19,6 +19,7 @@ import { Bouton } from '../composants/Bouton'
 import { ChampTexte, Pastilles } from '../composants/Champs'
 import { Dialogue } from '../composants/Dialogue'
 import { IconeChevronBas, IconeModifier, IconeRetour } from '../composants/Icones'
+import { IconePossession, IconeStatut } from '../composants/IconesLecture'
 import { Menu } from '../composants/Menu'
 import { EtatVide, BoutonPrincipal, Page } from '../composants/Page'
 import { Couverture } from '../couvertures/Couverture'
@@ -26,10 +27,14 @@ import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { revenir, useRoute } from '../navigation/useRoute'
 
-const PASTILLE = 'flex min-h-11 items-center gap-1.5 rounded-pilule pr-4 pl-[1.125rem] text-[0.9375rem]'
+const PASTILLE = 'flex min-h-11 items-center gap-1.5 rounded-pilule pr-3.5 pl-3.5 text-[0.9375rem]'
 const PASTILLE_DOUCE = `${PASTILLE} border-0 bg-accent-doux font-bold text-accent-texte`
 const PASTILLE_CLAIRE = `${PASTILLE} border border-bordure bg-surface font-semibold text-encre`
 const TITRE_SECTION = 'm-0 font-titre text-2xl'
+const ANCRE_TOMES = 'mes-tomes'
+
+const OPTIONS_STATUT = STATUTS.map((s) => ({ ...s, icone: <IconeStatut statut={s.valeur} taille={19} /> }))
+const OPTIONS_POSSESSION = POSSESSIONS.map((p) => ({ ...p, icone: <IconePossession possession={p.valeur} /> }))
 
 export function Fiche() {
   const { id } = useRoute()
@@ -116,12 +121,6 @@ function titresDe(oeuvre: OeuvreDetaillee, langueEdition: string | null | undefi
 
 const minusculeInitiale = (texte: string) => texte.charAt(0).toLocaleLowerCase('fr') + texte.slice(1)
 
-/** « épique, âpre et introspective » */
-function enumerer(mots: string[]): string {
-  if (mots.length <= 1) return mots.join('')
-  return `${mots.slice(0, -1).join(', ')} et ${mots[mots.length - 1]}`
-}
-
 const MESSAGES_ECRITURE: Record<string, string> = {
   reseau: 'Pas de connexion à internet : ce changement n’a pas été enregistré.',
   introuvable: 'Cette œuvre n’est plus dans ma bibliothèque : rien n’a été changé.',
@@ -133,7 +132,6 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   const enLigne = useEnLigne()
   const modifier = useModifierOeuvre(oeuvre.id)
   const [confirmation, setConfirmation] = useState<Possession | null>(null)
-  const [suppression, setSuppression] = useState(false)
 
   const edition = oeuvre.editions.find((e) => e.id === oeuvre.monEdition) ?? null
   const { principal, secondaire } = titresDe(oeuvre, edition?.language)
@@ -148,7 +146,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
     oeuvre.tomes.map((t) => t.possession),
   )
 
-  const erreurs = [modifier.statut, modifier.possession, modifier.possessionTomes, modifier.monEdition, modifier.suppression]
+  const erreurs = [modifier.statut, modifier.possession, modifier.possessionTomes, modifier.monEdition]
     .map((mutation) => mutation.error?.echec)
     .filter(Boolean)
   const derniereErreur = erreurs[0]
@@ -158,27 +156,31 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
     oeuvre.annee !== null ? String(oeuvre.annee) : null,
   ].filter(Boolean)
 
-  function choisirPossession(valeur: Possession) {
-    if (avecTomes) setConfirmation(valeur)
-    else modifier.possession.mutate(valeur)
+  function allerAuxTomes() {
+    const section = document.getElementById(ANCRE_TOMES)
+    if (!section) return
+    const doux = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    section.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: 'start' })
+    section.focus({ preventScroll: true })
   }
 
   return (
-    // iPhone : une colonne centrée, comme la maquette. iPad en portrait : couverture et en-tête côte à côte,
-    // sections en dessous. Écran large (iPad en paysage) : les sections passent dans la colonne de droite.
-    <div className="flex flex-col gap-10 tablette:grid tablette:grid-cols-[minmax(9rem,12.5rem)_minmax(0,1fr)] tablette:items-start tablette:gap-x-10 min-[72rem]:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] min-[72rem]:gap-x-14">
+    // iPhone et iPad en portrait : une colonne centrée, comme la maquette (à côté de la barre latérale,
+    // deux colonnes laisseraient moins de 250 px au titre). Écran large (iPad en paysage) : la couverture
+    // reste à gauche, l'en-tête et les sections passent dans la colonne de droite.
+    <div className="flex flex-col gap-10 tablette:mx-auto tablette:w-full tablette:max-w-[42rem] min-[72rem]:mx-0 min-[72rem]:grid min-[72rem]:max-w-none min-[72rem]:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] min-[72rem]:items-start min-[72rem]:gap-x-14">
       {/* Couverture : elle reste visible pendant la lecture de la fiche sur grand écran */}
-      <div className="flex flex-col items-center tablette:items-stretch min-[72rem]:sticky min-[72rem]:top-[calc(env(safe-area-inset-top)+1.5rem)] min-[72rem]:row-span-2">
+      <div className="flex flex-col items-center min-[72rem]:sticky min-[72rem]:top-[calc(env(safe-area-inset-top)+1.5rem)] min-[72rem]:row-span-2 min-[72rem]:items-stretch">
         <Couverture
           titre={principal}
           auteur={auteurs.join(', ') || null}
           graine={oeuvre.id}
-          className="w-[12.25rem] shadow-forte tablette:w-full"
+          className="w-[12.25rem] shadow-forte tablette:w-[14rem] min-[72rem]:w-full"
         />
       </div>
 
       {/* En-tête : titres, auteur, thèmes, statut et possession */}
-      <div className="-mt-4 flex min-w-0 flex-col items-center gap-[1.375rem] text-center tablette:mt-0 tablette:items-start tablette:self-center tablette:text-left min-[72rem]:self-start">
+      <div className="-mt-4 flex min-w-0 flex-col items-center gap-[1.375rem] text-center min-[72rem]:mt-0 min-[72rem]:items-start min-[72rem]:text-left">
         <div className="flex flex-col gap-1.5">
           <h1 className="m-0 font-titre text-[2.25rem] leading-[1.05] tablette:text-[2.75rem]">{principal}</h1>
           {auteurs.length > 0 && <p className="m-0 text-[1.0625rem]">{auteurs.join(', ')}</p>}
@@ -189,7 +191,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         {themes.length > 0 && (
           <ul
             aria-label="Thèmes"
-            className="m-0 flex max-w-[20rem] list-none flex-wrap justify-center gap-x-3.5 gap-y-1.5 p-0 font-titre text-[1.1875rem] leading-[1.35] italic tablette:max-w-[65ch] tablette:justify-start"
+            className="m-0 flex max-w-[20rem] list-none flex-wrap justify-center gap-x-3.5 gap-y-1.5 p-0 font-titre text-[1.1875rem] leading-[1.35] italic tablette:max-w-[32rem] min-[72rem]:max-w-[65ch] min-[72rem]:justify-start"
           >
             {themes.map((theme) => (
               <li key={theme}>
@@ -206,39 +208,54 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
           </ul>
         )}
 
-        <div className="flex flex-col items-center gap-3 tablette:items-start">
-          <div className="flex flex-wrap justify-center gap-2.5 tablette:justify-start">
+        <div className="flex flex-col items-center gap-3 min-[72rem]:items-start">
+          <div className="flex flex-wrap justify-center gap-2.5 min-[72rem]:justify-start">
             <Menu
               nom={`Statut de lecture : ${libelleStatut(oeuvre.statut)}. Changer`}
               contenuBouton={
                 <>
+                  <IconeStatut statut={oeuvre.statut} taille={19} />
                   {libelleStatut(oeuvre.statut)}
                   <IconeChevronBas taille={16} />
                 </>
               }
               classeBouton={PASTILLE_DOUCE}
-              options={STATUTS}
+              options={OPTIONS_STATUT}
               valeur={oeuvre.statut}
               onChoisir={(valeur) => modifier.statut.mutate(valeur)}
               desactive={!enLigne}
             />
-            <Menu
-              nom={`Possession : ${libellePossession(possession)}. Changer`}
-              contenuBouton={
-                <>
-                  {libellePossession(possession)}
-                  <IconeChevronBas taille={16} />
-                </>
-              }
-              classeBouton={PASTILLE_CLAIRE}
-              options={POSSESSIONS}
-              valeur={possession === 'partielle' ? null : possession}
-              onChoisir={choisirPossession}
-              desactive={!enLigne}
-            />
+            {avecTomes ? (
+              // Une série se règle tome par tome : la pastille résume, et mène à la grille des tomes.
+              <button
+                type="button"
+                aria-label={`Possession : ${libellePossession(possession)}. Voir mes tomes`}
+                onClick={allerAuxTomes}
+                className={`${PASTILLE_CLAIRE} cursor-pointer`}
+              >
+                <IconePossession possession={possession} />
+                {libellePossession(possession)}
+              </button>
+            ) : (
+              <Menu
+                nom={`Possession : ${libellePossession(possession)}. Changer`}
+                contenuBouton={
+                  <>
+                    <IconePossession possession={possession} />
+                    {libellePossession(possession)}
+                    <IconeChevronBas taille={16} />
+                  </>
+                }
+                classeBouton={PASTILLE_CLAIRE}
+                options={OPTIONS_POSSESSION}
+                valeur={possession === 'partielle' ? null : possession}
+                onChoisir={(valeur) => modifier.possession.mutate(valeur)}
+                desactive={!enLigne}
+              />
+            )}
           </div>
           {!enLigne && (
-            <p className="m-0 max-w-[30ch] text-sm text-discret tablette:max-w-none">
+            <p className="m-0 max-w-[30ch] text-sm text-discret min-[72rem]:max-w-none">
               Je pourrai changer le statut et la possession au retour du réseau.
             </p>
           )}
@@ -248,29 +265,21 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-10 tablette:col-span-2 min-[72rem]:col-span-1 min-[72rem]:col-start-2">
+      <div className="flex min-w-0 flex-col gap-10 min-[72rem]:col-start-2">
         <Resume oeuvre={oeuvre} edition={edition} />
-        <MonEdition oeuvre={oeuvre} edition={edition} enLigne={enLigne} choisir={(valeur) => modifier.monEdition.mutate(valeur)} />
+        {oeuvre.editions.length > 0 && (
+          <MonEdition oeuvre={oeuvre} edition={edition} enLigne={enLigne} choisir={(valeur) => modifier.monEdition.mutate(valeur)} />
+        )}
         {avecTomes && (
           <Tomes
             titre={principal}
             tomes={oeuvre.tomes}
             enLigne={enLigne}
             changer={(tomes, valeur) => modifier.possessionTomes.mutate({ tomes, possession: valeur })}
+            changerTous={setConfirmation}
           />
         )}
         {oeuvre.medias.length > 0 && <Medias oeuvre={oeuvre} />}
-
-        <div className="border-t border-bordure pt-8">
-          <button
-            type="button"
-            aria-disabled={!enLigne || undefined}
-            onClick={() => enLigne && setSuppression(true)}
-            className="flex min-h-11 cursor-pointer items-center border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60"
-          >
-            Supprimer cette œuvre de ma bibliothèque
-          </button>
-        </div>
       </div>
 
       <Dialogue
@@ -285,34 +294,30 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
       >
         {confirmation && texteConfirmationTomes(oeuvre.tomes, confirmation)}
       </Dialogue>
-
-      <Dialogue
-        ouvert={suppression}
-        titre={`Supprimer « ${principal} » ?`}
-        confirmer="Supprimer"
-        annuler="Garder"
-        occupe={modifier.suppression.isPending}
-        onAnnuler={() => setSuppression(false)}
-        onConfirmer={() =>
-          modifier.suppression.mutate(undefined, {
-            onSuccess: () => revenir(LIENS.bibliotheque),
-            onSettled: () => setSuppression(false),
-          })
-        }
-      >
-        <p className="m-0">
-          L’œuvre quittera ma bibliothèque, avec ses éditions{oeuvre.estSerie ? ', ses tomes' : ''}, mes notes et mon historique de lecture.
-          Ce geste ne se défait pas.
-        </p>
-      </Dialogue>
     </div>
   )
 }
 
-function Section({ titre, children, complement }: { titre: string; children: ReactNode; complement?: ReactNode }) {
+function Section({
+  titre,
+  children,
+  complement,
+  ancre,
+}: {
+  titre: string
+  children: ReactNode
+  complement?: ReactNode
+  /** Identifiant de la section, quand un bouton de la fiche y mène (elle reçoit alors le focus). */
+  ancre?: string
+}) {
   const id = useId()
   return (
-    <section aria-labelledby={id} className="flex max-w-[65ch] flex-col gap-3">
+    <section
+      id={ancre}
+      tabIndex={ancre ? -1 : undefined}
+      aria-labelledby={id}
+      className="flex max-w-[65ch] flex-col gap-3 outline-none"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 id={id} className={TITRE_SECTION}>
           {titre}
@@ -326,12 +331,13 @@ function Section({ titre, children, complement }: { titre: string; children: Rea
 
 function Resume({ oeuvre, edition }: { oeuvre: OeuvreDetaillee; edition: Edition | null }) {
   const nom = (genre: string) => oeuvre.etiquettes.filter((e) => e.genre === genre).map((e) => minusculeInitiale(e.nom))
-  const atmospheres = nom('atmosphere')
+  // « Manga · aventure historique · lecture longue · traduit du japonais · épique, âpre, introspective »
   const details = [
-    [libelleForme(oeuvre.forme), ...nom('genre')].join(', '),
+    libelleForme(oeuvre.forme),
+    ...nom('genre'),
     LONGUEURS.find((l) => l.valeur === oeuvre.longueur)?.detail,
     mentionTraduction(oeuvre.langueOriginale, edition?.language, edition?.translator),
-    atmospheres.length > 0 ? `atmosphère ${enumerer(atmospheres)}` : null,
+    nom('atmosphere').join(', ') || null,
   ].filter(Boolean)
 
   return (
@@ -341,7 +347,7 @@ function Resume({ oeuvre, edition }: { oeuvre: OeuvreDetaillee; edition: Edition
       ) : (
         <p className="m-0 text-discret">Je n’ai pas encore écrit de résumé pour cette œuvre.</p>
       )}
-      <p className="m-0 mt-1 text-[0.9375rem] text-discret">{details.join(' · ')}</p>
+      <p className="m-0 mt-1 text-[0.9375rem] text-pretty text-discret">{details.join(' · ')}</p>
     </Section>
   )
 }
@@ -362,13 +368,20 @@ function MonEdition({
   choisir: (edition: string | null) => void
 }) {
   const plusieurs = oeuvre.editions.length > 1 || (oeuvre.editions.length === 1 && !edition)
-  const lignes = edition
+  // Ce que je lis d'un coup d'œil, en une ligne ; le reste (traduction, ISBN) se déplie.
+  const ligne = edition
+    ? [
+        edition.publisher,
+        edition.format,
+        nomLangue(edition.language) ?? edition.language,
+        edition.pageCount !== null ? `${edition.pageCount} pages` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : ''
+  const precisions = edition
     ? ([
-        ['Éditeur', edition.publisher],
-        ['Collection ou format', edition.format],
-        ['Langue', nomLangue(edition.language) ?? edition.language],
         ['Traduction', edition.translator],
-        ['Pages', edition.pageCount !== null ? String(edition.pageCount) : null],
         ['ISBN', edition.isbn],
       ].filter(([, valeur]) => valeur) as [string, string][])
     : []
@@ -396,28 +409,30 @@ function MonEdition({
       }
     >
       {edition ? (
-        <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2.5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce">
-          {lignes.map(([terme, valeur]) => (
-            <div key={terme} className="contents">
-              <dt className="text-[0.9375rem] text-discret">{terme}</dt>
-              <dd className="m-0 text-[0.9375rem] font-semibold [overflow-wrap:anywhere]">{valeur}</dd>
-            </div>
-          ))}
-          {lignes.length === 0 && <dd className="col-span-2 m-0 text-discret">Je n’ai rien noté sur cette édition.</dd>}
-        </dl>
+        <>
+          <p className="m-0 text-[1.0625rem] [overflow-wrap:anywhere]">{ligne || 'Je n’ai rien noté sur cette édition.'}</p>
+          {precisions.length > 0 && (
+            <details className="group -mt-1">
+              <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 text-[0.9375rem] font-semibold text-discret [&::-webkit-details-marker]:hidden">
+                Détails
+                <span className="transition-transform duration-200 group-open:rotate-180">
+                  <IconeChevronBas taille={16} />
+                </span>
+              </summary>
+              <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-1.5 pb-1">
+                {precisions.map(([terme, valeur]) => (
+                  <div key={terme} className="contents">
+                    <dt className="text-[0.9375rem] text-discret">{terme}</dt>
+                    <dd className="m-0 text-[0.9375rem] tabular-nums [overflow-wrap:anywhere]">{valeur}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          )}
+        </>
       ) : (
-        <p className="m-0 text-discret">
-          {oeuvre.editions.length === 0
-            ? 'Aucune édition n’est notée pour cette œuvre.'
-            : 'Je n’ai pas encore choisi l’édition que je lis.'}
-        </p>
+        <p className="m-0 text-discret">Je n’ai pas encore choisi l’édition que je lis.</p>
       )}
-      <a
-        href={LIENS.modifier(oeuvre.id)}
-        className="flex min-h-11 items-center self-start text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4"
-      >
-        {oeuvre.editions.length === 0 ? 'Ajouter une édition' : 'Ajouter ou corriger une édition'}
-      </a>
     </Section>
   )
 }
@@ -433,15 +448,37 @@ function Tomes({
   tomes,
   enLigne,
   changer,
+  changerTous,
 }: {
   titre: string
   tomes: Tome[]
   enLigne: boolean
   changer: (tomes: { de: number; a: number }, possession: Possession) => void
+  /** Ouvre la confirmation qui applique une possession à tous les tomes. */
+  changerTous: (possession: Possession) => void
 }) {
   const [plage, setPlage] = useState(false)
   return (
-    <Section titre="Mes tomes">
+    <Section
+      titre="Mes tomes"
+      ancre={ANCRE_TOMES}
+      complement={
+        <Menu
+          nom="Tous les tomes : changer leur possession"
+          contenuBouton={
+            <>
+              Tous les tomes
+              <IconeChevronBas taille={16} />
+            </>
+          }
+          classeBouton={PASTILLE_CLAIRE}
+          options={OPTIONS_POSSESSION}
+          valeur={null}
+          onChoisir={changerTous}
+          desactive={!enLigne}
+        />
+      }
+    >
       <ul aria-label="Légende" className="m-0 flex list-none flex-wrap gap-x-5 gap-y-2 p-0 text-sm text-discret">
         {POSSESSIONS.map((p) => (
           <li key={p.valeur} className="flex items-center gap-2">
@@ -483,7 +520,7 @@ function Tomes({
           onClick={() => enLigne && setPlage(true)}
           className="flex min-h-11 cursor-pointer items-center self-start border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60"
         >
-          Changer plusieurs tomes à la fois
+          Changer plusieurs tomes
         </button>
       )}
     </Section>
@@ -554,17 +591,18 @@ function PlageDeTomes({
 function Medias({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   return (
     <Section titre="À l’écran">
-      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
         {oeuvre.medias.map((media) => {
+          // « Anime · 2 saisons · 48 épisodes » ; le titre seulement s'il diffère de celui de l'œuvre.
+          const titre = media.titre && media.titre !== oeuvre.titreFr ? ` « ${media.titre} »` : ''
           const details = [
+            `${libelleTypeMedia(media.type)}${titre}`,
             media.saisons !== null ? `${media.saisons} saison${media.saisons > 1 ? 's' : ''}` : null,
             media.episodes !== null ? `${media.episodes} épisode${media.episodes > 1 ? 's' : ''}` : null,
           ].filter(Boolean)
           return (
-            <li key={media.id} className="flex flex-col gap-0.5 rounded-panneau border border-bordure bg-surface px-5 py-4 shadow-douce">
-              <span className="text-sm font-bold text-discret">{libelleTypeMedia(media.type)}</span>
-              <span className="font-titre text-xl">{media.titre ?? oeuvre.titreFr}</span>
-              {details.length > 0 && <span className="text-[0.9375rem] text-discret">{details.join(' · ')}</span>}
+            <li key={media.id} className="text-[1.0625rem]">
+              {details.join(' · ')}
             </li>
           )
         })}
