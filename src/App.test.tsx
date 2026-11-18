@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { App } from './App'
+import { depotFictif } from './bibliotheque/depot.fictif'
 import { authFictif } from './session/auth.fictif'
 
 const MOI = { email: 'moi@exemple.test' }
@@ -13,7 +14,7 @@ function aller(hash: string) {
 
 async function ouvrirConnecte() {
   const faux = authFictif({ compte: MOI })
-  render(<App auth={faux.auth} />)
+  render(<App auth={faux.auth} depot={depotFictif().depot} />)
   await screen.findByRole('main')
   return faux
 }
@@ -47,7 +48,7 @@ describe('squelette', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Découvrir' })).toBeInTheDocument()
     expect(document.title).toBe('Découvrir · Ichnos')
     aller('#/bibliotheque')
-    expect(screen.getByText('Ma bibliothèque est encore vide.')).toBeInTheDocument()
+    expect(await screen.findByText(/Ma bibliothèque est encore vide./)).toBeInTheDocument()
     aller('#/reglages')
     expect(screen.getByRole('radio', { name: 'Comme l’appareil' })).toBeChecked()
   })

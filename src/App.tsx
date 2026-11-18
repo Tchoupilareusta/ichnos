@@ -11,6 +11,8 @@ import { Ajouter } from './ecrans/Ajouter'
 import { Reglages } from './ecrans/Reglages'
 import { Introuvable } from './ecrans/Introuvable'
 import { Connexion, NonConfigure } from './ecrans/Connexion'
+import { DEPOT_ABSENT, type Depot } from './bibliotheque/depot'
+import { depotParDefaut } from './bibliotheque/depotParDefaut'
 import type { Auth } from './session/auth'
 import { authParDefaut } from './session/authParDefaut'
 import { FournisseurSession, useEtatSession } from './session/Session'
@@ -34,7 +36,7 @@ const TITRES: Record<Ecran, string> = {
 }
 
 /** L'appli entière est réservée au compte connecté : sans session, seul l'écran de connexion s'affiche. */
-export function App({ auth = authParDefaut }: { auth?: Auth | null }) {
+export function App({ auth = authParDefaut, depot = depotParDefaut }: { auth?: Auth | null; depot?: Depot | null }) {
   if (!auth) {
     return (
       <>
@@ -43,10 +45,10 @@ export function App({ auth = authParDefaut }: { auth?: Auth | null }) {
       </>
     )
   }
-  return <AppReservee auth={auth} />
+  return <AppReservee auth={auth} depot={depot ?? DEPOT_ABSENT} />
 }
 
-function AppReservee({ auth }: { auth: Auth }) {
+function AppReservee({ auth, depot }: { auth: Auth; depot: Depot }) {
   const session = useEtatSession(auth)
   const ecran = useEcran()
   const Contenu = ECRANS[ecran]
@@ -69,7 +71,7 @@ function AppReservee({ auth }: { auth: Auth }) {
   }
 
   return (
-    <FournisseurSession value={{ auth, compte: session.compte }}>
+    <FournisseurSession value={{ auth, compte: session.compte, depot }}>
       <AllerAuContenu />
       <HorsConnexion />
       <BarreLaterale ecran={ecran} />
