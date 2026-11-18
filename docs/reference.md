@@ -2,6 +2,7 @@
 
 *Version 1 — 17 novembre 2026*
 *Mise à jour du 17 novembre 2026 : l'IA comme aide à la suggestion (§2, §7.6, §8.4, §10.2, §11).*
+*Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -34,11 +35,12 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Navigation mobile | Barre du bas : Accueil · Bibliothèque · Découvrir, plus un bouton « Ajouter ». |
 | Navigation iPad et ordinateur | Barre latérale, grille de couvertures plus large. |
 | Notes et citations | Rangées dans la fiche de chaque œuvre. Pas d'onglet dédié. |
-| Liste d'envies | Filtre de la bibliothèque, pas d'onglet dédié. |
+| Liste d'envies | Filtre de la bibliothèque, pas d'onglet dédié : c'est le statut « Envie de lire » (ce que j'ai envie de lire, pas ce que je veux acheter). « À acheter » reste un filtre de possession séparé, qui sert de liste de courses. |
 | Libellés de possession | « Je l'ai », « À acheter », « Pas à moi ». |
 | Voix de l'interface | Première personne du propriétaire (« Mon ressenti », « Mon envie du moment »). |
 | Appréciation | Quelques mots plutôt que des étoiles (voir §6.4). Facultative. |
-| Mangas | Possession et progression suivies tome par tome. |
+| Mangas | Possession et progression suivies tome par tome. La possession de la série se calcule à partir des tomes : « J'en ai une partie » quand je n'ai pas tous les tomes (§6.2). |
+| Hors connexion, modifications | Les boutons de modification sont grisés, avec un message calme qui explique pourquoi. |
 | Langue de lecture | Français ou anglais. Le catalogue n'ajoute pas d'édition anglaise d'office. Quand j'ajoute un livre par son ISBN, l'édition est celle de mon exemplaire. Pour une œuvre écrite en anglais, « Découvrir ailleurs » indique si la version originale vaut le coup (ex. 1984 et son vocabulaire inventé). Si mon édition est en anglais, le titre original s'affiche en premier. Les fiches (synopsis, étiquettes) restent toujours en français. |
 | Anime | Média associé à l'œuvre (saisons, épisodes), jamais compté comme des livres. |
 | Hors connexion | Consultation possible. Les modifications demandent une connexion. |
@@ -177,6 +179,12 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 ### 6.2 Possession et statut
 
 Ils sont indépendants : un livre peut être « Terminé » et « Non possédé » (emprunté), ou « À découvrir » et « Possédé ».
+
+Possession d'une série (validé le 18 novembre 2026), calculée à partir de ses tomes :
+- tous les tomes possédés : « Je l'ai » ; une partie seulement : « J'en ai une partie » ;
+- aucun tome possédé : « À acheter » si au moins un tome est à acheter, sinon « Pas à moi ».
+- Dans les filtres, une série apparaît dans « Je l'ai » dès qu'un tome est possédé, et dans « À acheter » dès qu'un tome est à acheter. C'est voulu : on retrouve ainsi les séries où il manque des tomes.
+- Sur la fiche : la grille des tomes change un tome ou une plage (« les tomes 1 à 8 ») ; le menu de possession applique un choix à tous les tomes, toujours après une confirmation qui dit combien de tomes vont changer.
 
 ### 6.3 Progression et éditions
 
@@ -318,7 +326,7 @@ Import (validé le 18 novembre 2026) :
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
-- Une seule fonction de la base est appelable par le compte connecté : `importer_catalogue`. Elle s'exécute avec les droits de l'appelant, donc sous RLS. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
+- Deux fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9) et `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes). Elles s'exécutent avec les droits de l'appelant, donc sous RLS. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
 - API Claude (§7.6, §8.4) :
   - une seule Edge Function porte tous les appels à l'API Claude ;
@@ -357,7 +365,7 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil | Fable 5.2, élevé |
 | 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
 | 8 | Accueil final, notes, export, sauvegarde et veille | Opus 5.5, moyen |
-| 9 | Finitions : animations, PWA complète, hors ligne, accessibilité, audit design (Impeccable) | Opus 5.5, moyen |
+| 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, audit design (Impeccable) | Opus 5.5, moyen |
 | 10 | Revue de sécurité finale | Fable 5.2, élevé |
 
 Signal pour monter l'effort : un fichier oublié, des tests non lancés, une modification abandonnée en cours de route.
