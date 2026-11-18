@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "etat": "catalogue complet (35 œuvres), décisions du 18 novembre 2026 appliquées, en relecture avant l’import",
+  "etat": "catalogue validé le 18 novembre 2026 (35 œuvres), prêt pour l’import",
   "a_propos": "Catalogue de départ d’Ichnos. Informations bibliographiques publiques uniquement : aucun statut de lecture, aucune possession, aucune appréciation, aucune note. Le bloc « relecture » de chaque œuvre (sources, remarques, autres éditions) sert à la vérification et n’est pas importé.",
   "relecture_generale": {
     "themes_proposes": [],
@@ -8,7 +8,7 @@
       "Le catalogue compte 35 œuvres : les 32 du cahier des charges et les 3 mangas ajoutés.",
       "Les ISBN sont tous écrits à 13 chiffres. Quand la BnF donne un ISBN ancien à 10 caractères, c’est le même numéro dans sa forme actuelle.",
       "Nature, Différence et Enfance sont créés et posés où vous l’avez demandé. Je les ai aussi posés là où le thème est au centre du livre : Nature sur Un psaume pour les recyclés sauvages ; Différence sur Des fleurs pour Algernon et La Métamorphose ; Enfance sur Sa Majesté des mouches et Prendre soin de l’enfant intérieur.",
-      "Champs laissés vides faute de source fiable : l’ISBN du tome 3 de Vagabond ; l’année d’origine de Prendre soin de l’enfant intérieur et de La Paix en soi, la paix en marche ; le titre original de ce dernier ; le format des deux éditions anglaises d’Orwell ; l’année des Lettres à Lucilius."
+      "Champs laissés vides faute de source fiable : l’ISBN du tome 3 de Vagabond et celui du tome 21 de Chainsaw Man ; l’année d’origine de Prendre soin de l’enfant intérieur et de La Paix en soi, la paix en marche ; le titre original de ce dernier ; le format des deux éditions anglaises d’Orwell ; l’année des Lettres à Lucilius."
     ]
   },
   "tags": {
@@ -888,7 +888,7 @@
         {
           "number": 21,
           "title": null,
-          "isbn": "9782820355102"
+          "isbn": null
         },
         {
           "number": 22,
@@ -927,7 +927,9 @@
         ],
         "remarques": [
           "Série terminée au Japon : 24 tomes, le dernier paru le 25 mars 2026 (Wikipédia). La BnF en référence 23 en français ; le 24e sera à ajouter à sa parution.",
-          "Les tomes 21 et 22 n’ont encore qu’une notice succincte à la BnF (ISBN sans pagination).",
+          "Tomes 16, 17 et 23 revérifiés à la BnF le 18 novembre 2026 : chaque ISBN correspond bien à son tome. Les numéros ne se suivent pas parce que l’éditeur ne les attribue pas dans l’ordre des tomes ; rien dans les notices n’indique une réimpression.",
+          "Tome 21 : la BnF ne connaît pour l’instant que l’édition sous étui (ISBN 978-2-8203-5510-2, 10,99 €). L’ISBN de l’édition courante n’étant pas vérifié, il est laissé vide.",
+          "Le tome 22 n’a encore qu’une notice succincte à la BnF (ISBN sans pagination).",
           "Kazé est devenu Crunchyroll en cours de parution : l’éditeur indiqué est le nom actuel.",
           "Anime : une saison de 12 épisodes (MAPPA, 2022). Un film d’animation est sorti en 2025 ; je ne l’ai pas ajouté."
         ],
@@ -957,9 +959,7 @@
         "Fantasy et merveilleux"
       ],
       "themes": [
-        "Courage",
-        "Amitié",
-        "Humilité"
+        "Amitié"
       ],
       "atmospheres": [
         "Drôle",
@@ -1042,8 +1042,7 @@
         ],
         "remarques": [
           "Série en cours : le nombre de tomes restera modifiable.",
-          "Le tome 10 n’a encore qu’une notice succincte à la BnF (ISBN sans pagination).",
-          "Les thèmes conviennent mal à un manga de gags : j’en ai mis trois par cohérence avec les autres fiches, à alléger si vous préférez."
+          "Le tome 10 n’a encore qu’une notice succincte à la BnF (ISBN sans pagination)."
         ],
         "autres_editions": []
       }
