@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useAdresseCouverture } from '../bibliotheque/requetes'
 import { echelleTitre, teinteDe } from './palette'
 
 type Props = {
@@ -6,19 +8,31 @@ type Props = {
   auteur?: string | null
   /** Identifiant de l'œuvre : il fixe la teinte. */
   graine: string
+  /** Chemin de l'image dans mon stockage privé, si une couverture a été trouvée. */
+  chemin?: string | null
+  /** Adresse d'une image pas encore rangée (aperçu pendant l'ajout). */
+  apercu?: string | null
   className?: string
 }
 
 /**
- * Couverture typographique générée. Toujours décorative (aria-hidden) : le titre est
- * déjà dit à côté. Le texte suit la largeur de la couverture (unités cqi) sans
- * jamais descendre sous 11 px.
+ * Couverture d'une œuvre. La couverture typographique est toujours là, jamais de case vide ;
+ * quand une image existe, elle vient se poser par-dessus. Toujours décorative (aria-hidden) :
+ * le titre est déjà dit à côté. Le texte suit la largeur de la couverture (unités cqi) sans
+ * jamais descendre sous 11 px. L'état est porté par data-etat pour les animations de l'étape 9.
  */
-export function Couverture({ titre, auteur, graine, className = '' }: Props) {
+export function Couverture({ titre, auteur, graine, chemin, apercu, className = '' }: Props) {
   const { fond, texte } = teinteDe(graine)
+  const rangee = useAdresseCouverture(chemin)
+  const adresse = apercu ?? rangee
+  // L'image n'apparaît qu'une fois chargée ; si elle ne se charge pas, la couverture typographique reste.
+  const [chargee, setChargee] = useState<string | null>(null)
+  const [illisible, setIllisible] = useState<string | null>(null)
+  const visible = adresse !== null && illisible !== adresse
   return (
     <div
       aria-hidden="true"
+      data-etat={visible && chargee === adresse ? 'image' : 'typographique'}
       className={`relative aspect-[2/3] overflow-hidden rounded-couverture ${className}`}
       style={{
         containerType: 'inline-size',
@@ -48,6 +62,18 @@ export function Couverture({ titre, auteur, graine, className = '' }: Props) {
           </div>
         )}
       </div>
+      {visible && (
+        <img
+          src={adresse}
+          alt=""
+          decoding="async"
+          onLoad={() => setChargee(adresse)}
+          onError={() => setIllisible(adresse)}
+          className={`absolute inset-0 size-full object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+            chargee === adresse ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
     </div>
   )
 }

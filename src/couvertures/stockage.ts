@@ -12,8 +12,6 @@ export interface Couvertures {
   deposer(image: Blob): Promise<Depose>
   /** Une adresse affichable pour une couverture rangée, ou null (hors connexion et jamais vue, ou disparue). */
   adresse(chemin: string): Promise<string | null>
-  /** Retire des images du stockage et de l'appareil. Au mieux : un échec ne bloque rien. */
-  retirer(chemins: string[]): Promise<void>
   /** Efface les couvertures gardées sur l'appareil (à la déconnexion). */
   oublier(): Promise<void>
 }
@@ -21,7 +19,6 @@ export interface Couvertures {
 export const COUVERTURES_ABSENTES: Couvertures = {
   deposer: async () => ({ ok: false, echec: 'inconnu' }),
   adresse: async () => null,
-  retirer: async () => {},
   oublier: async () => {},
 }
 
@@ -57,6 +54,8 @@ export function creerCouverturesSupabase(client: ClientStockage, outils: Outils 
   const recuperer = outils.recuperer ?? ((adresse: string) => fetch(adresse))
   const creerAdresse = outils.creerAdresse ?? ((image: Blob) => URL.createObjectURL(image))
   const libererAdresse = outils.libererAdresse ?? ((adresse: string) => URL.revokeObjectURL(adresse))
+  // Une image n'est jamais supprimée du stockage ici : nommée d'après son contenu, elle peut
+  // servir à deux œuvres. Une image devenue inutile reste dans mon dossier privé, sans conséquence.
 
   /** Les adresses déjà préparées pendant cette session. */
   const connues = new Map<string, Promise<string | null>>()
@@ -146,22 +145,6 @@ export function creerCouverturesSupabase(client: ClientStockage, outils: Outils 
       })
       connues.set(chemin, promesse)
       return promesse
-    },
-
-    async retirer(chemins) {
-      if (chemins.length === 0) return
-      const cache = await ouvrirCache()
-      for (const chemin of chemins) {
-        const adresse = await connues.get(chemin)?.catch(() => null)
-        if (adresse) libererAdresse(adresse)
-        connues.delete(chemin)
-        await cache?.delete(cleCache(chemin)).catch(() => {})
-      }
-      try {
-        await client.storage.from(SEAU).remove(chemins)
-      } catch {
-        // Au mieux : une image orpheline reste dans mon stockage privé, sans conséquence.
-      }
     },
 
     async oublier() {

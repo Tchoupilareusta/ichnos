@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { titresAffiches } from '../catalogue/titres'
 import { mentionTraduction, nomLangue } from '../catalogue/langues'
-import type { Edition, Media, OeuvreDetaillee, Tome } from '../bibliotheque/depot'
+import { couverturesDeLaFiche, type Edition, type Media, type OeuvreDetaillee, type Tome } from '../bibliotheque/depot'
 import {
   LONGUEURS,
   POSSESSIONS,
@@ -37,6 +37,7 @@ import { LIEN_ACTION, Section } from '../composants/Section'
 import { MonParcours } from '../suivi/Parcours'
 import { ProgressionFiche } from '../suivi/ProgressionFiche'
 import { MonRessenti, ProposerRessenti } from '../suivi/Ressenti'
+import { couvertureAffichee } from '../couvertures/choix'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
@@ -208,6 +209,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
           titre={principal}
           auteur={auteurs.join(', ') || null}
           graine={oeuvre.id}
+          chemin={couvertureAffichee(couverturesDeLaFiche(oeuvre))}
           className="w-[12.25rem] shadow-forte tablette:w-[14rem] min-[72rem]:w-full"
         />
       </div>
@@ -592,6 +594,14 @@ function Tomes({
       >
         {tomeOuvert && (
           <div className="flex flex-col gap-6">
+            {tomeOuvert.couverture && (
+              <Couverture
+                titre={titre}
+                graine={`${titre}-${tomeOuvert.numero}`}
+                chemin={tomeOuvert.couverture}
+                className="w-28 self-center"
+              />
+            )}
             <Pastilles
               legende="Ma lecture"
               options={LECTURES_TOME}

@@ -31,7 +31,6 @@ type Options = {
 function monde(options: Options = {}, partage?: ReturnType<typeof fauxCaches>) {
   const envois: { chemin: string; type: string | undefined; ecraser: boolean | undefined }[] = []
   const signatures: string[][] = []
-  const retraits: string[][] = []
   const telechargements: string[] = []
   const cache = partage ?? fauxCaches()
   let numero = 0
@@ -49,10 +48,6 @@ function monde(options: Options = {}, partage?: ReturnType<typeof fauxCaches>) {
           if (options.signature === 'panne') return { data: null, error: { message: 'Failed to fetch' } }
           return { data: chemins.map((path) => ({ path, signedUrl: `https://stockage.test/${path}?jeton=${++numero}`, error: null })), error: null }
         },
-        remove: async (chemins: string[]) => {
-          retraits.push(chemins)
-          return { data: [], error: null }
-        },
       }),
     },
   } as unknown as ClientStockage
@@ -67,7 +62,7 @@ function monde(options: Options = {}, partage?: ReturnType<typeof fauxCaches>) {
     creerAdresse: (blob) => `blob:essai/${blob.size}-${++numero}`,
     libererAdresse: () => {},
   })
-  return { couvertures, envois, signatures, retraits, telechargements, cache }
+  return { couvertures, envois, signatures, telechargements, cache }
 }
 
 describe('déposer une couverture', () => {
@@ -165,25 +160,8 @@ describe('afficher une couverture', () => {
   })
 })
 
-describe('retirer et oublier', () => {
+describe('oublier', () => {
   const CHEMIN = `${MOI}/0123456789abcdef0123456789abcdef.jpg`
-
-  it('retire une couverture du stockage et de l’appareil', async () => {
-    const { couvertures, retraits, cache, signatures } = monde()
-    await couvertures.adresse(CHEMIN)
-    await couvertures.retirer([CHEMIN])
-    expect(retraits).toEqual([[CHEMIN]])
-    expect(cache.boites.get('ichnos-couvertures')?.size).toBe(0)
-    // Elle n'est plus en mémoire non plus : la redemander repart du stockage.
-    await couvertures.adresse(CHEMIN)
-    expect(signatures).toHaveLength(2)
-  })
-
-  it('ne fait rien pour une liste vide', async () => {
-    const { couvertures, retraits } = monde()
-    await couvertures.retirer([])
-    expect(retraits).toHaveLength(0)
-  })
 
   it('à la déconnexion, efface les couvertures gardées sur l’appareil', async () => {
     const { couvertures, cache } = monde()

@@ -1,6 +1,12 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import type { EchecAssistant, FicheProposee, ImageTrouvee } from '../ajout/assistant'
+import { editionConfiee, oublierEdition, type Apport, type EditionAAjouter } from '../ajout/passage'
+import { appliquerProposition, libelleSource, pourFiche, type ChampPropose, type CleProvenance, type Provenance } from '../ajout/preremplir'
 import { LANGUES, nomLangue } from '../catalogue/langues'
-import type { EchecEcriture, OeuvreDetaillee, Vocabulaire } from '../bibliotheque/depot'
+import { couverturesDeLaFiche, type EchecEcriture, type OeuvreDetaillee, type Vocabulaire } from '../bibliotheque/depot'
+import { couvertureAffichee, type CibleCouverture } from '../couvertures/choix'
+import { Couverture } from '../couvertures/Couverture'
 import {
   ajusterTomes,
   etatDepuisOeuvre,
@@ -15,7 +21,8 @@ import {
   type Erreurs,
 } from '../bibliotheque/formulaire'
 import { FORMES, GENRES_ETIQUETTES, LONGUEURS, ROLES, TYPES_MEDIA, type GenreEtiquette, type Role, type TypeMedia } from '../bibliotheque/modele'
-import { useEnregistrerOeuvre, useModifierOeuvre, useOeuvre, useVocabulaire } from '../bibliotheque/requetes'
+import { EchecDepot, useEnregistrerOeuvre, useModifierOeuvre, useOeuvre, useRetirerCouverture, useVocabulaire } from '../bibliotheque/requetes'
+import { useSession } from '../session/Session'
 import { Bouton } from '../composants/Bouton'
 import { CHAMP, ChampListe, ChampLong, ChampTexte, Pastilles } from '../composants/Champs'
 import { Dialogue } from '../composants/Dialogue'
@@ -24,11 +31,6 @@ import { BoutonPrincipal, EtatVide, Page, TitrePage } from '../composants/Page'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { peutRevenir, remplacer, revenir, useRoute } from '../navigation/useRoute'
-
-/** « Ajouter une œuvre » : le formulaire vide. */
-export function Ajouter() {
-  return <Formulaire initial={null} />
-}
 
 /** « Modifier » : le formulaire rempli avec la fiche. */
 export function Modifier() {
@@ -87,12 +89,112 @@ const optionsLangues = (actuelle: string) => [
   ...(actuelle && !nomLangue(actuelle) ? [{ valeur: actuelle, libelle: actuelle }] : []),
 ]
 
-function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
+const SANS_PROPOSITION: Record<EchecAssistant, string> = {
+  limite: 'L’IA a déjà préparé ses 30 fiches du jour : je remplis celle-ci moi-même, ou j’y reviens demain.',
+  reseau: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
+  non_configure: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
+  ia: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
+  indisponible: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
+}
+
+/** Une édition (ou l'ISBN d'un tome) trouvée par la recherche, ajoutée à la fiche d'une œuvre que j'ai déjà. */
+function avecEditionConfiee(etat: EtatFormulaire, confiee: EditionAAjouter): EtatFormulaire {
+  if (confiee.tome !== null) {
+    const numero = confiee.tome
+    const tomes = etat.tomes.length >= numero ? etat.tomes : ajusterTomes(etat.tomes, numero)
+    return { ...etat, estSerie: true, tomes: tomes.map((t) => (t.numero === numero ? { ...t, isbn: confiee.edition.isbn } : t)) }
+  }
+  return { ...etat, editions: [...etat.editions, { ...ligneEdition(), ...confiee.edition }] }
+}
+
+/**
+ * Le formulaire d'une œuvre. `initial` : la fiche à modifier. `apport` : ce que la recherche
+ * automatique a trouvé pour une œuvre nouvelle (tout y reste modifiable, rien n'est enregistré avant validation).
+ */
+export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaillee | null; apport?: Apport | null }) {
   const enLigne = useEnLigne()
+  const { depot, assistant, couvertures } = useSession()
   const vocabulaire = useVocabulaire().data ?? { etiquettes: [], auteurs: [] }
   const enregistrement = useEnregistrerOeuvre()
   const [depart] = useState(() => (initial ? etatDepuisOeuvre(initial) : etatVide()))
-  const [etat, setEtat] = useState<EtatFormulaire>(depart)
+  const [etat, setEtat] = useState<EtatFormulaire>(() => {
+    const confiee = initial ? editionConfiee(initial.id) : null
+    return apport?.etat ?? (confiee ? avecEditionConfiee(depart, confiee) : depart)
+  })
+  // L'édition confiée par l'écran « Ajouter » est reprise une seule fois.
+  useEffect(() => oublierEdition(), [])
+
+  // D'où vient chaque champ rempli par la recherche. Dès que je corrige un champ, sa source ne vaut plus.
+  const [provenance, setProvenance] = useState<Provenance>(apport?.provenance ?? {})
+  const cleEditionTrouvee = apport?.etat.editions[0]?.cle ?? null
+  const oublierSource = (cle: CleProvenance) => setProvenance((avant) => (cle in avant ? { ...avant, [cle]: undefined } : avant))
+  const aideSource = (cle: CleProvenance, parDefaut?: string) => {
+    const source = provenance[cle]
+    if (!source) return parDefaut
+    // Open Library date parfois une traduction : cette année-là se vérifie.
+    if (cle === 'annee' && source === 'open_library') return 'D’après Open Library, à vérifier : c’est parfois l’année d’une traduction.'
+    return `D’après ${libelleSource(source)}.`
+  }
+
+  // La couverture trouvée : un aperçu, rangé seulement à la validation et si je la garde.
+  const refCouverture = apport?.couverture ?? null
+  const apercu = useQuery<ImageTrouvee | null>({
+    queryKey: ['apercu-couverture', JSON.stringify(refCouverture)],
+    queryFn: async () => {
+      const reponse = refCouverture ? await assistant.couverture({ ref: refCouverture }) : null
+      return reponse?.ok ? reponse.valeur : null
+    },
+    enabled: refCouverture !== null,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+  const imageTrouvee = apercu.data ?? null
+  const adresseApercu = useMemo(() => (imageTrouvee ? URL.createObjectURL(imageTrouvee.image) : null), [imageTrouvee])
+  useEffect(() => () => void (adresseApercu && URL.revokeObjectURL(adresseApercu)), [adresseApercu])
+  const [garderCouverture, setGarderCouverture] = useState(true)
+
+  // La proposition de l'IA : demandée une seule fois, à partir de ce que les catalogues ont trouvé.
+  const pourIA = useMemo(() => (apport ? pourFiche(apport.etat, apport.descriptions) : null), [apport])
+  const proposition = useQuery<FicheProposee, EchecDepot<EchecAssistant>>({
+    queryKey: ['fiche-proposee', JSON.stringify(pourIA)],
+    queryFn: async () => {
+      const reponse = await assistant.proposerFiche(pourIA as NonNullable<typeof pourIA>)
+      if (!reponse.ok) throw new EchecDepot(reponse.echec)
+      return reponse.valeur
+    },
+    enabled: pourIA !== null,
+    // Un appel payant : jamais relancé tout seul (ni au retour dans l'appli, ni après un échec).
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+  })
+  const [proposes, setProposes] = useState<ChampPropose[]>([])
+  const [themesNouveaux, setThemesNouveaux] = useState<string[]>([])
+  const etatCourant = useRef(etat)
+  etatCourant.current = etat
+  const versee = useRef(false)
+  useEffect(() => {
+    const fiche = proposition.data
+    if (!fiche || versee.current) return
+    versee.current = true
+    // Seuls les champs encore vides sont remplis : ce que j'ai écrit entre-temps reste.
+    const { etat: suite, remplis } = appliquerProposition(etatCourant.current, fiche)
+    setEtat(suite)
+    setProposes(remplis)
+    setThemesNouveaux(fiche.themesNouveaux)
+  }, [proposition.data])
+  const messageIA = !pourIA
+    ? null
+    : proposition.isPending
+      ? 'Une proposition de résumé et d’étiquettes se prépare…'
+      : proposition.error
+        ? SANS_PROPOSITION[proposition.error.echec]
+        : proposition.data && !proposition.data.synopsis
+          ? 'L’IA ne connaît pas assez cette œuvre pour en proposer un résumé : je l’écris moi-même.'
+          : null
+  const propose = (champ: ChampPropose) => proposes.includes(champ)
   const [erreurs, setErreurs] = useState<Erreurs>({})
   const [abandon, setAbandon] = useState(false)
   const [annonce, setAnnonce] = useState<string | null>(null)
@@ -108,6 +210,27 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
   }, [titre])
 
   const maj = (changement: Partial<EtatFormulaire>) => setEtat((avant) => ({ ...avant, ...changement }))
+  /** Je corrige un champ rempli par la recherche : sa source est oubliée. */
+  const majSource = (cle: CleProvenance, changement: Partial<EtatFormulaire>) => {
+    maj(changement)
+    oublierSource(cle)
+  }
+
+  /** Une fois la fiche enregistrée : la couverture gardée est rangée, sur mon édition, sur le tome ou sur l'œuvre. */
+  async function rangerCouverture(id: string) {
+    if (!apport || !imageTrouvee || !garderCouverture) return
+    const deposee = await couvertures.deposer(imageTrouvee.image)
+    if (!deposee.ok) return
+    let cible: CibleCouverture = { type: 'oeuvre' }
+    if (apport.tome !== null) {
+      cible = { type: 'tome', numero: apport.tome }
+    } else if (cleEditionTrouvee && etat.mienne === cleEditionTrouvee) {
+      // L'identifiant de l'édition n'existe qu'une fois la fiche enregistrée.
+      const lecture = await depot.lireOeuvre(id)
+      if (lecture.ok && lecture.oeuvre.monEdition) cible = { type: 'edition', edition: lecture.oeuvre.monEdition }
+    }
+    await depot.definirCouverture(id, cible, deposee.chemin)
+  }
 
   function quitter() {
     if (modifie) setAbandon(true)
@@ -130,7 +253,7 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
       return
     }
     setAnnonce(null)
-    enregistrement.mutate(versEnvoi(etat, initial?.id), {
+    enregistrement.mutate({ fiche: versEnvoi(etat, initial?.id), apres: rangerCouverture }, {
       onSuccess: (id) => {
         // Nouvelle œuvre : sa fiche s'ouvre à la place du formulaire, pour y choisir statut et possession.
         if (!initial || !peutRevenir()) remplacer(LIENS.oeuvre(id))
@@ -163,7 +286,9 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
         <div className="flex flex-col gap-3">
           <TitrePage>{titre}</TitrePage>
           <p className="m-0 max-w-[60ch] text-discret">
-            Ce que je ne sais pas, je le laisse vide : rien n’est jamais complété à ma place.
+            {apport
+              ? 'Voici ce que les catalogues ont trouvé. Je relis, je corrige : rien n’est enregistré avant que je valide.'
+              : 'Ce que je ne sais pas, je le laisse vide : rien n’est jamais complété à ma place.'}
           </p>
           {!enLigne && (
             <p className="m-0 max-w-[60ch] rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte">
@@ -180,13 +305,25 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
           </p>
         </div>
 
+        {apport && (
+          <ApercuCouverture
+            titre={etat.titreFr}
+            cherche={refCouverture !== null && apercu.isPending}
+            trouvee={imageTrouvee}
+            adresse={adresseApercu}
+            garder={garderCouverture}
+            setGarder={setGarderCouverture}
+          />
+        )}
+
         <Bloc titre="L’œuvre">
           <div className="grid grid-cols-1 gap-5 tablette:grid-cols-2">
             <ChampTexte
               id={idChamp.titreFr}
               libelle="Titre en français"
+              aide={aideSource('titreFr')}
               value={etat.titreFr}
-              onChange={(e) => maj({ titreFr: e.target.value })}
+              onChange={(e) => majSource('titreFr', { titreFr: e.target.value })}
               erreur={erreurs[idChamp.titreFr]}
               required
               autoComplete="off"
@@ -194,15 +331,16 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
             />
             <ChampTexte
               libelle="Titre original"
-              aide="S’il diffère du titre français."
+              aide={aideSource('titreOriginal', 'S’il diffère du titre français.')}
               value={etat.titreOriginal}
-              onChange={(e) => maj({ titreOriginal: e.target.value })}
+              onChange={(e) => majSource('titreOriginal', { titreOriginal: e.target.value })}
               autoComplete="off"
             />
             <ChampListe
               libelle="Langue d’origine"
+              aide={aideSource('langueOriginale')}
               value={etat.langueOriginale}
-              onChange={(e) => maj({ langueOriginale: e.target.value })}
+              onChange={(e) => majSource('langueOriginale', { langueOriginale: e.target.value })}
               options={optionsLangues(etat.langueOriginale)}
             />
             <ChampListe
@@ -214,10 +352,10 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
             <ChampTexte
               id={idChamp.annee}
               libelle="Première parution"
-              aide="L’année, si je la connais."
+              aide={aideSource('annee', 'L’année, si je la connais.')}
               inputMode="numeric"
               value={etat.annee}
-              onChange={(e) => maj({ annee: e.target.value })}
+              onChange={(e) => majSource('annee', { annee: e.target.value })}
               erreur={erreurs[idChamp.annee]}
               autoComplete="off"
             />
@@ -231,25 +369,45 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
         </Bloc>
 
         <Bloc titre="Auteurs">
-          <Auteurs etat={etat} maj={maj} connus={vocabulaire.auteurs} />
+          <Auteurs etat={etat} maj={(changement) => majSource('auteurs', changement)} connus={vocabulaire.auteurs} aide={aideSource('auteurs')} />
         </Bloc>
 
         <Bloc titre="En quelques mots">
+          {/* Élément toujours présent : son contenu change, son état est porté par data-etat (étape 9). */}
+          <p role="status" data-etat={messageIA ? 'ouvert' : 'ferme'} className="m-0 max-w-[60ch] text-[0.9375rem] text-discret empty:hidden">
+            {messageIA ?? ''}
+          </p>
           <ChampLong
             libelle="Résumé"
-            aide="Écrit avec mes mots, sans rien dévoiler de la fin."
+            aide={
+              propose('synopsis') && etat.synopsis === proposition.data?.synopsis
+                ? 'Proposé par l’IA d’après les catalogues : à relire et à corriger.'
+                : 'Écrit avec mes mots, sans rien dévoiler de la fin.'
+            }
             value={etat.synopsis}
             onChange={(e) => maj({ synopsis: e.target.value })}
           />
         </Bloc>
 
-        <Bloc titre="Étiquettes">
+        <Bloc titre="Étiquettes" aide={propose('etiquettes') ? 'Proposées par l’IA dans mon vocabulaire : je retire ce qui ne convient pas.' : undefined}>
           {GENRES_ETIQUETTES.map((g) => (
             <Etiquettes key={g.valeur} genre={g.valeur} libelle={g.pluriel} etat={etat} maj={maj} vocabulaire={vocabulaire} />
           ))}
+          {themesNouveaux.length > 0 && (
+            <ThemesNouveaux
+              themes={themesNouveaux}
+              ajouter={(nom) => {
+                if (!etat.etiquettes.some((e) => e.genre === 'theme' && e.nom === nom)) maj({ etiquettes: [...etat.etiquettes, { genre: 'theme', nom }] })
+                setThemesNouveaux((avant) => avant.filter((theme) => theme !== nom))
+              }}
+            />
+          )}
         </Bloc>
 
-        <Bloc titre="Le caractère du livre">
+        <Bloc
+          titre="Le caractère du livre"
+          aide={propose('tonalite') || propose('exigence') || propose('longueur') ? 'Proposé par l’IA : à ajuster.' : undefined}
+        >
           <Pastilles
             legende="Tonalité"
             options={[INCONNU, ...TONALITES]}
@@ -271,11 +429,18 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
         </Bloc>
 
         <Bloc titre="Éditions" id="editions">
-          <Editions etat={etat} maj={maj} erreurs={erreurs} />
+          <Editions
+            etat={etat}
+            maj={maj}
+            erreurs={erreurs}
+            trouvee={cleEditionTrouvee}
+            aideSource={aideSource}
+            oublierSource={oublierSource}
+          />
         </Bloc>
 
         {etat.estSerie && (
-          <Bloc titre="Tomes">
+          <Bloc titre="Tomes" aide={provenance.tomes ? `Le tome ${apport?.tome} est celui de mon ISBN, d’après ${libelleSource(provenance.tomes)}.` : undefined}>
             <Tomes etat={etat} maj={maj} erreurs={erreurs} initial={initial} />
           </Bloc>
         )}
@@ -294,6 +459,7 @@ function Formulaire({ initial }: { initial: OeuvreDetaillee | null }) {
         </div>
       </form>
 
+      {initial && <CouvertureRangee oeuvre={initial} enLigne={enLigne} />}
       {initial && <Suppression oeuvre={initial} enLigne={enLigne} />}
 
       <Dialogue
@@ -362,6 +528,135 @@ function Suppression({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: bo
           Ce geste ne se défait pas.
         </p>
       </Dialogue>
+    </section>
+  )
+}
+
+/**
+ * La couverture trouvée par la recherche, avant validation : je la vois, et je peux ne pas la garder.
+ * Rien n'est rangé tant que la fiche n'est pas enregistrée.
+ */
+function ApercuCouverture({
+  titre,
+  cherche,
+  trouvee,
+  adresse,
+  garder,
+  setGarder,
+}: {
+  titre: string
+  cherche: boolean
+  trouvee: ImageTrouvee | null
+  adresse: string | null
+  garder: boolean
+  setGarder: (garder: boolean) => void
+}) {
+  const visible = trouvee !== null && garder
+  return (
+    <section aria-label="Couverture" data-etat={visible ? 'image' : 'typographique'} className="flex items-center gap-5">
+      <Couverture titre={titre || 'Sans titre'} graine="apercu" apercu={visible ? adresse : null} className="w-24 shrink-0" />
+      <div className="flex min-w-0 flex-col items-start gap-2">
+        {cherche ? (
+          <p role="status" className="m-0 text-[0.9375rem] text-discret">
+            Je cherche la couverture…
+          </p>
+        ) : trouvee === null ? (
+          <p className="m-0 text-[0.9375rem] text-discret">Pas de couverture trouvée : celle d’Ichnos s’affichera.</p>
+        ) : garder ? (
+          <>
+            <p className="m-0 text-[0.9375rem]">Couverture trouvée sur {libelleSource(trouvee.source).replace(/^la /, 'la ')}.</p>
+            <button type="button" onClick={() => setGarder(false)} className={LIEN}>
+              Ne pas garder cette couverture
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="m-0 text-[0.9375rem] text-discret">Cette couverture ne sera pas gardée : celle d’Ichnos s’affichera.</p>
+            <button type="button" onClick={() => setGarder(true)} className={LIEN}>
+              La garder finalement
+            </button>
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
+const LIEN =
+  'flex min-h-11 cursor-pointer items-center border-0 bg-transparent p-0 text-left text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60'
+
+/** Les thèmes que l'IA propose en plus de mon vocabulaire : à part, marqués « Nouveau », ajoutés un par un si je le veux. */
+function ThemesNouveaux({ themes, ajouter }: { themes: string[]; ajouter: (nom: string) => void }) {
+  return (
+    <div role="group" aria-label="Thèmes proposés, absents de mon vocabulaire" className="flex flex-col gap-2.5 border-t border-bordure pt-5">
+      <p className="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[0.9375rem]">
+        <span className="rounded-pilule bg-surlignage px-2.5 py-0.5 text-sm font-bold">Nouveau</span>
+        <span className="text-discret">L’IA propose aussi ces thèmes, absents de mon vocabulaire.</span>
+      </p>
+      <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+        {themes.map((nom) => (
+          <li key={nom}>
+            <button
+              type="button"
+              aria-label={`Ajouter le thème nouveau ${nom}`}
+              onClick={() => ajouter(nom)}
+              className="flex min-h-11 cursor-pointer items-center gap-2 rounded-pilule border border-dashed border-bordure bg-transparent px-4 text-[0.9375rem] font-bold text-accent-texte"
+            >
+              <IconeAjouter taille={18} />
+              {nom}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+const ECHECS_COUVERTURE: Record<string, string> = {
+  reseau: 'Pas de connexion à internet : la couverture n’a pas été retirée.',
+  introuvable: 'Cette œuvre n’est plus dans ma bibliothèque.',
+  invalide: 'La couverture n’a pas pu être retirée.',
+  inconnu: 'La couverture n’a pas pu être retirée. Je réessaie dans un instant.',
+}
+
+/**
+ * Dans « Modifier » : la couverture rangée, et de quoi la retirer si ce n'est pas la bonne.
+ * La couverture d'Ichnos reprend alors sa place ; les Réglages permettent d'en rechercher une.
+ */
+function CouvertureRangee({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: boolean }) {
+  const retrait = useRetirerCouverture(oeuvre.id)
+  const chemin = couvertureAffichee(couverturesDeLaFiche(oeuvre))
+  if (!chemin) return null
+  // Tous les endroits de cette fiche où ce chemin est rangé.
+  const cibles: CibleCouverture[] = [
+    ...(oeuvre.couverture === chemin ? [{ type: 'oeuvre' as const }] : []),
+    ...oeuvre.editions.filter((e) => e.couverture === chemin).map((e) => ({ type: 'edition' as const, edition: e.id })),
+    ...oeuvre.tomes.filter((t) => t.couverture === chemin).map((t) => ({ type: 'tome' as const, numero: t.numero })),
+  ]
+  return (
+    <section aria-labelledby="couverture-rangee" className="flex max-w-3xl flex-col gap-4 border-t border-bordure pt-8">
+      <h2 id="couverture-rangee" className="m-0 font-titre text-2xl">
+        Couverture
+      </h2>
+      <div className="flex items-center gap-5">
+        <Couverture titre={oeuvre.titreFr} graine={oeuvre.id} chemin={chemin} className="w-24 shrink-0" />
+        <div className="flex min-w-0 flex-col items-start gap-1">
+          <button
+            type="button"
+            aria-disabled={!enLigne || retrait.isPending || undefined}
+            onClick={() => enLigne && !retrait.isPending && retrait.mutate(cibles)}
+            className={LIEN}
+          >
+            Retirer cette couverture
+          </button>
+          <p className="m-0 text-sm text-discret">
+            {enLigne ? 'Celle d’Ichnos reprendra sa place.' : 'Je pourrai la retirer au retour du réseau.'}
+          </p>
+          <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
+            {retrait.error ? ECHECS_COUVERTURE[retrait.error.echec] : ''}
+          </p>
+        </div>
+      </div>
     </section>
   )
 }
@@ -436,7 +731,7 @@ function BoutonAjouterLigne({ children, onClick }: { children: ReactNode; onClic
   )
 }
 
-function Auteurs({ etat, maj, connus }: PropsBloc & { connus: string[] }) {
+function Auteurs({ etat, maj, connus, aide }: PropsBloc & { connus: string[]; aide?: string }) {
   const idListe = useId()
   const changer = (cle: string, changement: { nom?: string; role?: Role }) =>
     maj({ auteurs: etat.auteurs.map((a) => (a.cle === cle ? { ...a, ...changement } : a)) })
@@ -453,6 +748,7 @@ function Auteurs({ etat, maj, connus }: PropsBloc & { connus: string[] }) {
             <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 min-[30rem]:grid-cols-[minmax(0,1fr)_11rem]">
               <ChampTexte
                 libelle={`Nom${etat.auteurs.length > 1 ? ` (${rang + 1})` : ''}`}
+                aide={rang === 0 ? aide : undefined}
                 list={idListe}
                 value={auteur.nom}
                 onChange={(e) => changer(auteur.cle, { nom: e.target.value })}
@@ -556,9 +852,25 @@ function Etiquettes({
   )
 }
 
-function Editions({ etat, maj, erreurs }: PropsBloc & { erreurs: Erreurs }) {
-  const changer = (cle: string, changement: Partial<EtatFormulaire['editions'][number]>) =>
+function Editions({
+  etat,
+  maj,
+  erreurs,
+  trouvee,
+  aideSource,
+  oublierSource,
+}: PropsBloc & {
+  erreurs: Erreurs
+  /** Clé de l'édition remplie par la recherche : ses champs disent d'où ils viennent. */
+  trouvee: string | null
+  aideSource: (cle: CleProvenance, parDefaut?: string) => string | undefined
+  oublierSource: (cle: CleProvenance) => void
+}) {
+  const changer = (cle: string, changement: Partial<EtatFormulaire['editions'][number]>, source?: CleProvenance) => {
     maj({ editions: etat.editions.map((e) => (e.cle === cle ? { ...e, ...changement } : e)) })
+    if (source && cle === trouvee) oublierSource(source)
+  }
+  const aide = (cle: string, source: CleProvenance, parDefaut?: string) => (cle === trouvee ? aideSource(source, parDefaut) : parDefaut)
   return (
     <>
       {etat.editions.length === 0 && <p className="m-0 text-discret">Aucune édition notée pour l’instant.</p>}
@@ -578,7 +890,13 @@ function Editions({ etat, maj, erreurs }: PropsBloc & { erreurs: Erreurs }) {
               />
             </div>
             <div className="grid grid-cols-1 gap-5 tablette:grid-cols-2">
-              <ChampTexte libelle="Éditeur" value={edition.publisher} onChange={(e) => changer(edition.cle, { publisher: e.target.value })} autoComplete="off" />
+              <ChampTexte
+                libelle="Éditeur"
+                aide={aide(edition.cle, 'editeur')}
+                value={edition.publisher}
+                onChange={(e) => changer(edition.cle, { publisher: e.target.value }, 'editeur')}
+                autoComplete="off"
+              />
               <ChampTexte
                 libelle="Collection ou format"
                 aide="Folio, poche, broché…"
@@ -588,14 +906,16 @@ function Editions({ etat, maj, erreurs }: PropsBloc & { erreurs: Erreurs }) {
               />
               <ChampListe
                 libelle="Langue de l’édition"
+                aide={aide(edition.cle, 'langue')}
                 value={edition.language}
-                onChange={(e) => changer(edition.cle, { language: e.target.value })}
+                onChange={(e) => changer(edition.cle, { language: e.target.value }, 'langue')}
                 options={optionsLangues(edition.language)}
               />
               <ChampTexte
                 libelle="Traduction"
+                aide={aide(edition.cle, 'traducteur')}
                 value={edition.translator}
-                onChange={(e) => changer(edition.cle, { translator: e.target.value })}
+                onChange={(e) => changer(edition.cle, { translator: e.target.value }, 'traducteur')}
                 autoComplete="off"
               />
               <ChampTexte
@@ -611,10 +931,10 @@ function Editions({ etat, maj, erreurs }: PropsBloc & { erreurs: Erreurs }) {
               <ChampTexte
                 id={idChamp.pagesEdition(edition.cle)}
                 libelle="Nombre de pages"
-                aide="Celui de mon exemplaire."
+                aide={aide(edition.cle, 'pages', 'Celui de mon exemplaire.')}
                 inputMode="numeric"
                 value={edition.pageCount}
-                onChange={(e) => changer(edition.cle, { pageCount: e.target.value })}
+                onChange={(e) => changer(edition.cle, { pageCount: e.target.value }, 'pages')}
                 erreur={erreurs[idChamp.pagesEdition(edition.cle)]}
                 autoComplete="off"
               />

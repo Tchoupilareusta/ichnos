@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { IconeChevronBas } from './Icones'
 
 const LIBELLE = 'text-[0.9375rem] font-bold text-encre'
@@ -34,7 +34,13 @@ function Pied({ idAide, idErreur, aide, erreur }: { idAide?: string; idErreur?: 
   )
 }
 
-export function ChampTexte({ libelle, aide, erreur, className = '', ...champ }: Commun & InputHTMLAttributes<HTMLInputElement>) {
+export function ChampTexte({
+  libelle,
+  aide,
+  erreur,
+  className = '',
+  ...champ
+}: Commun & InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> }) {
   const { id, idAide, idErreur, decrit } = useDescriptions(aide, erreur)
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>

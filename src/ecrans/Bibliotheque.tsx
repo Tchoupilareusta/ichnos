@@ -413,6 +413,7 @@ function Grille({ oeuvres }: { oeuvres: OeuvreListee[] }) {
             <Couverture
               titre={oeuvre.titre}
               graine={oeuvre.id}
+              chemin={oeuvre.couverture}
               className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.98]"
             />
             <span className="flex flex-col gap-0.5">

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bouton } from '../composants/Bouton'
 import { Page, TitrePage } from '../composants/Page'
+import { CouverturesManquantes } from '../couvertures/CouverturesManquantes'
 import { useSession } from '../session/Session'
 import { appliquerTheme, lireChoixTheme, type ChoixTheme } from '../theme/theme'
 
@@ -46,13 +47,14 @@ export function Reglages() {
           ))}
         </div>
       </fieldset>
+      <CouverturesManquantes />
       <MonCompte />
     </Page>
   )
 }
 
 function MonCompte() {
-  const { auth, compte } = useSession()
+  const { auth, compte, couvertures } = useSession()
   const [occupe, setOccupe] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
 
@@ -60,8 +62,9 @@ function MonCompte() {
     setOccupe(true)
     setErreur(null)
     const resultat = await auth.deconnecter()
-    // En cas de succès, l'appli repasse d'elle-même à l'écran de connexion.
-    if (resultat.ok) return
+    // En cas de succès, l'appli repasse d'elle-même à l'écran de connexion,
+    // et les couvertures gardées sur l'appareil sont effacées.
+    if (resultat.ok) return void couvertures.oublier()
     setOccupe(false)
     setErreur(
       resultat.echec === 'reseau'

@@ -131,7 +131,7 @@ function CarteEnCours({ lecture, enLigne, ouvrir }: { lecture: EnCours; enLigne:
   return (
     <li className="flex w-[9.75rem] shrink-0 snap-start flex-col gap-3 tablette:w-[11rem]">
       <a href={LIENS.oeuvre(lecture.id)} className="flex flex-col gap-3 text-encre no-underline">
-        <Couverture titre={lecture.titre} auteur={auteurs || null} graine={lecture.id} className="w-full" />
+        <Couverture titre={lecture.titre} auteur={auteurs || null} graine={lecture.id} chemin={lecture.couverture} className="w-full" />
         <span className="flex flex-col gap-0.5">
           <span className="text-[0.9375rem] leading-tight font-bold">{lecture.titre}</span>
           {court && court === long ? (
