@@ -44,7 +44,7 @@ const edition = (champs: Partial<EditionOpenLibrary>): EditionOpenLibrary => ({
   traducteur: null,
   langueOriginale: null,
   titreOriginal: null,
-  aCouverture: false,
+  couverture: null,
   ...champs,
 })
 
@@ -184,13 +184,23 @@ describe('fusionnerNotice', () => {
   it('propose la couverture de Google Books d’abord, sinon celle de l’édition sur Open Library', () => {
     const sources = { bnf: [bnf({ isbn: ISBN, titre: 'Momo' })], oeuvres: [] as OeuvreOpenLibrary[] }
     expect(
-      fusionnerNotice(ISBN, { ...sources, google: [google({ isbn13: [ISBN], aCouverture: true })], edition: edition({ aCouverture: true }) })
+      fusionnerNotice(ISBN, { ...sources, google: [google({ isbn13: [ISBN], aCouverture: true })], edition: edition({ couverture: 8751329 }) })
         .couverture,
     ).toEqual({ source: 'google_books', id: 'zyTCAlFPjgYC' })
-    expect(fusionnerNotice(ISBN, { ...sources, google: [], edition: edition({ titre: 'Momo', aCouverture: true }) }).couverture).toEqual({
+    // Le numéro de couverture de l'édition elle-même : l'image d'origine, et la bonne édition.
+    expect(fusionnerNotice(ISBN, { ...sources, google: [], edition: edition({ titre: 'Momo', couverture: 8751329 }) }).couverture).toEqual({
       source: 'open_library',
-      isbn: ISBN,
+      numero: 8751329,
     })
+    // La recherche d'Open Library donne la couverture de l'œuvre en général : jamais pour un ISBN.
+    expect(
+      fusionnerNotice(ISBN, {
+        ...sources,
+        google: [],
+        edition: edition({ titre: 'Momo' }),
+        oeuvres: [{ titre: 'Momo', auteurs: ['Michael Ende'], annee: 1973, couverture: 8574580 }],
+      }).couverture,
+    ).toBeNull()
     expect(fusionnerNotice(ISBN, { ...sources, google: [], edition: null }).couverture).toBeNull()
   })
 })

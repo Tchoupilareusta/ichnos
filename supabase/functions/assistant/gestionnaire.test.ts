@@ -90,7 +90,7 @@ function monde(options: Options = {}) {
     ['openlibrary.org/isbn/', () => new Response(echantillon('ol-edition-momo.json'))],
     ['openlibrary.org/search.json', () => new Response(echantillon('ol-recherche-momo.json'))],
     ['books.google.com/books/', () => reponseImage(jpeg(480, 720))],
-    ['covers.openlibrary.org', () => reponseImage(jpeg(400, 600))],
+    ['covers.openlibrary.org', () => reponseImage(jpeg(600, 900))],
   ]
 
   const recuperer = async (adresse: string, init?: RequestInit) => {
@@ -424,6 +424,51 @@ describe('couverture', () => {
     expect(corps.source).toBe('google_books')
     expect(corps.image.type).toBe('image/jpeg')
     expect(atob(corps.image.base64).length).toBe(6000)
+    // La taille de l'image voyage avec elle : l'appli dit « de petite taille » sous 450 px de large.
+    expect(corps.largeur).toBe(480)
+    expect(corps.hauteur).toBe(720)
+  })
+
+  it('par ISBN, prend chez Open Library l’image d’origine de cette édition, par son numéro de couverture', async () => {
+    const { gestionnaire, vers } = monde({ cleGoogle: null })
+    const corps = await (await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))).json()
+    expect(corps).toMatchObject({ trouve: true, source: 'open_library' })
+    // Le numéro vient de la fiche de l'édition (8751329), jamais de la recherche, qui donne
+    // la couverture de l'œuvre en général (8574580, une édition allemande).
+    expect(vers('covers.openlibrary.org').map((appel) => appel.adresse)).toEqual(['https://covers.openlibrary.org/b/id/8751329.jpg?default=false'])
+    expect(vers('openlibrary.org/search.json')).toHaveLength(0)
+  })
+
+  it('par ISBN, garde l’adresse par ISBN d’Open Library en dernier recours, quand la fiche de l’édition ne répond pas', async () => {
+    const { gestionnaire, vers } = monde({ cleGoogle: null, routes: [['openlibrary.org/isbn/', () => new Response('panne', { status: 503 })]] })
+    const corps = await (await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))).json()
+    expect(corps.trouve).toBe(true)
+    expect(vers('covers.openlibrary.org').map((appel) => appel.adresse)).toEqual([`https://covers.openlibrary.org/b/isbn/${ISBN}-L.jpg?default=false`])
+  })
+
+  it('par ISBN, garde la plus large des deux sources quand Google Books n’a qu’une petite image', async () => {
+    const { gestionnaire } = monde({
+      routes: [
+        ['books.google.com/books/', () => reponseImage(jpeg(300, 450))],
+        ['covers.openlibrary.org', () => reponseImage(jpeg(625, 999))],
+      ],
+    })
+    const corps = await (await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))).json()
+    expect(corps).toMatchObject({ trouve: true, source: 'open_library', largeur: 625, hauteur: 999 })
+  })
+
+  it('interroge Google Books depuis la Suisse (country=CH), sans y mettre la clé', async () => {
+    const { gestionnaire, vers } = monde()
+    await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))
+    await gestionnaire(requete(PAR_ISBN))
+    await gestionnaire(requete({ action: 'chercher_titre', titre: 'Momo', auteur: 'Ende' }))
+    const adresses = vers('googleapis.com/books').map((appel) => new URL(appel.adresse))
+    expect(adresses).toHaveLength(3)
+    for (const adresse of adresses) {
+      expect(adresse.searchParams.get('country')).toBe('CH')
+      expect(adresse.searchParams.has('langRestrict')).toBe(false)
+      expect(adresse.href).not.toContain(CLE_GOOGLE)
+    }
   })
 
   it('par ISBN, cherche chez Google Books puis chez Open Library', async () => {

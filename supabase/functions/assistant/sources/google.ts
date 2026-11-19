@@ -24,12 +24,15 @@ export const ID_VOLUME = /^[A-Za-z0-9_-]{6,24}$/
 
 const pourRequete = (texte: string) => texte.replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim()
 
+/** Les éditions telles qu'on les voit depuis la Suisse : celles que je trouve en librairie. */
+const PAYS = 'country=CH'
+
 export const adresseGoogleIsbn = (isbn: string) =>
-  `${BASE}?q=${encodeURIComponent(`isbn:${isbn}`)}&maxResults=5&printType=books&fields=${encodeURIComponent(CHAMPS)}`
+  `${BASE}?q=${encodeURIComponent(`isbn:${isbn}`)}&maxResults=5&printType=books&${PAYS}&fields=${encodeURIComponent(CHAMPS)}`
 
 export function adresseGoogleTitre(titre: string, auteur?: string) {
   const requete = [`intitle:"${pourRequete(titre)}"`, auteur ? `inauthor:"${pourRequete(auteur)}"` : ''].filter(Boolean).join(' ')
-  return `${BASE}?q=${encodeURIComponent(requete)}&maxResults=10&printType=books&fields=${encodeURIComponent(CHAMPS)}`
+  return `${BASE}?q=${encodeURIComponent(requete)}&maxResults=10&printType=books&${PAYS}&fields=${encodeURIComponent(CHAMPS)}`
 }
 
 const estObjet = (valeur: unknown): valeur is Record<string, unknown> =>

@@ -1,9 +1,9 @@
-import { assistantFictif } from '../ajout/assistant.fictif'
+import { assistantFictif, imageFictive } from '../ajout/assistant.fictif'
 import { depotFictif, oeuvreFictive } from '../bibliotheque/depot.fictif'
 import { chercherCouverturesManquantes, type Avancement } from './recherche'
 import { couverturesFictives } from './stockage.fictif'
 
-const IMAGE = { ok: true as const, valeur: { image: new Blob(['image'], { type: 'image/jpeg' }), source: 'open_library' as const } }
+const IMAGE = imageFictive()
 const edition = (id: string, isbn: string | null) => ({ id, isbn, publisher: null, language: null, format: null, translator: null, pageCount: null })
 const tome = (numero: number, isbn: string | null) => ({ numero, titre: null, isbn, possession: 'non_possede' as const, lecture: 'a_lire' as const })
 

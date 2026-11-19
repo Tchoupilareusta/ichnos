@@ -66,6 +66,22 @@ describe('assistant (fonction serveur)', () => {
     expect(reponse.valeur.source).toBe('open_library')
     expect(reponse.valeur.image.type).toBe('image/jpeg')
     expect(reponse.valeur.image.size).toBe('contenu-image'.length)
+    // Une fonction serveur plus ancienne ne donne pas la taille : elle est alors inconnue.
+    expect(reponse.valeur.largeur).toBeNull()
+    expect(reponse.valeur.hauteur).toBeNull()
+  })
+
+  it('fait suivre la taille de l’image, pour dire « de petite taille »', async () => {
+    const image = { type: 'image/jpeg', base64: btoa('contenu-image') }
+    const { client } = fauxClient({ data: { trouve: true, source: 'google_books', image, largeur: 300, hauteur: 450 } })
+    const reponse = await creerAssistantSupabase(client).couverture({ isbn: '9782747024693' })
+    expect(reponse).toMatchObject({ ok: true, valeur: { largeur: 300, hauteur: 450 } })
+    // Une taille fantaisiste n'est pas crue.
+    const bancale = fauxClient({ data: { trouve: true, source: 'google_books', image, largeur: 'grande', hauteur: -3 } })
+    expect(await creerAssistantSupabase(bancale.client).couverture({ isbn: '9782747024693' })).toMatchObject({
+      ok: true,
+      valeur: { largeur: null, hauteur: null },
+    })
   })
 
   it('rend « aucune couverture » sans en faire une erreur', async () => {

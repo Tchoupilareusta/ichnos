@@ -200,20 +200,26 @@ export function creerGestionnaire(deps: Dependances): (requete: Request) => Prom
     if ('ref' in demande) {
       refs.push(demande.ref)
     } else {
-      // Par ISBN : Google Books d'abord (il faut retrouver son identifiant de volume), puis Open Library.
-      const google = await lireGoogle(adresseGoogleIsbn(demande.isbn))
+      // Par ISBN : Google Books d'abord (il faut retrouver son identifiant de volume), puis Open Library
+      // (il faut le numéro de couverture de cette édition, pour avoir l'image d'origine).
+      const [google, edition] = await Promise.all([lireGoogle(adresseGoogleIsbn(demande.isbn)), lire(adresseOpenLibraryEdition(demande.isbn))])
       const volumes: VolumeGoogle[] = google.etat === 'ok' ? lireVolumesGoogle(json(google.texte)) : []
       const volume = volumes.find((v) => v.isbn13.includes(demande.isbn) && v.aCouverture)
       if (volume) refs.push({ source: 'google_books', id: volume.id })
-      refs.push({ source: 'open_library', isbn: demande.isbn })
+      const numero = edition.etat === 'ok' ? (lireEditionOpenLibrary(json(edition.texte))?.couverture ?? null) : null
+      // Sans numéro connu, l'adresse par ISBN reste le dernier recours : même édition, image plus petite.
+      refs.push(numero !== null ? { source: 'open_library', numero } : { source: 'open_library', isbn: demande.isbn })
     }
-    for (const ref of refs) {
-      const trouvee = await chercherCouverture(ref, recuperer)
-      if (trouvee) {
-        return { trouve: true, source: trouvee.source, image: { type: trouvee.image.type, base64: enBase64(trouvee.image.octets) } }
-      }
+    const trouvee = await chercherCouverture(refs, recuperer)
+    if (!trouvee) return { trouve: false }
+    const { image } = trouvee
+    return {
+      trouve: true,
+      source: trouvee.source,
+      image: { type: image.type, base64: enBase64(image.octets) },
+      largeur: image.largeur,
+      hauteur: image.hauteur,
     }
-    return { trouve: false }
   }
 
   /** Mon vocabulaire d'étiquettes, lu dans la base avec mon jeton (la RLS ne montre que le mien). */

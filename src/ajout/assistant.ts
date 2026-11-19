@@ -34,7 +34,12 @@ export type {
 export type EchecAssistant = 'reseau' | 'limite' | 'non_configure' | 'ia' | 'indisponible'
 export type Reponse<T> = { ok: true; valeur: T } | { ok: false; echec: EchecAssistant }
 
-export type ImageTrouvee = { image: Blob; source: Source }
+/** Largeur et hauteur en pixels ; null quand la fonction ne les donne pas. */
+export type ImageTrouvee = { image: Blob; source: Source; largeur: number | null; hauteur: number | null }
+
+/** Une taille en pixels crédible, sinon null. */
+const pixels = (valeur: unknown): number | null =>
+  typeof valeur === 'number' && Number.isInteger(valeur) && valeur > 0 && valeur < 100_000 ? valeur : null
 
 /** Ce que l'appli attend de l'assistant (la fonction serveur en vrai, un faux dans les tests). */
 export interface Assistant {
@@ -113,7 +118,12 @@ export function creerAssistantSupabase(client: ClientFonctions): Assistant {
         const image = d.image
         if (d.trouve !== true || !estObjet(image) || typeof image.base64 !== 'string' || typeof image.type !== 'string') return undefined
         try {
-          return { image: imageDepuisBase64(image.base64, image.type), source: d.source as Source }
+          return {
+            image: imageDepuisBase64(image.base64, image.type),
+            source: d.source as Source,
+            largeur: pixels(d.largeur),
+            hauteur: pixels(d.hauteur),
+          }
         } catch {
           return undefined
         }

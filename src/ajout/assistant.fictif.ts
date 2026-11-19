@@ -100,3 +100,9 @@ export function assistantFictif(
   }
   return { assistant, appels, attente }
 }
+
+/** Une couverture trouvée, pour les tests : 600 px de large par défaut, donc pas « de petite taille ». */
+export const imageFictive = (champs: Partial<ImageTrouvee> = {}) => ({
+  ok: true as const,
+  valeur: { image: new Blob(['image'], { type: 'image/jpeg' }), source: 'open_library' as const, largeur: 600, hauteur: 900, ...champs },
+})

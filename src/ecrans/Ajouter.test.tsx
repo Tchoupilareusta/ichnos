@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { App } from '../App'
 import type { FicheProposee, Reponse } from '../ajout/assistant'
-import { assistantFictif, ficheFictive, noticeFictive, reponseIsbnFictive, reponseTitreFictive, resultatFictif } from '../ajout/assistant.fictif'
+import { assistantFictif, ficheFictive, imageFictive, noticeFictive, reponseIsbnFictive, reponseTitreFictive, resultatFictif } from '../ajout/assistant.fictif'
 import { depotFictif, oeuvreFictive } from '../bibliotheque/depot.fictif'
 import { couverturesFictives } from '../couvertures/stockage.fictif'
 import { authFictif } from '../session/auth.fictif'
@@ -18,7 +18,7 @@ const MOMO = noticeFictive({
   langueOriginale: { valeur: 'de', source: 'bnf' },
   annee: { valeur: 1973, source: 'open_library' },
 })
-const IMAGE = { ok: true as const, valeur: { image: new Blob(['image'], { type: 'image/jpeg' }), source: 'open_library' as const } }
+const IMAGE = imageFictive()
 const DESCRIPTION = { texte: 'Une orpheline et des voleurs de temps.', source: 'bnf' as const }
 
 type Monde = { depot?: ReturnType<typeof depotFictif>; assistant?: ReturnType<typeof assistantFictif>; couvertures?: ReturnType<typeof couverturesFictives> }

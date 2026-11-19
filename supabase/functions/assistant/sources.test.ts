@@ -187,8 +187,9 @@ describe('Open Library', () => {
       traducteur: 'Corinna Gepner',
       langueOriginale: 'de',
       titreOriginal: 'Momo',
-      aCouverture: true,
+      couverture: 8751329,
     })
+    expect(lireEditionOpenLibrary({ title: 'Sans image', covers: [-1, 'x'] })?.couverture).toBeNull()
   })
 
   it('lit une recherche : auteur, année de première publication, numéro de couverture', () => {

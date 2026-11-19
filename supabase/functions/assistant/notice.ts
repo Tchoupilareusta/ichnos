@@ -83,10 +83,12 @@ export function fusionnerNotice(
     'open_library',
   ])
 
+  // Open Library : la couverture de cette édition, par son numéro (l'image d'origine). Jamais celle
+  // que rend sa recherche : c'est la couverture de l'œuvre en général, souvent une autre édition.
   const couverture: RefCouverture | null = google?.aCouverture
     ? { source: 'google_books', id: google.id }
-    : edition?.aCouverture
-      ? { source: 'open_library', isbn }
+    : edition && edition.couverture !== null
+      ? { source: 'open_library', numero: edition.couverture }
       : null
 
   return {

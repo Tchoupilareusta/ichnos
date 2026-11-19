@@ -11,7 +11,11 @@ export type EditionOpenLibrary = {
   traducteur: string | null
   langueOriginale: string | null
   titreOriginal: string | null
-  aCouverture: boolean
+  /**
+   * Numéro de la couverture de cette édition (la première de sa fiche), ou null. À ne pas confondre
+   * avec celui que rend la recherche, qui est la couverture de l'œuvre : souvent une autre édition.
+   */
+  couverture: number | null
 }
 
 export type OeuvreOpenLibrary = { titre: string; auteurs: string[]; annee: number | null; couverture: number | null }
@@ -54,7 +58,7 @@ export function lireEditionOpenLibrary(reponse: unknown): EditionOpenLibrary | n
     traducteur: traducteur ?? null,
     langueOriginale: langueDe(reponse.translated_from),
     titreOriginal: texte(reponse.translation_of),
-    aCouverture: liste(reponse.covers).some((numero) => typeof numero === 'number' && numero > 0),
+    couverture: liste(reponse.covers).find((numero): numero is number => typeof numero === 'number' && Number.isInteger(numero) && numero > 0) ?? null,
   }
 }
 
