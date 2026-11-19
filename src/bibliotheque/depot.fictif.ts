@@ -1,6 +1,13 @@
 import { titresAffiches } from '../catalogue/titres'
+import {
+  historiqueAvecFin,
+  progressionSerie,
+  type Evenement,
+  type TypeEvenement,
+} from './suivi'
 import type {
   Depot,
+  EnCours,
   Ecriture,
   Enregistrement,
   FicheEnvoi,
@@ -31,6 +38,11 @@ export function oeuvreFictive(champs: Partial<OeuvreDetaillee> & { id: string; t
     statut: 'a_decouvrir',
     possession: 'non_possede',
     monEdition: null,
+    unite: null,
+    position: null,
+    total: null,
+    appreciation: null,
+    historique: [],
     ...champs,
   }
 }
@@ -89,6 +101,7 @@ function appliquerFiche(fiche: FicheEnvoi, avant: OeuvreDetaillee | undefined, i
       titre: v.title,
       isbn: v.isbn,
       possession: avant?.tomes.find((t) => t.numero === v.number)?.possession ?? 'non_possede',
+      lecture: avant?.tomes.find((t) => t.numero === v.number)?.lecture ?? 'a_lire',
     })),
     medias: fiche.media.map((m, rang) => ({
       id: m.id ?? `${id}-media-${rang}`,
@@ -97,10 +110,80 @@ function appliquerFiche(fiche: FicheEnvoi, avant: OeuvreDetaillee | undefined, i
       saisons: m.seasons,
       episodes: m.episodes_total,
       episodesVus: avant?.medias.find((x) => x.id === m.id)?.episodesVus ?? null,
+      statut: avant?.medias.find((x) => x.id === m.id)?.statut ?? 'a_voir',
     })),
     statut: avant?.statut ?? 'a_decouvrir',
     possession: avant?.possession ?? 'non_possede',
     monEdition: mienne >= 0 ? editions[mienne].id : null,
+    unite: avant?.unite ?? null,
+    position: avant?.position ?? null,
+    total: avant?.total ?? null,
+    appreciation: avant?.appreciation ?? null,
+    historique: avant?.historique ?? [],
+  }
+}
+
+/** Ce que feraient changer_statut et noter_progression (supabase/migrations), en plus simple. */
+const AUJOURDHUI = () => new Date().toISOString()
+const noter = (o: OeuvreDetaillee, type: TypeEvenement, valeur: number | null = null): Evenement[] => [
+  ...o.historique,
+  { type, valeur, date: AUJOURDHUI(), precision: 'jour' },
+]
+function lectureOuverte(o: OeuvreDetaillee) {
+  const bornes = o.historique.filter((e) => e.type === 'commence' || e.type === 'termine')
+  return bornes[bornes.length - 1]?.type === 'commence'
+}
+const positionDe = (o: OeuvreDetaillee) =>
+  o.estSerie ? progressionSerie(o.tomes.map((t) => ({ numero: t.numero, lecture: t.lecture }))).position : o.position
+
+export function appliquerStatut(o: OeuvreDetaillee, statut: OeuvreDetaillee['statut']): OeuvreDetaillee {
+  if (o.statut === statut) return o
+  const ouverte = lectureOuverte(o)
+  const position = positionDe(o)
+  if (statut === 'en_cours') {
+    const dejaLu = o.historique.some((e) => e.type === 'termine')
+    if (o.statut === 'termine' || (!ouverte && dejaLu))
+      return {
+        ...o,
+        statut,
+        position: null,
+        historique: noter(o, 'commence'),
+        tomes: o.tomes.map((t) => ({ ...t, lecture: 'a_lire' })),
+      }
+    return { ...o, statut, historique: noter(o, ouverte ? 'repris' : 'commence', ouverte ? position : null) }
+  }
+  if (statut === 'termine' && ouverte) return { ...o, statut, historique: noter(o, 'termine', position) }
+  if (statut === 'en_pause' && ouverte) return { ...o, statut, historique: noter(o, 'mis_en_pause', position) }
+  return { ...o, statut }
+}
+
+export function appliquerProgression(o: OeuvreDetaillee, valeur: number | null): OeuvreDetaillee {
+  if (o.estSerie) {
+    if (valeur === null) return o
+    return {
+      ...o,
+      tomes: o.tomes.map((t) => ({
+        ...t,
+        lecture: t.numero < valeur ? 'lu' : t.numero === valeur ? 'en_cours' : t.lecture === 'en_cours' ? 'a_lire' : t.lecture,
+      })),
+      historique: noter(o, 'progression', valeur),
+    }
+  }
+  return { ...o, position: valeur, historique: valeur === null ? o.historique : noter(o, 'progression', valeur) }
+}
+
+function versEnCours(o: OeuvreDetaillee): EnCours {
+  return {
+    id: o.id,
+    titre: versListee(o).titre,
+    auteurs: o.auteurs.filter((a) => a.role === 'auteur').map((a) => a.nom),
+    estSerie: o.estSerie,
+    unite: o.unite,
+    position: o.position,
+    total: o.total,
+    pagesEdition: o.editions.find((e) => e.id === o.monEdition)?.pageCount ?? null,
+    tomes: o.tomes.map((t) => ({ numero: t.numero, lecture: t.lecture })),
+    appreciation: o.appreciation,
   }
 }
 
@@ -141,6 +224,17 @@ export function depotFictif(
       appels.listerOeuvres += 1
       return depart.lecture ?? { ok: true, oeuvres: oeuvres.map(versListee).sort((a, b) => comparerTitres(a.titre, b.titre)) }
     },
+    async listerEnCours() {
+      if (depart.lecture && !depart.lecture.ok) return depart.lecture
+      // Le plus récemment touché d'abord : l'ordre des écritures fait foi ici.
+      const recents = [...appels.ecritures].reverse().map((e) => e.id)
+      const rang = (id: string) => (recents.includes(id) ? recents.indexOf(id) : recents.length)
+      const lectures = oeuvres
+        .filter((o) => o.statut === 'en_cours')
+        .sort((a, b) => rang(a.id) - rang(b.id))
+        .map(versEnCours)
+      return { ok: true, lectures }
+    },
     async lireOeuvre(id) {
       if (depart.lecture && !depart.lecture.ok) return depart.lecture
       const oeuvre = oeuvres.find((o) => o.id === id)
@@ -162,7 +256,38 @@ export function depotFictif(
       return { ok: true, id }
     },
     async changerStatut(id, statut) {
-      return modifier(id, 'statut', statut, (o) => ({ ...o, statut }))
+      return modifier(id, 'statut', statut, (o) => appliquerStatut(o, statut))
+    },
+    async noterProgression(id, valeur) {
+      return modifier(id, 'progression', valeur, (o) => appliquerProgression(o, valeur))
+    },
+    async changerUnite(id, unite, total) {
+      return modifier(id, 'unite', { unite, total }, (o) => ({ ...o, unite, total, position: null }))
+    },
+    async changerTotal(id, total) {
+      return modifier(id, 'total', total, (o) => ({ ...o, total }))
+    },
+    async daterFin(id, date, precision) {
+      return modifier(id, 'dateFin', { date, precision }, (o) => ({ ...o, historique: historiqueAvecFin(o.historique, date, precision) }))
+    },
+    async changerAppreciation(id, appreciation) {
+      return modifier(id, 'appreciation', appreciation, (o) => ({ ...o, appreciation }))
+    },
+    async changerLectureTomes(id, choix, lecture) {
+      return modifier(id, 'lectureTomes', { choix, lecture }, (o) => ({
+        ...o,
+        tomes: o.tomes.map((t) => (choix === 'tous' || (t.numero >= choix.de && t.numero <= choix.a) ? { ...t, lecture } : t)),
+      }))
+    },
+    async changerMedia(id, media, valeurs) {
+      return modifier(id, 'media', { media, ...valeurs }, (o) => ({
+        ...o,
+        medias: o.medias.map((m) =>
+          m.id === media
+            ? { ...m, episodesVus: valeurs.vus !== undefined ? valeurs.vus : m.episodesVus, statut: valeurs.statut ?? m.statut }
+            : m,
+        ),
+      }))
     },
     async changerPossession(id, possession) {
       return modifier(id, 'possession', possession, (o) => ({ ...o, possession }))

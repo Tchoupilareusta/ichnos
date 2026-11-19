@@ -215,12 +215,28 @@ describe('fiche d’une œuvre', () => {
       },
       'volumes.select': {
         data: [
-          { number: 2, title: null, isbn: null, ownership: 'a_acheter' },
-          { number: 1, title: 'Premier', isbn: null, ownership: 'possede' },
+          { number: 2, title: null, isbn: null, ownership: 'a_acheter', reading_status: 'a_lire' },
+          { number: 1, title: 'Premier', isbn: null, ownership: 'possede', reading_status: 'lu' },
         ],
       },
-      'media.select': { data: [{ id: 'm1', kind: 'anime', title: null, seasons: 2, episodes_total: 48, episodes_watched: null }] },
-      'library_entries.select': { data: { reading_status: 'en_cours', ownership: 'non_possede', edition_id: 'e1' } },
+      'media.select': {
+        data: [{ id: 'm1', kind: 'anime', title: null, seasons: 2, episodes_total: 48, episodes_watched: 14, status: 'en_pause' }],
+      },
+      'library_entries.select': {
+        data: {
+          reading_status: 'en_cours',
+          ownership: 'non_possede',
+          edition_id: 'e1',
+          progress_unit: null,
+          progress_current: null,
+          progress_total: null,
+          appreciation: 'beau_moment',
+          reading_events: [
+            { kind: 'termine', value: null, occurred_at: '2026-04-20T10:00:00+00:00', date_precision: 'jour' },
+            { kind: 'commence', value: null, occurred_at: '2026-03-03T10:00:00+00:00', date_precision: 'jour' },
+          ],
+        },
+      },
     })
     const lecture = await creerDepotSupabase(client, charger).lireOeuvre('w1')
     expect(requetes.map((r) => r.table).sort()).toEqual(['editions', 'library_entries', 'media', 'volumes', 'works'])
@@ -239,12 +255,62 @@ describe('fiche d’une œuvre', () => {
       etiquettes: [{ genre: 'theme', nom: 'Rédemption', coeur: true }],
       editions: [{ id: 'e1', publisher: 'Éditeur', pageCount: null }],
       tomes: [
-        { numero: 1, titre: 'Premier', possession: 'possede' },
-        { numero: 2, titre: null, possession: 'a_acheter' },
+        { numero: 1, titre: 'Premier', possession: 'possede', lecture: 'lu' },
+        { numero: 2, titre: null, possession: 'a_acheter', lecture: 'a_lire' },
       ],
-      medias: [{ id: 'm1', type: 'anime', saisons: 2, episodes: 48 }],
+      // Un ancien statut « en pause » d'un média se lit « en cours ».
+      medias: [{ id: 'm1', type: 'anime', saisons: 2, episodes: 48, episodesVus: 14, statut: 'en_cours' }],
       statut: 'en_cours',
       monEdition: 'e1',
+      appreciation: 'beau_moment',
+      historique: [
+        { type: 'commence', date: '2026-03-03T10:00:00+00:00', precision: 'jour' },
+        { type: 'termine', date: '2026-04-20T10:00:00+00:00', precision: 'jour' },
+      ],
+    })
+  })
+
+  it('liste mes lectures en cours, la plus récemment touchée d’abord', async () => {
+    const { client, requetes } = fauxClient({
+      'library_entries.select': {
+        data: [
+          {
+            progress_unit: 'lettre',
+            progress_current: 12,
+            progress_total: null,
+            editions: { page_count: 980, language: 'fr' },
+            works: {
+              id: 'w2',
+              title_fr: 'Lettres à Lucilius',
+              title_original: 'Epistulae',
+              original_language: 'la',
+              is_series: false,
+              work_authors: [{ role: 'auteur', authors: { name: 'Sénèque' } }],
+              volumes: [],
+            },
+          },
+        ],
+      },
+    })
+    const lecture = await creerDepotSupabase(client, charger).listerEnCours()
+    expect(requetes[0].etapes).toContainEqual(['eq', 'reading_status', 'en_cours'])
+    expect(requetes[0].etapes).toContainEqual(['order', 'updated_at', { ascending: false }])
+    expect(lecture).toEqual({
+      ok: true,
+      lectures: [
+        {
+          id: 'w2',
+          titre: 'Lettres à Lucilius',
+          auteurs: ['Sénèque'],
+          estSerie: false,
+          unite: 'lettre',
+          position: 12,
+          total: null,
+          pagesEdition: 980,
+          tomes: [],
+          appreciation: null,
+        },
+      ],
     })
   })
 
@@ -313,13 +379,72 @@ describe('écritures', () => {
     expect(await creerDepotSupabase(client, charger).enregistrerOeuvre(FICHE)).toEqual({ ok: false, echec: 'reseau' })
   })
 
-  it('change le statut de ma relation à l’œuvre, et seulement elle', async () => {
-    const { client, requetes } = fauxClient({ 'library_entries.update': { data: [{ work_id: 'w1' }] } })
+  it('change le statut par la fonction changer_statut, en tout ou rien', async () => {
+    const { client, rpc, requetes } = fauxClient()
     expect(await creerDepotSupabase(client, charger).changerStatut('w1', 'envie_de_lire')).toEqual({ ok: true })
-    expect(requetes[0]).toEqual({
-      table: 'library_entries',
-      etapes: [['update', { reading_status: 'envie_de_lire' }], ['eq', 'work_id', 'w1'], ['select', 'work_id']],
-    })
+    expect(rpc).toEqual([{ nom: 'changer_statut', arguments_: { oeuvre: 'w1', statut: 'envie_de_lire' } }])
+    expect(requetes).toHaveLength(0)
+  })
+
+  it('note la progression par la fonction noter_progression', async () => {
+    const { client, rpc } = fauxClient()
+    expect(await creerDepotSupabase(client, charger).noterProgression('w1', 75)).toEqual({ ok: true })
+    expect(rpc).toEqual([{ nom: 'noter_progression', arguments_: { oeuvre: 'w1', valeur: 75 } }])
+  })
+
+  it('rend les refus de la base dans les mots de l’appli', async () => {
+    const introuvable = fauxClient({}, { error: { code: 'EO002', message: 'Œuvre introuvable.' } })
+    expect(await creerDepotSupabase(introuvable.client, charger).noterProgression('w1', 3)).toEqual({ ok: false, echec: 'introuvable' })
+    const invalide = fauxClient({}, { error: { code: 'EO001', message: 'Statut inconnu.' } })
+    expect(await creerDepotSupabase(invalide.client, charger).changerStatut('w1', 'en_cours')).toEqual({ ok: false, echec: 'invalide' })
+    const reseau = fauxClient({}, { error: SANS_RESEAU })
+    expect(await creerDepotSupabase(reseau.client, charger).changerStatut('w1', 'en_cours')).toEqual({ ok: false, echec: 'reseau' })
+  })
+
+  it('date la fin à l’année près, ou la retire', async () => {
+    const { client, rpc } = fauxClient()
+    const depot = creerDepotSupabase(client, charger)
+    await depot.daterFin('w1', '2019-01-01', 'annee')
+    await depot.daterFin('w1', null, 'annee')
+    expect(rpc).toEqual([
+      { nom: 'dater_fin', arguments_: { oeuvre: 'w1', jour: '2019-01-01', precision_date: 'annee' } },
+      { nom: 'dater_fin', arguments_: { oeuvre: 'w1', jour: null, precision_date: null } },
+    ])
+  })
+
+  it('change l’unité en remettant la position à zéro', async () => {
+    const { client, requetes } = fauxClient({ 'library_entries.update': { data: [{ work_id: 'w1' }] } })
+    expect(await creerDepotSupabase(client, charger).changerUnite('w1', 'lettre', 124)).toEqual({ ok: true })
+    expect(requetes[0].etapes[0]).toEqual(['update', { progress_unit: 'lettre', progress_total: 124, progress_current: null }])
+  })
+
+  it('change mon ressenti, ou le retire', async () => {
+    const { client, requetes } = fauxClient({ 'library_entries.update': { data: [{ work_id: 'w1' }] } })
+    await creerDepotSupabase(client, charger).changerAppreciation('w1', null)
+    expect(requetes[0].etapes[0]).toEqual(['update', { appreciation: null }])
+  })
+
+  it('change la lecture d’une plage de tomes', async () => {
+    const { client, requetes } = fauxClient({ 'volumes.update': { data: [{ number: 1 }] } })
+    expect(await creerDepotSupabase(client, charger).changerLectureTomes('w1', { de: 1, a: 8 }, 'lu')).toEqual({ ok: true })
+    expect(requetes[0].etapes).toEqual([
+      ['update', { reading_status: 'lu' }],
+      ['eq', 'work_id', 'w1'],
+      ['gte', 'number', 1],
+      ['lte', 'number', 8],
+      ['select', 'number'],
+    ])
+  })
+
+  it('note les épisodes vus d’un média de cette œuvre seulement', async () => {
+    const { client, requetes } = fauxClient({ 'media.update': { data: [{ id: 'm1' }] } })
+    expect(await creerDepotSupabase(client, charger).changerMedia('w1', 'm1', { vus: 14, statut: 'en_cours' })).toEqual({ ok: true })
+    expect(requetes[0].etapes).toEqual([
+      ['update', { episodes_watched: 14, status: 'en_cours' }],
+      ['eq', 'id', 'm1'],
+      ['eq', 'work_id', 'w1'],
+      ['select', 'id'],
+    ])
   })
 
   it('rend « introuvable » quand la RLS cache la ligne à modifier', async () => {

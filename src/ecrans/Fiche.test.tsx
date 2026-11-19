@@ -34,11 +34,11 @@ const SERIE = oeuvreFictive({
   estSerie: true,
   auteurs: [{ nom: 'Makoto Yukimura', role: 'auteur' }],
   tomes: [
-    { numero: 1, titre: null, isbn: null, possession: 'possede' },
-    { numero: 2, titre: null, isbn: null, possession: 'a_acheter' },
-    { numero: 3, titre: null, isbn: null, possession: 'non_possede' },
+    { numero: 1, titre: null, isbn: null, possession: 'possede', lecture: 'a_lire' },
+    { numero: 2, titre: null, isbn: null, possession: 'a_acheter', lecture: 'a_lire' },
+    { numero: 3, titre: null, isbn: null, possession: 'non_possede', lecture: 'a_lire' },
   ],
-  medias: [{ id: 'm1', type: 'anime', titre: null, saisons: 2, episodes: 48, episodesVus: null }],
+  medias: [{ id: 'm1', type: 'anime', titre: null, saisons: 2, episodes: 48, episodesVus: null, statut: 'a_voir' }],
 })
 
 async function ouvrirFiche(faux: ReturnType<typeof depotFictif>, id: string) {
@@ -121,8 +121,26 @@ describe('série', () => {
     expect(document.activeElement).toBe(document.getElementById('mes-tomes'))
     const tomes = screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
     expect(within(tomes).getAllByRole('button')).toHaveLength(3)
-    await choisirDansMenu(/^Tome 3 : Je ne l’ai pas/, 'Je l’ai')
+    // Toucher un tome ouvre un panneau avec sa lecture et sa possession.
+    const tome3 = within(tomes).getByRole('button', { name: 'Tome 3 : à lire, je ne l’ai pas. Changer' })
+    expect(tome3).toHaveAttribute('aria-haspopup', 'dialog')
+    fireEvent.click(tome3)
+    const panneau = screen.getByRole('dialog', { name: 'Tome 3' })
+    await act(async () => fireEvent.click(within(panneau).getByRole('radio', { name: 'Je l’ai' })))
     expect(faux.appels.ecritures).toContainEqual({ action: 'possessionTomes', id: 'vin', valeur: { choix: { de: 3, a: 3 }, possession: 'possede' } })
+    await act(async () => fireEvent.click(within(panneau).getByRole('radio', { name: 'Lu' })))
+    expect(faux.appels.ecritures).toContainEqual({ action: 'lectureTomes', id: 'vin', valeur: { choix: { de: 3, a: 3 }, lecture: 'lu' } })
+    expect(await within(tomes).findByRole('button', { name: 'Tome 3 : lu, je l’ai. Changer' })).toBeInTheDocument()
+  })
+
+  it('note une plage de tomes lus : « J’ai lu du tome 1 au tome 2 »', async () => {
+    const faux = depotFictif({ oeuvres: [SERIE] })
+    await ouvrirFiche(faux, 'vin')
+    fireEvent.click(screen.getByRole('button', { name: 'Changer plusieurs tomes' }))
+    fireEvent.change(screen.getByLabelText('Au tome'), { target: { value: '2' } })
+    expect(screen.getByRole('radio', { name: 'Lus' })).toBeChecked()
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Appliquer' })))
+    expect(faux.appels.ecritures).toContainEqual({ action: 'lectureTomes', id: 'vin', valeur: { choix: { de: 1, a: 2 }, lecture: 'lu' } })
   })
 
   it('demande confirmation avant de changer tous les tomes, en disant combien vont changer', async () => {
@@ -143,6 +161,7 @@ describe('série', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Changer plusieurs tomes' }))
     fireEvent.change(screen.getByLabelText('Du tome'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('Au tome'), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('radio', { name: 'Ma possession' }))
     fireEvent.click(screen.getByRole('radio', { name: 'À acheter' }))
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Appliquer' })))
     expect(faux.appels.ecritures).toContainEqual({
@@ -168,7 +187,7 @@ describe('série', () => {
   })
 
   it('formule la confirmation sans erreur de nombre', () => {
-    const tomes = (...p: ('possede' | 'a_acheter' | 'non_possede')[]) => p.map((possession, i) => ({ numero: i + 1, titre: null, isbn: null, possession }))
+    const tomes = (...p: ('possede' | 'a_acheter' | 'non_possede')[]) => p.map((possession, i) => ({ numero: i + 1, titre: null, isbn: null, possession, lecture: 'a_lire' as const }))
     expect(titreConfirmationTomes(tomes('non_possede'), 'possede')).toBe('Marquer le tome comme « Je l’ai » ?')
     expect(texteConfirmationTomes(tomes('non_possede', 'non_possede'), 'possede')).toBe('2 tomes vont changer.')
     expect(texteConfirmationTomes(tomes('possede', 'possede', 'non_possede'), 'possede')).toBe('1 tome va changer ; les 2 autres le sont déjà.')

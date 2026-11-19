@@ -39,7 +39,7 @@ describe('formulaire d’une œuvre', () => {
   })
 
   it('n’accepte pas un total d’épisodes plus petit que ce que j’ai déjà vu', () => {
-    const media = { ...ligneMedia(), episodes: '10', episodesVus: 12 }
+    const media = { ...ligneMedia(), episodes: '10', episodesVus: 12, statut: 'a_voir' }
     expect(valider({ ...etatVide(), titreFr: 'X', medias: [media] })).toHaveProperty(idChamp.episodes(media.cle))
   })
 
@@ -100,10 +100,10 @@ describe('formulaire d’une œuvre', () => {
       etiquettes: [{ genre: 'theme', nom: 'Rédemption', coeur: true }],
       editions: [{ id: 'e1', isbn: null, publisher: 'Kurokawa', language: 'fr', format: 'manga', translator: null, pageCount: null }],
       tomes: [
-        { numero: 1, titre: null, isbn: '9782351423554', possession: 'possede' },
-        { numero: 2, titre: null, isbn: null, possession: 'non_possede' },
+        { numero: 1, titre: null, isbn: '9782351423554', possession: 'possede', lecture: 'a_lire' },
+        { numero: 2, titre: null, isbn: null, possession: 'non_possede', lecture: 'a_lire' },
       ],
-      medias: [{ id: 'm1', type: 'anime', titre: null, saisons: 2, episodes: 48, episodesVus: 5 }],
+      medias: [{ id: 'm1', type: 'anime', titre: null, saisons: 2, episodes: 48, episodesVus: 5, statut: 'a_voir' }],
       monEdition: 'e1',
     })
     const etat = etatDepuisOeuvre(oeuvre)

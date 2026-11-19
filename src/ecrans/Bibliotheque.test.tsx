@@ -126,8 +126,8 @@ describe('recherche et filtres', () => {
       titreFr: 'Vinland Saga',
       estSerie: true,
       tomes: [
-        { numero: 1, titre: null, isbn: null, possession: 'possede' },
-        { numero: 2, titre: null, isbn: null, possession: 'a_acheter' },
+        { numero: 1, titre: null, isbn: null, possession: 'possede', lecture: 'a_lire' },
+        { numero: 2, titre: null, isbn: null, possession: 'a_acheter', lecture: 'a_lire' },
       ],
     }),
   ]

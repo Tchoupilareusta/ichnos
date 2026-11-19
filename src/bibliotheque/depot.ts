@@ -8,6 +8,17 @@ import type {
   Statut,
   TypeMedia,
 } from './modele'
+import {
+  progressionLivre,
+  progressionSerie,
+  type Appreciation,
+  type Evenement,
+  type LectureTome,
+  type PrecisionDate,
+  type Progression,
+  type StatutMedia,
+  type Unite,
+} from './suivi'
 
 /** Une œuvre telle que la grille de la bibliothèque a besoin de la connaître. */
 export type OeuvreListee = {
@@ -40,6 +51,7 @@ export type Tome = {
   titre: string | null
   isbn: string | null
   possession: Possession
+  lecture: LectureTome
 }
 
 export type Media = {
@@ -48,8 +60,9 @@ export type Media = {
   titre: string | null
   saisons: number | null
   episodes: number | null
-  /** Avancement : jamais modifié par la fiche (suivi à l'étape 5). */
+  /** Avancement : jamais modifié par le formulaire, seulement par le suivi de la fiche. */
   episodesVus: number | null
+  statut: StatutMedia
 }
 
 export type Etiquette = { genre: GenreEtiquette; nom: string; coeur: boolean }
@@ -76,6 +89,47 @@ export type OeuvreDetaillee = {
   /** Possession enregistrée pour l'œuvre ; pour une série, l'écran la calcule à partir des tomes. */
   possession: Possession
   monEdition: string | null
+  /** Unité choisie (vide tant que je n'ai rien choisi : l'appli propose alors « page »). Ignorée pour une série. */
+  unite: Unite | null
+  position: number | null
+  total: number | null
+  appreciation: Appreciation | null
+  /** Historique discret, du plus ancien au plus récent. */
+  historique: Evenement[]
+}
+
+/** Une lecture en cours, telle que l'accueil la montre. */
+export type EnCours = {
+  id: string
+  titre: string
+  auteurs: string[]
+  estSerie: boolean
+  unite: Unite | null
+  position: number | null
+  total: number | null
+  /** Nombre de pages de mon édition, s'il est connu. */
+  pagesEdition: number | null
+  tomes: { numero: number; lecture: LectureTome }[]
+  /** Mon ressenti déjà choisi (une relecture le garde). */
+  appreciation: Appreciation | null
+}
+
+/** Où j'en suis : pour une série, tiré des tomes ; sinon dans l'unité choisie. */
+export function progressionDe(x: Pick<EnCours, 'estSerie' | 'unite' | 'position' | 'total' | 'pagesEdition' | 'tomes'>): Progression {
+  return x.estSerie ? progressionSerie(x.tomes) : progressionLivre(x.unite, x.position, x.total, x.pagesEdition)
+}
+
+/** Les mêmes informations, lues sur la fiche. */
+export function suiviDeLaFiche(oeuvre: OeuvreDetaillee) {
+  const edition = oeuvre.editions.find((e) => e.id === oeuvre.monEdition)
+  return {
+    estSerie: oeuvre.estSerie,
+    unite: oeuvre.unite,
+    position: oeuvre.position,
+    total: oeuvre.total,
+    pagesEdition: edition?.pageCount ?? null,
+    tomes: oeuvre.tomes.map((t) => ({ numero: t.numero, lecture: t.lecture })),
+  }
 }
 
 /** Mon vocabulaire : pour proposer les étiquettes et les auteurs déjà connus dans le formulaire. */
@@ -120,6 +174,7 @@ export type EchecEcriture = 'reseau' | 'introuvable' | 'invalide' | 'inconnu'
 export type EchecInstallation = 'reseau' | 'deja' | 'inconnu'
 
 export type Lecture = { ok: true; oeuvres: OeuvreListee[] } | { ok: false; echec: EchecLecture }
+export type LectureEnCours = { ok: true; lectures: EnCours[] } | { ok: false; echec: EchecLecture }
 export type LectureFiche = { ok: true; oeuvre: OeuvreDetaillee } | { ok: false; echec: EchecFiche }
 export type LectureVocabulaire = { ok: true; vocabulaire: Vocabulaire } | { ok: false; echec: EchecLecture }
 export type Installation = { ok: true } | { ok: false; echec: EchecInstallation }
@@ -132,11 +187,24 @@ export type ChoixTomes = 'tous' | { de: number; a: number }
 /** Ce que l'appli attend de la base pour la bibliothèque (Supabase en vrai, un faux dans les tests). */
 export interface Depot {
   listerOeuvres(): Promise<Lecture>
+  /** Mes lectures « En cours », la plus récemment touchée d'abord. */
+  listerEnCours(): Promise<LectureEnCours>
   lireOeuvre(id: string): Promise<LectureFiche>
   lireVocabulaire(): Promise<LectureVocabulaire>
   /** Crée (sans id) ou modifie une œuvre. Tout ou rien. */
   enregistrerOeuvre(fiche: FicheEnvoi): Promise<Enregistrement>
+  /** Statut, dates et historique, en tout ou rien (fonction changer_statut). */
   changerStatut(id: string, statut: Statut): Promise<Ecriture>
+  /** Position, ou tome courant d'une série, et sa trace (fonction noter_progression). Vide : efface la position. */
+  noterProgression(id: string, valeur: number | null): Promise<Ecriture>
+  /** Change l'unité et son total ; la position repart de zéro, car elle ne veut plus rien dire. */
+  changerUnite(id: string, unite: Unite, total: number | null): Promise<Ecriture>
+  changerTotal(id: string, total: number | null): Promise<Ecriture>
+  /** Date de fin de la dernière lecture, au jour, au mois ou à l'année près ; vide pour la retirer. */
+  daterFin(id: string, date: string | null, precision: PrecisionDate): Promise<Ecriture>
+  changerAppreciation(id: string, appreciation: Appreciation | null): Promise<Ecriture>
+  changerLectureTomes(id: string, tomes: ChoixTomes, lecture: LectureTome): Promise<Ecriture>
+  changerMedia(id: string, media: string, valeurs: { vus?: number | null; statut?: StatutMedia }): Promise<Ecriture>
   /** Possession d'une œuvre qui n'est pas une série. */
   changerPossession(id: string, possession: Possession): Promise<Ecriture>
   changerPossessionTomes(id: string, tomes: ChoixTomes, possession: Possession): Promise<Ecriture>
@@ -151,10 +219,18 @@ const absent = async () => ({ ok: false as const, echec: 'inconnu' as const })
 /** Sans base configurée, rien ne se lit ni ne s'écrit. */
 export const DEPOT_ABSENT: Depot = {
   listerOeuvres: absent,
+  listerEnCours: absent,
   lireOeuvre: absent,
   lireVocabulaire: absent,
   enregistrerOeuvre: absent,
   changerStatut: absent,
+  noterProgression: absent,
+  changerUnite: absent,
+  changerTotal: absent,
+  daterFin: absent,
+  changerAppreciation: absent,
+  changerLectureTomes: absent,
+  changerMedia: absent,
   changerPossession: absent,
   changerPossessionTomes: absent,
   changerMonEdition: absent,
