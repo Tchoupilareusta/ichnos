@@ -15,9 +15,12 @@ export function Menu<T extends string>({
   valeur,
   onChoisir,
   desactive = false,
+  nomListe,
 }: {
   /** Ce que VoiceOver annonce : « Statut de lecture : En cours. Changer ». */
   nom: string
+  /** Nom de la liste ouverte, quand il diffère du nom du bouton sans « Changer ». */
+  nomListe?: string
   contenuBouton: ReactNode
   classeBouton: string
   options: Option<T>[]
@@ -115,7 +118,7 @@ export function Menu<T extends string>({
           ref={liste}
           id={id}
           role="menu"
-          aria-label={nom.replace(/\.\s*Changer$/, '')}
+          aria-label={nomListe ?? nom.replace(/\.\s*Changer$/, '')}
           onKeyDown={clavier}
           style={{ translate: `${decalage}px 0` }}
           className={`absolute ${versLeHaut ? 'bottom-[calc(100%+0.5rem)]' : 'top-[calc(100%+0.5rem)]'} left-0 z-40 m-0 flex max-h-[min(24rem,60dvh)] min-w-[14rem] list-none flex-col overflow-y-auto rounded-carte border border-bordure bg-surface p-1.5 text-left shadow-forte`}
