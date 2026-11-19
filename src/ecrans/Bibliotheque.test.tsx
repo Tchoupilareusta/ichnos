@@ -131,6 +131,10 @@ describe('recherche et filtres', () => {
       ],
     }),
   ]
+  const choisir = async (bulle: HTMLElement, choix: string) => {
+    fireEvent.click(bulle)
+    await act(async () => fireEvent.click(screen.getByRole('menuitemradio', { name: choix })))
+  }
   const titresAffiches = () =>
     within(screen.getByRole('main'))
       .queryAllByRole('link')
@@ -139,58 +143,66 @@ describe('recherche et filtres', () => {
 
   it('cherche par titre ou auteur, sans accents', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Chercher un titre ou un auteur' }), { target: { value: 'etranger' } })
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher un titre ou un auteur' }), { target: { value: 'etranger' } })
     expect(titresAffiches()).toEqual(['#/oeuvre/etr'])
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ende' } })
     expect(titresAffiches()).toEqual(['#/oeuvre/momo'])
     expect(window.location.hash).toBe('#/bibliotheque?q=ende')
   })
 
-  it('« Envie de lire » est ma liste d’envies : une pastille toujours visible, qui se retire d’un second appui', async () => {
+  it('filtre par statut avec une bulle-menu : le choix s’affiche dans la bulle, la croix le retire', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    const statuts = screen.getByRole('group', { name: 'Statut de lecture' })
-    const envies = within(statuts).getByRole('button', { name: 'Envie de lire, ma liste d’envies' })
-    fireEvent.click(envies)
-    expect(envies).toHaveAttribute('aria-pressed', 'true')
+    const bulle = screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' })
+    expect(bulle).toHaveAttribute('aria-haspopup', 'menu')
+    expect(bulle).toHaveTextContent('Statut')
+    await choisir(bulle, 'Envie de lire')
     expect(titresAffiches()).toEqual(['#/oeuvre/etr'])
     expect(window.location.hash).toBe('#/bibliotheque?statut=envie_de_lire')
-    // Un autre statut remplace le premier : une seule pastille choisie à la fois.
-    fireEvent.click(within(statuts).getByRole('button', { name: 'En cours' }))
-    expect(envies).toHaveAttribute('aria-pressed', 'false')
-    fireEvent.click(within(statuts).getByRole('button', { name: 'En cours' }))
+    const active = screen.getByRole('button', { name: 'Filtre statut : Envie de lire. Changer' })
+    expect(active).toHaveTextContent('Envie de lire')
+    // Un autre choix remplace le premier.
+    await choisir(active, 'En cours')
+    expect(screen.getByRole('button', { name: 'Filtre statut : En cours. Changer' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre En cours' }))
+    expect(screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' })).toBeInTheDocument()
     expect(titresAffiches()).toHaveLength(3)
+  })
+
+  it('propose les choix dans l’ordre décidé, chacun avec son mot', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' }))
+    expect(screen.getAllByRole('menuitemradio').map((m) => m.textContent)).toEqual(['En cours', 'Envie de lire', 'Terminé', 'À découvrir', 'En pause'])
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrer par possession, aucun filtre' }))
+    expect(screen.getAllByRole('menuitemradio').map((m) => m.textContent)).toEqual(['Je l’ai', 'À acheter', 'Je ne l’ai pas'])
   })
 
   it('« À acheter » retrouve aussi la série où il manque des tomes', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    const possession = screen.getByRole('group', { name: 'Possession' })
-    fireEvent.click(within(possession).getByRole('button', { name: 'À acheter' }))
+    await choisir(screen.getByRole('button', { name: 'Filtrer par possession, aucun filtre' }), 'À acheter')
     expect(titresAffiches()).toEqual(['#/oeuvre/momo', '#/oeuvre/vin'])
-    fireEvent.click(within(possession).getByRole('button', { name: 'Je l’ai' }))
+    await choisir(screen.getByRole('button', { name: 'Filtre possession : À acheter. Changer' }), 'Je l’ai')
     expect(titresAffiches()).toEqual(['#/oeuvre/vin'])
-    fireEvent.click(within(possession).getByRole('button', { name: 'Je l’ai' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Je l’ai' }))
     expect(titresAffiches()).toHaveLength(3)
   })
 
-  it('range les filtres du plus utile au moins utile : statut et possession en pastilles, le reste dans une feuille', async () => {
+  it('garde dans le panneau Filtres les six filtres dans l’ordre, en accord avec les bulles', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    expect(within(screen.getByRole('main')).getAllByRole('group').map((g) => g.getAttribute('aria-label'))).toEqual([
-      'Statut de lecture',
-      'Possession',
-    ])
-    expect(
-      within(screen.getByRole('group', { name: 'Statut de lecture' }))
-        .getAllByRole('button')
-        .map((b) => b.textContent),
-    ).toEqual(['En cours', 'Envie de lire', 'Terminé', 'À découvrir', 'En pause'])
+    await choisir(screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' }), 'Envie de lire')
     const bouton = screen.getByRole('button', { name: 'Filtres' })
     expect(bouton).toHaveAttribute('aria-haspopup', 'dialog')
     fireEvent.click(bouton)
-    const feuille = screen.getByRole('dialog', { name: 'Plus de filtres' })
-    const champs = within(feuille).getAllByRole('combobox').map((champ) => (champ as HTMLSelectElement).labels?.[0]?.textContent)
-    expect(champs).toEqual(['Genre', 'Thème', 'Atmosphère', 'Auteur'])
-    // Pas de phrase d'aide : la feuille ne contient que les quatre listes et le bouton.
-    expect(feuille.querySelectorAll('p')).toHaveLength(0)
+    const panneau = screen.getByRole('dialog', { name: 'Filtres' })
+    const champs = within(panneau).getAllByRole('combobox').map((champ) => (champ as HTMLSelectElement).labels?.[0]?.textContent)
+    expect(champs).toEqual(['Statut de lecture', 'Possession', 'Genre', 'Thème', 'Atmosphère', 'Auteur'])
+    expect(within(panneau).getByLabelText('Statut de lecture')).toHaveValue('envie_de_lire')
+    // Un choix dans le panneau se retrouve dans la bulle.
+    fireEvent.change(within(panneau).getByLabelText('Possession'), { target: { value: 'a_acheter' } })
+    fireEvent.click(within(panneau).getByRole('button', { name: 'Voir mes livres' }))
+    expect(screen.getByRole('button', { name: 'Filtre possession : À acheter. Changer' })).toBeInTheDocument()
+    // Pas de phrase d'aide dans le panneau.
+    expect(panneau.querySelectorAll('p')).toHaveLength(0)
   })
 
   it('montre les autres filtres choisis, et de quoi tout effacer', async () => {
@@ -209,6 +221,13 @@ describe('recherche et filtres', () => {
     expect(screen.queryByRole('list', { name: 'Autres filtres choisis' })).not.toBeInTheDocument()
   })
 
+  it('affiche deux colonnes sur iPhone, quelle que soit la taille du texte', async () => {
+    await ouvrir(depotFictif({ oeuvres: COLLECTION }))
+    const grille = screen.getAllByRole('list').find((ul) => ul.querySelector('a[href^="#/oeuvre/"]'))!
+    expect(grille.className).toMatch(/(^| )grid-cols-2( |$)/)
+    expect(grille.className).not.toMatch(/minmax\(.*rem/)
+  })
+
   it('retrouve les filtres de l’adresse (au retour depuis une fiche)', async () => {
     window.location.hash = '#/bibliotheque?theme=Absurde'
     render(<App auth={authFictif({ compte: { email: 'moi@exemple.test' } }).auth} depot={depotFictif({ oeuvres: COLLECTION }).depot} />)
@@ -219,7 +238,7 @@ describe('recherche et filtres', () => {
 
   it('le dit simplement quand ma liste d’envies est vide', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION.filter((o) => o.statut !== 'envie_de_lire') }))
-    fireEvent.click(screen.getByRole('button', { name: 'Envie de lire, ma liste d’envies' }))
+    await choisir(screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' }), 'Envie de lire')
     expect(screen.getByText(/Ma liste d’envies est vide pour l’instant./)).toBeInTheDocument()
   })
 
@@ -233,7 +252,7 @@ describe('recherche et filtres', () => {
 
   it('parle de filtres, pas de recherche, quand ce sont les filtres qui ne donnent rien', async () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
-    fireEvent.click(within(screen.getByRole('group', { name: 'Statut de lecture' })).getByRole('button', { name: 'En pause' }))
+    await choisir(screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' }), 'En pause')
     expect(screen.getByText('Rien ne correspond à ces filtres.')).toBeInTheDocument()
   })
 })

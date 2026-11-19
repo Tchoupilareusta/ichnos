@@ -56,6 +56,21 @@ export function IconeStatut({ statut, taille = 20 }: { statut: Statut; taille?: 
   return <Svg taille={taille}>{DESSINS[statut]}</Svg>
 }
 
+/** Le livre seul, sans marque : la bulle « Statut » avant qu'un statut soit choisi. */
+export function IconeLivre({ taille = 20 }: { taille?: number }) {
+  return <Svg taille={taille}>{COUVERTURE}</Svg>
+}
+
+/** Un cercle et son point : la bulle « Possession » avant qu'une possession soit choisie. */
+export function IconePossessionGenerique({ taille = 16 }: { taille?: number }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 16 16" aria-hidden="true" focusable="false" className="shrink-0">
+      <circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="8" cy="8" r="2.4" fill="currentColor" />
+    </svg>
+  )
+}
+
 /**
  * Possession : le code de la grille des tomes. Plein = je l'ai, pointillé = à acheter,
  * vide = je ne l'ai pas, à moitié plein = j'en ai une partie.

@@ -9,13 +9,16 @@ import {
   filtresDepuisParametres,
   parametresDepuisFiltres,
   type Filtres,
+  type Possession,
+  type Statut,
 } from '../bibliotheque/modele'
 import { CLES, useOeuvres } from '../bibliotheque/requetes'
 import { Bouton } from '../composants/Bouton'
 import { ChampListe } from '../composants/Champs'
 import { Feuille } from '../composants/Feuille'
-import { IconeFermer, IconeFiltres, IconeRecherche } from '../composants/Icones'
-import { IconePossession, IconeStatut } from '../composants/IconesLecture'
+import { IconeChevronBas, IconeFermer, IconeFiltres, IconeRecherche } from '../composants/Icones'
+import { IconeLivre, IconePossession, IconePossessionGenerique, IconeStatut } from '../composants/IconesLecture'
+import { Menu } from '../composants/Menu'
 import { EtatVide, Page, TitrePage } from '../composants/Page'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
@@ -176,10 +179,11 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
   return (
     <div className="flex flex-col gap-7">
       <div className="flex flex-col gap-3.5">
-        <div className="flex max-w-2xl items-center gap-2.5">
-          <div role="search" className="min-w-0 flex-1">
+        {/* Avec un texte très agrandi, « Filtres » passe sous la recherche plutôt que de la tronquer. */}
+        <div className="flex max-w-2xl flex-wrap items-center gap-2.5">
+          <div role="search" className="min-w-[min(100%,10rem)] flex-1">
             <label className="relative block">
-              <span className="sr-only">Chercher un titre ou un auteur</span>
+              <span className="sr-only">Rechercher un titre ou un auteur</span>
               <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-discret">
                 <IconeRecherche taille={20} />
               </span>
@@ -187,7 +191,7 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
                 type="search"
                 value={filtres.recherche}
                 onChange={(e) => changer('recherche', e.target.value)}
-                placeholder="Un titre, un auteur…"
+                placeholder="Rechercher"
                 enterKeyHint="search"
                 autoComplete="off"
                 autoCorrect="off"
@@ -209,38 +213,26 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
           </button>
         </div>
 
-        {/* Les deux filtres de tous les jours, toujours à portée : un appui choisit, un second retire. */}
-        <RangeePastilles libelle="Statut de lecture" defile>
-          {STATUTS.map(({ valeur, libelle }) => {
-            const choisi = filtres.statut === valeur
-            return (
-              <PastilleFiltre
-                key={valeur}
-                choisi={choisi}
-                onClick={() => changer('statut', choisi ? null : valeur)}
-                icone={<IconeStatut statut={valeur} taille={19} />}
-                nom={valeur === 'envie_de_lire' ? 'Envie de lire, ma liste d’envies' : undefined}
-              >
-                {libelle}
-              </PastilleFiltre>
-            )
-          })}
-        </RangeePastilles>
-        <RangeePastilles libelle="Possession" defile>
-          {POSSESSIONS.map(({ valeur, libelle }) => {
-            const choisi = filtres.possession === valeur
-            return (
-              <PastilleFiltre
-                key={valeur}
-                choisi={choisi}
-                onClick={() => changer('possession', choisi ? null : valeur)}
-                icone={<IconePossession possession={valeur} />}
-              >
-                {libelle}
-              </PastilleFiltre>
-            )
-          })}
-        </RangeePastilles>
+        {/* Les deux filtres de tous les jours : deux bulles qui ouvrent un menu. Jamais coupées par le
+            bord de l'écran ; si les deux bulles actives ne tiennent pas côte à côte, la seconde passe à la ligne. */}
+        <div className="flex flex-wrap gap-2">
+          <BulleFiltre
+            nom="statut"
+            libelle="Statut"
+            icone={<IconeLivre taille={19} />}
+            options={OPTIONS_STATUT}
+            valeur={filtres.statut}
+            choisir={(valeur) => changer('statut', valeur)}
+          />
+          <BulleFiltre
+            nom="possession"
+            libelle="Possession"
+            icone={<IconePossessionGenerique />}
+            options={OPTIONS_POSSESSION}
+            valeur={filtres.possession}
+            choisir={(valeur) => changer('possession', valeur)}
+          />
+        </div>
 
         {facettesActives.length > 0 && (
           <ul aria-label="Autres filtres choisis" className="m-0 flex list-none flex-wrap items-center gap-2 p-0">
@@ -292,8 +284,20 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
         </EtatVide>
       )}
 
-      <Feuille ouvert={feuille} titre="Plus de filtres" fermer={() => setFeuille(false)} libelleFermer="Voir mes livres">
+      <Feuille ouvert={feuille} titre="Filtres" fermer={() => setFeuille(false)} libelleFermer="Voir mes livres">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(14rem,100%),1fr))] gap-4">
+          <ChampListe
+            libelle="Statut de lecture"
+            value={filtres.statut ?? ''}
+            onChange={(e) => changer('statut', (e.target.value || null) as Statut | null)}
+            options={[{ valeur: '', libelle: 'Tous' }, ...STATUTS]}
+          />
+          <ChampListe
+            libelle="Possession"
+            value={filtres.possession ?? ''}
+            onChange={(e) => changer('possession', (e.target.value || null) as Possession | null)}
+            options={[{ valeur: '', libelle: 'Toutes' }, ...POSSESSIONS]}
+          />
           <ChampListe
             libelle="Genre"
             value={filtres.genre ?? ''}
@@ -326,9 +330,12 @@ function Collection({ oeuvres }: { oeuvres: OeuvreListee[] }) {
 
 const liste = (valeurs: string[], tous: string) => [{ valeur: '', libelle: tous }, ...valeurs.map((v) => ({ valeur: v, libelle: v }))]
 
+const OPTIONS_STATUT = STATUTS.map((s) => ({ ...s, icone: <IconeStatut statut={s.valeur} taille={19} /> }))
+const OPTIONS_POSSESSION = POSSESSIONS.map((p) => ({ ...p, icone: <IconePossession possession={p.valeur} /> }))
+
 type CleFacette = 'genre' | 'theme' | 'atmosphere' | 'auteur'
 
-/** Les filtres de la feuille « Plus de filtres » qui sont choisis, dans l'ordre de la feuille. */
+/** Les autres filtres du panneau qui sont choisis (genre, thème, atmosphère, auteur), dans son ordre. */
 function pastillesFacettes(filtres: Filtres): { cle: CleFacette; texte: string }[] {
   return (['genre', 'theme', 'atmosphere', 'auteur'] as const)
     .filter((cle) => filtres[cle])
@@ -336,58 +343,70 @@ function pastillesFacettes(filtres: Filtres): { cle: CleFacette; texte: string }
 }
 
 /**
- * Une rangée de pastilles. Sur un iPhone étroit, elle défile à l’horizontale jusqu’au
- * bord de l'écran ; sur iPad, tout tient sur la largeur.
+ * Bulle de filtre : « Statut ▾ » ouvre un menu ; une fois un choix fait, la bulle l'affiche avec son
+ * icône (« En cours ✕ »), prend le fond d'accent doux, et la croix retire le filtre.
  */
-function RangeePastilles({ libelle, defile = false, children }: { libelle: string; defile?: boolean; children: ReactNode }) {
+function BulleFiltre<T extends string>({
+  nom,
+  libelle,
+  icone,
+  options,
+  valeur,
+  choisir,
+}: {
+  /** « statut », « possession » : pour ce que VoiceOver lit. */
+  nom: string
+  libelle: string
+  icone: ReactNode
+  options: { valeur: T; libelle: string; icone: ReactNode }[]
+  valeur: T | null
+  choisir: (valeur: T | null) => void
+}) {
+  const choix = options.find((o) => o.valeur === valeur) ?? null
   return (
     <div
-      role="group"
-      aria-label={libelle}
-      className={
-        defile
-          ? '-mx-6 -my-1 flex gap-2 overflow-x-auto px-6 py-1 [scrollbar-width:none] tablette:mx-0 tablette:flex-wrap tablette:overflow-visible tablette:px-0 [&::-webkit-scrollbar]:hidden'
-          : 'flex flex-wrap gap-2'
-      }
+      className={`flex max-w-full items-center rounded-pilule border text-[0.9375rem] transition-colors duration-200 ${
+        choix ? 'border-transparent bg-accent-doux font-bold text-accent-texte' : 'border-bordure bg-surface font-semibold text-encre'
+      }`}
     >
-      {children}
+      <Menu
+        nom={choix ? `Filtre ${nom} : ${choix.libelle}. Changer` : `Filtrer par ${nom}, aucun filtre`}
+        nomListe={`Filtrer par ${nom}`}
+        contenuBouton={
+          <>
+            {choix ? choix.icone : icone}
+            <span className="min-w-0">{choix ? choix.libelle : libelle}</span>
+            {!choix && <IconeChevronBas taille={16} />}
+          </>
+        }
+        classeBouton={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-pilule border-0 bg-transparent pl-3.5 text-left text-inherit ${
+          choix ? 'pr-1' : 'pr-3'
+        }`}
+        options={options}
+        valeur={valeur}
+        onChoisir={choisir}
+      />
+      {choix && (
+        <button
+          type="button"
+          onClick={() => choisir(null)}
+          aria-label={`Retirer le filtre ${choix.libelle}`}
+          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-pilule border-0 bg-transparent text-inherit"
+        >
+          <IconeFermer taille={16} />
+        </button>
+      )}
     </div>
   )
 }
 
-function PastilleFiltre({
-  choisi,
-  onClick,
-  icone,
-  nom,
-  children,
-}: {
-  choisi: boolean
-  onClick: () => void
-  icone: ReactNode
-  /** Nom lu par VoiceOver, quand il dit plus que le mot affiché (il commence toujours par lui). */
-  nom?: string
-  children: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={choisi}
-      aria-label={nom}
-      onClick={onClick}
-      className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-pilule pr-3.5 pl-3 text-[0.9375rem] whitespace-nowrap transition-colors duration-200 ${
-        choisi ? 'border border-accent bg-accent font-bold text-sur-accent' : 'border border-bordure bg-surface font-semibold text-encre'
-      }`}
-    >
-      {icone}
-      {children}
-    </button>
-  )
-}
-
+/**
+ * Grille de couvertures : le nombre de colonnes suit la largeur de l'écran (2 sur iPhone, 4 sur iPad
+ * en portrait, 6 en paysage), pas la taille du texte choisie dans les réglages de l'iPhone.
+ */
 function Grille({ oeuvres }: { oeuvres: OeuvreListee[] }) {
   return (
-    <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(8.75rem,40vw),1fr))] gap-x-5 gap-y-8 p-0 tablette:gap-x-6 tablette:gap-y-10">
+    <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-7 p-0 min-[36rem]:grid-cols-3 tablette:grid-cols-4 tablette:gap-x-5 tablette:gap-y-9 min-[64rem]:grid-cols-5 min-[72rem]:grid-cols-6">
       {oeuvres.map((oeuvre) => (
         <li key={oeuvre.id} className="min-w-0">
           <a href={LIENS.oeuvre(oeuvre.id)} className="group flex flex-col gap-3 text-encre no-underline">
@@ -397,7 +416,7 @@ function Grille({ oeuvres }: { oeuvres: OeuvreListee[] }) {
               className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.98]"
             />
             <span className="flex flex-col gap-0.5">
-              <span className="text-[0.9375rem] leading-[1.3] font-bold text-balance">{oeuvre.titre}</span>
+              <span className="text-[0.9375rem] leading-[1.3] font-bold text-balance [overflow-wrap:anywhere]">{oeuvre.titre}</span>
               {oeuvre.auteurs.length > 0 && <span className="text-sm text-discret">{oeuvre.auteurs.join(', ')}</span>}
             </span>
           </a>
