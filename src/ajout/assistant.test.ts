@@ -66,12 +66,47 @@ describe('assistant (fonction serveur)', () => {
     expect(reponse.valeur.source).toBe('open_library')
     expect(reponse.valeur.image.type).toBe('image/jpeg')
     expect(reponse.valeur.image.size).toBe('contenu-image'.length)
+    // Une fonction serveur plus ancienne ne donne pas la taille : elle est alors inconnue.
+    expect(reponse.valeur.largeur).toBeNull()
+    expect(reponse.valeur.hauteur).toBeNull()
+  })
+
+  it('fait suivre la taille de l’image, pour dire « de petite taille »', async () => {
+    const image = { type: 'image/jpeg', base64: btoa('contenu-image') }
+    const { client } = fauxClient({ data: { trouve: true, source: 'google_books', image, largeur: 300, hauteur: 450 } })
+    const reponse = await creerAssistantSupabase(client).couverture({ isbn: '9782747024693' })
+    expect(reponse).toMatchObject({ ok: true, valeur: { largeur: 300, hauteur: 450 } })
+    // Une taille fantaisiste n'est pas crue.
+    const bancale = fauxClient({ data: { trouve: true, source: 'google_books', image, largeur: 'grande', hauteur: -3 } })
+    expect(await creerAssistantSupabase(bancale.client).couverture({ isbn: '9782747024693' })).toMatchObject({
+      ok: true,
+      valeur: { largeur: null, hauteur: null },
+    })
   })
 
   it('rend « aucune couverture » sans en faire une erreur', async () => {
     const { client, appels } = fauxClient({ data: { trouve: false } })
     expect(await creerAssistantSupabase(client).couverture({ ref: { source: 'google_books', id: 'zyTCAlFPjgYC' } })).toEqual({ ok: true, valeur: null })
     expect(appels[0].corps).toEqual({ action: 'couverture', ref: { source: 'google_books', id: 'zyTCAlFPjgYC' } })
+  })
+
+  it('demande d’autres couvertures, et rend les propositions sans image', async () => {
+    const propositions = [
+      { ref: { source: 'google_books', id: 'zyTCAlFPjgYC' }, editeur: 'Gallimard', collection: 'Folio', annee: 2013, langue: 'fr', source: 'google_books' },
+      { ref: { source: 'open_library', numero: 15166217 }, editeur: null, collection: null, annee: null, langue: null, source: 'open_library' },
+    ]
+    const { client, appels } = fauxClient({ data: { propositions, sources: SOURCES } })
+    const demande = { titre: 'L’Étranger', auteur: 'Albert Camus', langue: 'fr' as const, isbn: '9782070360024', editeur: 'Gallimard' }
+    expect(await creerAssistantSupabase(client).autresCouvertures(demande)).toEqual({ ok: true, valeur: propositions })
+    expect(appels[0].corps).toEqual({ action: 'autres_couvertures', ...demande })
+  })
+
+  it('écarte une proposition mal formée, et ne croit pas une réponse sans liste', async () => {
+    const bonne = { ref: { source: 'open_library', numero: 7 }, editeur: null, collection: null, annee: null, langue: null, source: 'open_library' }
+    const melange = fauxClient({ data: { propositions: [bonne, { ref: 'https://exemple.test/x.jpg' }, null, { ref: { source: 'ailleurs', id: 'x' } }] } })
+    expect(await creerAssistantSupabase(melange.client).autresCouvertures({ titre: 'Momo', langue: 'fr' })).toEqual({ ok: true, valeur: [bonne] })
+    const bancale = fauxClient({ data: { propositions: 'aucune' } })
+    expect(await creerAssistantSupabase(bancale.client).autresCouvertures({ titre: 'Momo', langue: 'fr' })).toEqual({ ok: false, echec: 'indisponible' })
   })
 
   it('demande une fiche en n’envoyant que l’œuvre', async () => {

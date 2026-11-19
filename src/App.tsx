@@ -5,6 +5,7 @@ import { FournisseurRoute, useRouteCourante } from './navigation/useRoute'
 import { ongletDe, type Ecran } from './navigation/routes'
 import { HorsConnexion } from './composants/HorsConnexion'
 import { AllerAuContenu } from './composants/AllerAuContenu'
+import { BandeauHaut } from './composants/BandeauHaut'
 import { Accueil } from './ecrans/Accueil'
 import { Bibliotheque } from './ecrans/Bibliotheque'
 import { Decouvrir } from './ecrans/Decouvrir'
@@ -63,6 +64,7 @@ export function App({
   if (!auth) {
     return (
       <>
+        <BandeauHaut />
         <HorsConnexion />
         <NonConfigure />
       </>
@@ -102,6 +104,7 @@ function AppReservee({ auth, depot, assistant, couvertures }: { auth: Auth; depo
   if (session.statut === 'deconnecte') {
     return (
       <>
+        <BandeauHaut />
         <HorsConnexion />
         <Connexion auth={auth} />
       </>
@@ -113,6 +116,7 @@ function AppReservee({ auth, depot, assistant, couvertures }: { auth: Auth; depo
       <FournisseurSession value={{ auth, compte: session.compte, depot, assistant, couvertures }}>
         <FournisseurRoute value={route}>
           <AllerAuContenu />
+          <BandeauHaut />
           <HorsConnexion />
           <BarreLaterale ecran={ongletDe(ecran)} />
           {/* Une adresse, un écran neuf : la bibliothèque relit ses filtres, le formulaire repart de la fiche. */}

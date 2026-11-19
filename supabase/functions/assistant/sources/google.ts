@@ -14,22 +14,36 @@ export type VolumeGoogle = {
   manga: boolean
   aCouverture: boolean
   isbn13: string[]
+  /** L'année de parution de ce volume (une édition), ou null. */
+  annee: number | null
 }
 
 const BASE = 'https://www.googleapis.com/books/v1/volumes'
 const CHAMPS =
-  'items(id,volumeInfo(title,authors,publisher,description,industryIdentifiers,pageCount,categories,imageLinks/thumbnail,language))'
+  'items(id,volumeInfo(title,authors,publisher,publishedDate,description,industryIdentifiers,pageCount,categories,imageLinks/thumbnail,language))'
 
 export const ID_VOLUME = /^[A-Za-z0-9_-]{6,24}$/
 
 const pourRequete = (texte: string) => texte.replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim()
 
+/** Les éditions telles qu'on les voit depuis la Suisse : celles que je trouve en librairie. */
+const PAYS = 'country=CH'
+
 export const adresseGoogleIsbn = (isbn: string) =>
-  `${BASE}?q=${encodeURIComponent(`isbn:${isbn}`)}&maxResults=5&printType=books&fields=${encodeURIComponent(CHAMPS)}`
+  `${BASE}?q=${encodeURIComponent(`isbn:${isbn}`)}&maxResults=5&printType=books&${PAYS}&fields=${encodeURIComponent(CHAMPS)}`
 
 export function adresseGoogleTitre(titre: string, auteur?: string) {
   const requete = [`intitle:"${pourRequete(titre)}"`, auteur ? `inauthor:"${pourRequete(auteur)}"` : ''].filter(Boolean).join(' ')
-  return `${BASE}?q=${encodeURIComponent(requete)}&maxResults=10&printType=books&fields=${encodeURIComponent(CHAMPS)}`
+  return `${BASE}?q=${encodeURIComponent(requete)}&maxResults=10&printType=books&${PAYS}&fields=${encodeURIComponent(CHAMPS)}`
+}
+
+/**
+ * D'autres couvertures pour un titre : les éditions dans la langue voulue (langRestrict), une
+ * vingtaine au plus. La restriction de langue ne sert qu'ici : ailleurs, elle écarterait des livres.
+ */
+export function adresseGoogleCouvertures(titre: string, auteur: string | undefined, langue: 'fr' | 'en') {
+  const requete = [`intitle:"${pourRequete(titre)}"`, auteur ? `inauthor:"${pourRequete(auteur)}"` : ''].filter(Boolean).join(' ')
+  return `${BASE}?q=${encodeURIComponent(requete)}&maxResults=20&printType=books&langRestrict=${langue}&${PAYS}&fields=${encodeURIComponent(CHAMPS)}`
 }
 
 const estObjet = (valeur: unknown): valeur is Record<string, unknown> =>
@@ -62,6 +76,8 @@ export function lireVolumesGoogle(reponse: unknown): VolumeGoogle[] {
         .filter((i): i is Record<string, unknown> => estObjet(i) && i.type === 'ISBN_13')
         .map((i) => texte(i.identifier))
         .filter((isbn): isbn is string => isbn !== null && /^97[89]\d{10}$/.test(isbn)),
+      // « 2013-05-02 » ou « 1972 » : seule l'année compte.
+      annee: Number(/^(1[4-9]\d\d|20\d\d)\b/.exec(texte(infos.publishedDate) ?? '')?.[1]) || null,
     })
   }
   return volumes

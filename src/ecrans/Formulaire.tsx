@@ -6,6 +6,9 @@ import { appliquerProposition, libelleSource, pourFiche, type ChampPropose, type
 import { LANGUES, nomLangue } from '../catalogue/langues'
 import { couverturesDeLaFiche, type EchecEcriture, type OeuvreDetaillee, type Vocabulaire } from '../bibliotheque/depot'
 import { couvertureAffichee, type CibleCouverture } from '../couvertures/choix'
+import { ApercuCouverture } from '../couvertures/ApercuCouverture'
+import { AutresCouvertures } from '../couvertures/AutresCouvertures'
+import { ChoisirImage } from '../couvertures/ChoisirImage'
 import { Couverture } from '../couvertures/Couverture'
 import {
   ajusterTomes,
@@ -540,56 +543,6 @@ function Suppression({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: bo
   )
 }
 
-/**
- * La couverture trouvée par la recherche, avant validation : je la vois, et je peux ne pas la garder.
- * Rien n'est rangé tant que la fiche n'est pas enregistrée.
- */
-function ApercuCouverture({
-  titre,
-  cherche,
-  trouvee,
-  adresse,
-  garder,
-  setGarder,
-}: {
-  titre: string
-  cherche: boolean
-  trouvee: ImageTrouvee | null
-  adresse: string | null
-  garder: boolean
-  setGarder: (garder: boolean) => void
-}) {
-  const visible = trouvee !== null && garder
-  return (
-    <section aria-label="Couverture" data-etat={visible ? 'image' : 'typographique'} className="flex flex-wrap items-center gap-5">
-      <Couverture titre={titre || 'Sans titre'} graine="apercu" apercu={visible ? adresse : null} className="w-24 shrink-0" />
-      <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-2">
-        {cherche ? (
-          <p role="status" className="m-0 text-[0.9375rem] text-discret">
-            Je cherche la couverture…
-          </p>
-        ) : trouvee === null ? (
-          <p className="m-0 text-[0.9375rem] text-discret">Pas de couverture trouvée : celle d’Ichnos s’affichera.</p>
-        ) : garder ? (
-          <>
-            <p className="m-0 text-[0.9375rem]">Couverture trouvée sur {libelleSource(trouvee.source)}.</p>
-            <button type="button" onClick={() => setGarder(false)} className={LIEN}>
-              Ne pas garder cette couverture
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="m-0 text-[0.9375rem] text-discret">Cette couverture ne sera pas gardée : celle d’Ichnos s’affichera.</p>
-            <button type="button" onClick={() => setGarder(true)} className={LIEN}>
-              La garder finalement
-            </button>
-          </>
-        )}
-      </div>
-    </section>
-  )
-}
-
 const LIEN =
   'flex min-h-11 cursor-pointer items-center border-0 bg-transparent p-0 text-left text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60'
 
@@ -628,42 +581,70 @@ const ECHECS_COUVERTURE: Record<string, string> = {
 }
 
 /**
- * Dans « Modifier » : la couverture rangée, et de quoi la retirer si ce n'est pas la bonne.
- * La couverture d'Ichnos reprend alors sa place ; les Réglages permettent d'en rechercher une.
+ * Dans « Modifier » : la couverture, toujours là. Je peux choisir une image (photo de mon exemplaire
+ * ou fichier), et retirer celle qui s'affiche si ce n'est pas la bonne : la couverture d'Ichnos
+ * reprend alors sa place. Chaque geste est immédiat, hors du bouton « Enregistrer ».
  */
 function CouvertureRangee({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: boolean }) {
   const retrait = useRetirerCouverture(oeuvre.id)
+  // Une image choisie ou gardée vient d'être rangée : la section le dit (VoiceOver l'annonce).
+  const [rangee, setRangee] = useState(false)
   const chemin = couvertureAffichee(couverturesDeLaFiche(oeuvre))
-  if (!chemin) return null
   // Tous les endroits de cette fiche où ce chemin est rangé.
-  const cibles: CibleCouverture[] = [
-    ...(oeuvre.couverture === chemin ? [{ type: 'oeuvre' as const }] : []),
-    ...oeuvre.editions.filter((e) => e.couverture === chemin).map((e) => ({ type: 'edition' as const, edition: e.id })),
-    ...oeuvre.tomes.filter((t) => t.couverture === chemin).map((t) => ({ type: 'tome' as const, numero: t.numero })),
-  ]
+  const cibles: CibleCouverture[] = chemin
+    ? [
+        ...(oeuvre.couverture === chemin ? [{ type: 'oeuvre' as const }] : []),
+        ...oeuvre.editions.filter((e) => e.couverture === chemin).map((e) => ({ type: 'edition' as const, edition: e.id })),
+        ...oeuvre.tomes.filter((t) => t.couverture === chemin).map((t) => ({ type: 'tome' as const, numero: t.numero })),
+      ]
+    : []
+  // Une image choisie va là où elle s'affiche : sur mon édition si j'en ai une, sinon sur l'œuvre.
+  // Pour une série, sur la série elle-même : ses tomes se règlent un par un, dans leur panneau.
+  const cible: CibleCouverture = !oeuvre.estSerie && oeuvre.monEdition ? { type: 'edition', edition: oeuvre.monEdition } : { type: 'oeuvre' }
+  const phrase = !enLigne
+    ? 'Je pourrai changer la couverture au retour du réseau.'
+    : oeuvre.estSerie
+      ? 'Pour une série, cette image s’affiche tant qu’aucun tome n’a sa couverture. Chaque tome se règle dans son panneau, sur la fiche.'
+      : chemin
+        ? 'Si je la retire, celle d’Ichnos reprendra sa place.'
+        : 'Une photo de mon exemplaire, ou la couverture d’une autre édition.'
   return (
     <section aria-labelledby="couverture-rangee" className="flex max-w-3xl flex-col gap-4 border-t border-bordure pt-8">
       <h2 id="couverture-rangee" className="m-0 font-titre text-2xl">
         Couverture
       </h2>
-      <div className="flex flex-wrap items-center gap-5">
+      <div className="flex items-center gap-5">
         <Couverture titre={oeuvre.titreFr} graine={oeuvre.id} chemin={chemin} className="w-24 shrink-0" />
-        <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-1">
-          <button
-            type="button"
-            aria-disabled={!enLigne || retrait.isPending || undefined}
-            onClick={() => enLigne && !retrait.isPending && retrait.mutate(cibles)}
-            className={LIEN}
-          >
-            Retirer cette couverture
-          </button>
-          <p className="m-0 text-sm text-discret">
-            {enLigne ? 'Celle d’Ichnos reprendra sa place.' : 'Je pourrai la retirer au retour du réseau.'}
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+          <p role="status" data-etat={rangee ? 'ouvert' : 'ferme'} className="m-0 text-[0.9375rem] font-semibold empty:hidden">
+            {rangee ? 'La nouvelle couverture est en place.' : ''}
           </p>
-          <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
-            {retrait.error ? ECHECS_COUVERTURE[retrait.error.echec] : ''}
-          </p>
+          <p className="m-0 max-w-[48ch] text-sm text-discret">{phrase}</p>
+          {chemin && (
+            <button
+              type="button"
+              aria-disabled={!enLigne || retrait.isPending || undefined}
+              onClick={() => {
+                if (!enLigne || retrait.isPending) return
+                setRangee(false)
+                retrait.mutate(cibles)
+              }}
+              className={LIEN}
+            >
+              Retirer cette couverture
+            </button>
+          )}
+          {retrait.error && (
+            <p role="alert" className="m-0 text-sm font-semibold text-accent-texte">
+              {ECHECS_COUVERTURE[retrait.error.echec]}
+            </p>
+          )}
         </div>
+      </div>
+      {/* Sous la couverture : sur iPhone, les deux boutons ne tiennent pas à côté d'elle sans se couper. */}
+      <div className="flex flex-wrap items-start gap-2.5">
+        <ChoisirImage oeuvre={oeuvre.id} cible={cible} enLigne={enLigne} surRangee={() => setRangee(true)} />
+        <AutresCouvertures oeuvre={oeuvre} cible={cible} enLigne={enLigne} surRangee={() => setRangee(true)} />
       </div>
     </section>
   )

@@ -197,6 +197,12 @@ export type EchecInstallation = 'reseau' | 'deja' | 'inconnu'
 /** Une œuvre ou un tome sans couverture : l'ISBN qui permet de la chercher, et l'endroit où la ranger. */
 export type ManqueCouverture = { oeuvre: string; titre: string; tome: number | null; isbn: string | null; cible: CibleCouverture }
 export type LectureManques = { ok: true; manques: ManqueCouverture[] } | { ok: false; echec: EchecLecture }
+/**
+ * Une couverture rangée : son chemin, l'endroit où elle est rangée, et l'ISBN de l'édition ou du
+ * tome qui la porte (null pour une couverture rangée sur l'œuvre : aucune édition précise).
+ */
+export type CouvertureRangee = { oeuvre: string; titre: string; tome: number | null; chemin: string; isbn: string | null; cible: CibleCouverture }
+export type LectureCouvertures = { ok: true; couvertures: CouvertureRangee[] } | { ok: false; echec: EchecLecture }
 /** L'œuvre de ma bibliothèque qui porte déjà un ISBN (et le tome, si c'est celui d'un tome). */
 export type RechercheIsbn = { ok: true; trouve: { id: string; tome: number | null } | null } | { ok: false; echec: EchecLecture }
 
@@ -207,6 +213,26 @@ export type LectureVocabulaire = { ok: true; vocabulaire: Vocabulaire } | { ok: 
 export type Installation = { ok: true } | { ok: false; echec: EchecInstallation }
 export type Ecriture = { ok: true } | { ok: false; echec: EchecEcriture }
 export type Enregistrement = { ok: true; id: string } | { ok: false; echec: EchecEcriture }
+
+/**
+ * « Je l'ai acheté » : l'ISBN de mon exemplaire et ce que les catalogues en disent, envoyés à la
+ * fonction noter_achat de la base. `tome` pour un tome de série ; `couverture` : le chemin d'une
+ * image déjà rangée, si j'en garde une.
+ */
+export type Achat = {
+  isbn: string
+  publisher?: string | null
+  language?: string | null
+  format?: string | null
+  translator?: string | null
+  page_count?: number | null
+  tome?: number
+  couverture?: string | null
+}
+/** « isbn_ailleurs » : cet ISBN est déjà celui d'une autre de mes œuvres, ou d'un autre tome de la série. */
+export type EchecAchat = EchecEcriture | 'isbn_ailleurs'
+/** L'édition devenue la mienne (null pour un tome). */
+export type NoteAchat = { ok: true; edition: string | null } | { ok: false; echec: EchecAchat }
 
 /** Les tomes visés par un changement de possession : tous, ou une plage (« les tomes 1 à 8 »). */
 export type ChoixTomes = 'tous' | { de: number; a: number }
@@ -236,6 +262,8 @@ export interface Depot {
   changerPossession(id: string, possession: Possession): Promise<Ecriture>
   changerPossessionTomes(id: string, tomes: ChoixTomes, possession: Possession): Promise<Ecriture>
   changerMonEdition(id: string, edition: string | null): Promise<Ecriture>
+  /** « Je l'ai acheté » : mon édition (ou le tome), son ISBN, sa couverture et la possession, en tout ou rien (fonction noter_achat). */
+  noterAchat(id: string, achat: Achat): Promise<NoteAchat>
   supprimerOeuvre(id: string): Promise<Ecriture>
   /** Range le chemin d'une couverture sur l'œuvre, une de ses éditions ou un de ses tomes ; null la retire. */
   definirCouverture(id: string, cible: CibleCouverture, chemin: string | null): Promise<Ecriture>
@@ -243,6 +271,8 @@ export interface Depot {
   trouverParIsbn(isbn: string): Promise<RechercheIsbn>
   /** Tout ce qui n'a pas encore de couverture, par ordre de titre. */
   listerSansCouverture(): Promise<LectureManques>
+  /** Toutes les couvertures rangées (œuvres, éditions, tomes), par ordre de titre. */
+  listerCouvertures(): Promise<LectureCouvertures>
   /** Installe le catalogue de départ dans une bibliothèque vide. Tout ou rien. */
   installerCatalogue(): Promise<Installation>
 }
@@ -267,9 +297,11 @@ export const DEPOT_ABSENT: Depot = {
   changerPossession: absent,
   changerPossessionTomes: absent,
   changerMonEdition: absent,
+  noterAchat: absent,
   supprimerOeuvre: absent,
   definirCouverture: absent,
   trouverParIsbn: absent,
   listerSansCouverture: absent,
+  listerCouvertures: absent,
   installerCatalogue: absent,
 }

@@ -136,6 +136,29 @@ export function lireDemande(corps: unknown): Demande | null {
       }
       return null
     }
+    case 'autres_couvertures': {
+      if (!seulement(corps, ['action', 'titre', 'auteur', 'langue', 'isbn', 'editeur'])) return null
+      const titre = texte(corps.titre, TITRE_MAX)
+      // La langue entre dans une adresse : français ou anglais, rien d'autre.
+      if (!titre || (corps.langue !== 'fr' && corps.langue !== 'en')) return null
+      const demande: Extract<Demande, { action: 'autres_couvertures' }> = { action: 'autres_couvertures', titre, langue: corps.langue }
+      if (corps.auteur !== undefined) {
+        const auteur = texte(corps.auteur, NOM_MAX)
+        if (!auteur) return null
+        demande.auteur = auteur
+      }
+      if (corps.isbn !== undefined) {
+        const isbn = isbn13(corps.isbn)
+        if (!isbn) return null
+        demande.isbn = isbn
+      }
+      if (corps.editeur !== undefined) {
+        const editeur = texte(corps.editeur, NOM_MAX)
+        if (!editeur) return null
+        demande.editeur = editeur
+      }
+      return demande
+    }
     case 'fiche': {
       if (!seulement(corps, ['action', 'oeuvre'])) return null
       const oeuvre = oeuvrePourFiche(corps.oeuvre)

@@ -88,9 +88,20 @@ function monde(options: Options = {}) {
     ['catalogue.bnf.fr', (adresse) => new Response(echantillon(adresse.includes('bib.title') ? 'bnf-titre-momo.xml' : 'bnf-momo.xml'))],
     ['googleapis.com/books', () => reponseJson(VOLUME_GOOGLE)],
     ['openlibrary.org/isbn/', () => new Response(echantillon('ol-edition-momo.json'))],
+    [
+      'openlibrary.org/works/',
+      () =>
+        reponseJson({
+          size: 2,
+          entries: [
+            { covers: [8751329], isbn_13: ['9782747024693'], publishers: ['Bayard Jeunesse'], publish_date: '2009', languages: [{ key: '/languages/fre' }] },
+            { covers: [8574580], publishers: ['Thienemann'], publish_date: '1973', languages: [{ key: '/languages/ger' }] },
+          ],
+        }),
+    ],
     ['openlibrary.org/search.json', () => new Response(echantillon('ol-recherche-momo.json'))],
     ['books.google.com/books/', () => reponseImage(jpeg(480, 720))],
-    ['covers.openlibrary.org', () => reponseImage(jpeg(400, 600))],
+    ['covers.openlibrary.org', () => reponseImage(jpeg(600, 900))],
   ]
 
   const recuperer = async (adresse: string, init?: RequestInit) => {
@@ -424,6 +435,51 @@ describe('couverture', () => {
     expect(corps.source).toBe('google_books')
     expect(corps.image.type).toBe('image/jpeg')
     expect(atob(corps.image.base64).length).toBe(6000)
+    // La taille de l'image voyage avec elle : l'appli dit « de petite taille » sous 450 px de large.
+    expect(corps.largeur).toBe(480)
+    expect(corps.hauteur).toBe(720)
+  })
+
+  it('par ISBN, prend chez Open Library l’image d’origine de cette édition, par son numéro de couverture', async () => {
+    const { gestionnaire, vers } = monde({ cleGoogle: null })
+    const corps = await (await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))).json()
+    expect(corps).toMatchObject({ trouve: true, source: 'open_library' })
+    // Le numéro vient de la fiche de l'édition (8751329), jamais de la recherche, qui donne
+    // la couverture de l'œuvre en général (8574580, une édition allemande).
+    expect(vers('covers.openlibrary.org').map((appel) => appel.adresse)).toEqual(['https://covers.openlibrary.org/b/id/8751329.jpg?default=false'])
+    expect(vers('openlibrary.org/search.json')).toHaveLength(0)
+  })
+
+  it('par ISBN, garde l’adresse par ISBN d’Open Library en dernier recours, quand la fiche de l’édition ne répond pas', async () => {
+    const { gestionnaire, vers } = monde({ cleGoogle: null, routes: [['openlibrary.org/isbn/', () => new Response('panne', { status: 503 })]] })
+    const corps = await (await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))).json()
+    expect(corps.trouve).toBe(true)
+    expect(vers('covers.openlibrary.org').map((appel) => appel.adresse)).toEqual([`https://covers.openlibrary.org/b/isbn/${ISBN}-L.jpg?default=false`])
+  })
+
+  it('par ISBN, garde la plus large des deux sources quand Google Books n’a qu’une petite image', async () => {
+    const { gestionnaire } = monde({
+      routes: [
+        ['books.google.com/books/', () => reponseImage(jpeg(300, 450))],
+        ['covers.openlibrary.org', () => reponseImage(jpeg(625, 999))],
+      ],
+    })
+    const corps = await (await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))).json()
+    expect(corps).toMatchObject({ trouve: true, source: 'open_library', largeur: 625, hauteur: 999 })
+  })
+
+  it('interroge Google Books depuis la Suisse (country=CH), sans y mettre la clé', async () => {
+    const { gestionnaire, vers } = monde()
+    await gestionnaire(requete({ action: 'couverture', isbn: ISBN }))
+    await gestionnaire(requete(PAR_ISBN))
+    await gestionnaire(requete({ action: 'chercher_titre', titre: 'Momo', auteur: 'Ende' }))
+    const adresses = vers('googleapis.com/books').map((appel) => new URL(appel.adresse))
+    expect(adresses).toHaveLength(3)
+    for (const adresse of adresses) {
+      expect(adresse.searchParams.get('country')).toBe('CH')
+      expect(adresse.searchParams.has('langRestrict')).toBe(false)
+      expect(adresse.href).not.toContain(CLE_GOOGLE)
+    }
   })
 
   it('par ISBN, cherche chez Google Books puis chez Open Library', async () => {
@@ -453,6 +509,104 @@ describe('couverture', () => {
     await gestionnaire(requete(PAR_ISBN))
     expect(vers('reserver_appel_ia')).toHaveLength(0)
     expect(demandesIA).toHaveLength(0)
+  })
+})
+
+describe('autres couvertures', () => {
+  const AUTRES = { action: 'autres_couvertures', titre: 'Momo', auteur: 'Michael Ende', langue: 'fr' }
+
+  it('rend des propositions d’éditions, chacune avec une référence d’image, sans aucune image', async () => {
+    const { gestionnaire, vers } = monde()
+    const reponse = await gestionnaire(requete(AUTRES))
+    expect(reponse.status).toBe(200)
+    const corps = await reponse.json()
+    expect(Object.keys(corps).sort()).toEqual(['propositions', 'sources'])
+    expect(corps.propositions).toEqual([
+      // L'édition de Bayard n'apparaît qu'une fois (même ISBN chez Google Books et Open Library).
+      // Google ne donne pas son année : c'est la BnF qui la dit (« 2009 »), rapprochée par l'ISBN.
+      { ref: { source: 'google_books', id: 'zyTCAlFPjgYC' }, editeur: null, collection: null, annee: 2009, langue: 'fr', source: 'google_books' },
+      { ref: { source: 'open_library', numero: 8574580 }, editeur: 'Thienemann', collection: null, annee: 1973, langue: 'de', source: 'open_library' },
+    ])
+    for (const proposition of corps.propositions) {
+      expect(Object.keys(proposition).sort()).toEqual(['annee', 'collection', 'editeur', 'langue', 'ref', 'source'])
+    }
+    // Aucune image n'est téléchargée ici : l'appli les demandera une à une, par leur référence.
+    expect(vers('books.google.com')).toHaveLength(0)
+    expect(vers('covers.openlibrary.org')).toHaveLength(0)
+    expect(corps.sources).toEqual({ bnf: 'ok', google_books: 'ok', open_library: 'ok' })
+  })
+
+  it('interroge Google Books dans la langue demandée et depuis la Suisse, la clé dans un en-tête', async () => {
+    const { gestionnaire, vers } = monde()
+    await gestionnaire(requete({ ...AUTRES, langue: 'en' }))
+    const [appel] = vers('googleapis.com/books')
+    const adresse = new URL(appel.adresse)
+    expect(adresse.searchParams.get('langRestrict')).toBe('en')
+    expect(adresse.searchParams.get('country')).toBe('CH')
+    expect(adresse.searchParams.get('q')).toBe('intitle:"Momo" inauthor:"Michael Ende"')
+    expect(appel.adresse).not.toContain(CLE_GOOGLE)
+    expect(new Headers(appel.options?.headers).get('x-goog-api-key')).toBe(CLE_GOOGLE)
+  })
+
+  it('demande à Open Library les éditions des œuvres trouvées, et à la BnF ses notices : jamais une image de la BnF', async () => {
+    const { gestionnaire, vers, appels } = monde()
+    await gestionnaire(requete(AUTRES))
+    expect(vers('openlibrary.org/search.json')).toHaveLength(1)
+    expect(vers('openlibrary.org/works/').map((appel) => appel.adresse)).toEqual(['https://openlibrary.org/works/OL2271626W/editions.json?limit=200'])
+    const bnf = vers('catalogue.bnf.fr')
+    expect(bnf).toHaveLength(1)
+    expect(decodeURIComponent(bnf[0].adresse)).toContain('bib.title all "Momo" and bib.author all "Michael Ende"')
+    // Les seuls sites interrogés : la connexion, puis les trois catalogues.
+    const sites = [...new Set(appels.map((appel) => new URL(appel.adresse).hostname))].sort()
+    expect(sites).toEqual(['catalogue.bnf.fr', 'openlibrary.org', 'projet-essai.supabase.co', 'www.googleapis.com'])
+  })
+
+  it('met en tête l’édition qui porte l’ISBN de mon édition', async () => {
+    const { gestionnaire } = monde({
+      routes: [['googleapis.com/books', () => reponseJson({ items: [{ id: 'autreVolume01', volumeInfo: { title: 'Momo', publisher: 'Récent', publishedDate: '2024', imageLinks: { thumbnail: 'x' }, language: 'fr' } }, ...VOLUME_GOOGLE.items] })]],
+    })
+    const corps = await (await gestionnaire(requete({ ...AUTRES, isbn: ISBN }))).json()
+    expect(corps.propositions[0].ref).toEqual({ source: 'google_books', id: 'zyTCAlFPjgYC' })
+  })
+
+  it('n’appelle jamais l’IA et ne consomme rien de la limite', async () => {
+    const { gestionnaire, vers, demandesIA } = monde()
+    await gestionnaire(requete(AUTRES))
+    expect(vers('reserver_appel_ia')).toHaveLength(0)
+    expect(vers('/rest/v1/')).toHaveLength(0)
+    expect(demandesIA).toHaveLength(0)
+  })
+
+  it('répond avec ce qui marche quand une source est en panne ou n’est pas configurée', async () => {
+    const sansGoogle = monde({ cleGoogle: null })
+    const corps = await (await sansGoogle.gestionnaire(requete(AUTRES))).json()
+    expect(corps.sources.google_books).toBe('non_configure')
+    expect(corps.propositions.map((p: { source: string }) => p.source)).toEqual(['open_library', 'open_library'])
+
+    const enPanne = monde({ routes: [['openlibrary.org', () => new Response('panne', { status: 503 })], ['catalogue.bnf.fr', () => new Response('panne', { status: 500 })]] })
+    const reste = await (await enPanne.gestionnaire(requete(AUTRES))).json()
+    expect(reste.sources).toEqual({ bnf: 'panne', google_books: 'ok', open_library: 'panne' })
+    expect(reste.propositions).toHaveLength(1)
+  })
+
+  it('dit simplement qu’il n’y a rien quand aucun catalogue n’a d’image', async () => {
+    const { gestionnaire } = monde({
+      routes: [
+        ['googleapis.com', () => reponseJson({ totalItems: 0 })],
+        ['openlibrary.org', () => reponseJson({ docs: [] })],
+      ],
+    })
+    const reponse = await gestionnaire(requete(AUTRES))
+    expect(reponse.status).toBe(200)
+    expect((await reponse.json()).propositions).toEqual([])
+  })
+
+  it('refuse une demande mal formée sans interroger aucun catalogue', async () => {
+    const { gestionnaire, vers } = monde()
+    const reponse = await gestionnaire(requete({ ...AUTRES, langue: 'de' }))
+    expect(reponse.status).toBe(400)
+    expect(vers('googleapis.com')).toHaveLength(0)
+    expect(vers('openlibrary.org')).toHaveLength(0)
   })
 })
 
@@ -601,6 +755,12 @@ describe('aucune clé, aucun contenu personnel dans les réponses ni dans les jo
     ['recherche réussie', {}, PAR_ISBN],
     ['recherche par titre', {}, { action: 'chercher_titre', titre: 'Momo', auteur: 'Ende' }],
     ['couverture', {}, { action: 'couverture', isbn: ISBN }],
+    ['autres couvertures', {}, { action: 'autres_couvertures', titre: 'Momo', auteur: 'Ende', langue: 'fr', isbn: ISBN, editeur: 'Bayard' }],
+    [
+      'autres couvertures, sources bavardes',
+      { routes: [['googleapis.com', bavard], ['catalogue.bnf.fr', bavard], ['openlibrary.org', bavard]] },
+      { action: 'autres_couvertures', titre: 'Momo', auteur: 'Ende', langue: 'fr' },
+    ],
     ['fiche réussie', {}, POUR_FICHE],
     ['sources bavardes', { routes: [['googleapis.com', bavard], ['catalogue.bnf.fr', bavard], ['openlibrary.org', bavard]] }, PAR_ISBN],
     ['sources qui lèvent une erreur', { routes: [['googleapis.com', explosif], ['catalogue.bnf.fr', explosif], ['openlibrary.org', explosif]] }, PAR_ISBN],
@@ -630,7 +790,7 @@ describe('aucune clé, aucun contenu personnel dans les réponses ni dans les jo
     const journaux = JSON.stringify(journal)
     for (const secret of SECRETS) expect(journaux).not.toContain(secret)
     // Ni ce que je cherche, ni qui je suis : le journal ne dit que l'action, le résultat et la durée.
-    for (const personnel of [ISBN, 'Momo', 'Ende', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'a@exemple.test', 'googleapis', 'http']) {
+    for (const personnel of [ISBN, 'Momo', 'Ende', 'Bayard', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'a@exemple.test', 'googleapis', 'http']) {
       expect(journaux).not.toContain(personnel)
     }
     expect(journal).toHaveLength(1)

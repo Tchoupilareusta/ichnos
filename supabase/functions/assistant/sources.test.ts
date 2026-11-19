@@ -4,8 +4,14 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { adresseBnfIsbn, adresseBnfTitre, lireNoticesBnf } from './sources/bnf.ts'
-import { lireVolumesGoogle } from './sources/google.ts'
-import { lireEditionOpenLibrary, lireRechercheOpenLibrary } from './sources/openLibrary.ts'
+import { adresseGoogleCouvertures, adresseGoogleIsbn, adresseGoogleTitre, lireVolumesGoogle } from './sources/google.ts'
+import {
+  adresseOpenLibraryEditions,
+  lireClesOeuvres,
+  lireEditionOpenLibrary,
+  lireEditionsOpenLibrary,
+  lireRechercheOpenLibrary,
+} from './sources/openLibrary.ts'
 
 const echantillon = (nom: string) => readFileSync(new URL(`./echantillons/${nom}`, import.meta.url), 'utf8')
 
@@ -44,6 +50,33 @@ describe('BnF', () => {
       titreOriginal: null,
       description: null,
     })
+  })
+
+  it('lit la collection, l’année et la hauteur d’une édition : de quoi reconnaître un poche', () => {
+    // De vraies notices de « L'étranger », réduites aux zones lues.
+    const notices = lireNoticesBnf(echantillon('bnf-titre-etranger.xml'))
+    const resume = notices.map((n) => [n.isbn, n.editeur, n.collection, n.annee, n.hauteur])
+    expect(resume).toEqual([
+      // « Collection Folio » se lit « Folio » ; « impr. 2007 » donne 2007.
+      ['9782070348633', 'Gallimard', 'Folio', 2007, 18],
+      ['9782070453177', 'Gallimard', 'Folio', 2013, 18],
+      ['9782840119661', 'Feryane', 'Mémoire', 2010, 22],
+      // Zone 214 à la place de la 210 : « DL 2022 ».
+      ['9782494067004', 'Kiléma éditions', null, 2022, 20],
+      [null, 'Gallimard', null, 1991, 19],
+      ['9782754807685', 'Futuropolis-Gallimard', null, 2012, 35],
+    ])
+  })
+
+  it('laisse vides la collection, l’année et la hauteur que la notice ne dit pas', () => {
+    const [notice] = lireNoticesBnf(echantillon('bnf-vinland1.xml'))
+    expect(notice.collection).toBeNull()
+    const vague = lireNoticesBnf(
+      '<srw:record><mxc:datafield tag="200" ind1="1" ind2=" "><mxc:subfield code="a">Sans date</mxc:subfield></mxc:datafield>' +
+        '<mxc:datafield tag="210" ind1=" " ind2=" "><mxc:subfield code="d">[s.d.]</mxc:subfield></mxc:datafield>' +
+        '<mxc:datafield tag="215" ind1=" " ind2=" "><mxc:subfield code="d">in-8</mxc:subfield></mxc:datafield></srw:record>',
+    )[0]
+    expect([vague.annee, vague.hauteur, vague.collection]).toEqual([null, null, null])
   })
 
   it('lit toutes les notices d’une recherche par titre', () => {
@@ -139,8 +172,38 @@ describe('Google Books', () => {
         manga: false,
         aCouverture: true,
         isbn13: ['9782747024693'],
+        annee: 2009,
       },
     ])
+  })
+
+  it('lit l’année de parution, même donnée au jour près', () => {
+    const annee = (publishedDate: unknown) => lireVolumesGoogle({ items: [{ id: 'abcdef123456', volumeInfo: { title: 'X', publishedDate } }] })[0].annee
+    expect(annee('2013-05-02')).toBe(2013)
+    expect(annee('1972')).toBe(1972)
+    expect(annee('bientôt')).toBeNull()
+    expect(annee(2013)).toBeNull()
+  })
+
+  it('interroge toujours depuis la Suisse, et ne restreint la langue que pour « Chercher d’autres couvertures »', () => {
+    const isbn = new URL(adresseGoogleIsbn('9782747024693'))
+    const titre = new URL(adresseGoogleTitre('Momo', 'Ende'))
+    const couvertures = new URL(adresseGoogleCouvertures('L’Étranger', 'Albert Camus', 'fr'))
+    for (const adresse of [isbn, titre, couvertures]) {
+      expect(adresse.hostname).toBe('www.googleapis.com')
+      expect(adresse.searchParams.get('country')).toBe('CH')
+      expect(adresse.searchParams.get('printType')).toBe('books')
+      expect(adresse.searchParams.has('key')).toBe(false)
+    }
+    expect(isbn.searchParams.has('langRestrict')).toBe(false)
+    expect(titre.searchParams.has('langRestrict')).toBe(false)
+    expect(couvertures.searchParams.get('langRestrict')).toBe('fr')
+    expect(couvertures.searchParams.get('maxResults')).toBe('20')
+    expect(couvertures.searchParams.get('q')).toBe('intitle:"L’Étranger" inauthor:"Albert Camus"')
+    expect(new URL(adresseGoogleCouvertures('1984', undefined, 'en')).searchParams.get('langRestrict')).toBe('en')
+    expect(new URL(adresseGoogleCouvertures('1984', undefined, 'en')).searchParams.get('q')).toBe('intitle:"1984"')
+    // Un guillemet dans le titre ne casse pas la requête.
+    expect(new URL(adresseGoogleCouvertures('Le "grand" livre', undefined, 'fr')).searchParams.get('q')).toBe('intitle:"Le grand livre"')
   })
 
   it('laisse vide ce que Google ne donne pas, et ignore une pagination nulle', () => {
@@ -156,6 +219,7 @@ describe('Google Books', () => {
       manga: false,
       aCouverture: false,
       isbn13: [],
+      annee: null,
     })
   })
 
@@ -187,8 +251,9 @@ describe('Open Library', () => {
       traducteur: 'Corinna Gepner',
       langueOriginale: 'de',
       titreOriginal: 'Momo',
-      aCouverture: true,
+      couverture: 8751329,
     })
+    expect(lireEditionOpenLibrary({ title: 'Sans image', covers: [-1, 'x'] })?.couverture).toBeNull()
   })
 
   it('lit une recherche : auteur, année de première publication, numéro de couverture', () => {
@@ -200,6 +265,34 @@ describe('Open Library', () => {
         couverture: 8574580,
       },
     ])
+  })
+
+  it('lit les clés des œuvres d’une recherche, pour demander leurs éditions', () => {
+    expect(lireClesOeuvres(JSON.parse(echantillon('ol-recherche-momo.json')))).toEqual(['OL2271626W'])
+    // Une clé qui ne ressemble pas à une clé d'œuvre est écartée : elle entrerait dans une adresse.
+    expect(lireClesOeuvres({ docs: [{ key: '/works/OL1230613W' }, { key: '/works/../admin' }, { key: 'https://exemple.test/OL1W' }, { key: 12 }, {}] })).toEqual(['OL1230613W'])
+    expect(lireClesOeuvres(null)).toEqual([])
+    expect(adresseOpenLibraryEditions('OL1230613W')).toBe('https://openlibrary.org/works/OL1230613W/editions.json?limit=200')
+  })
+
+  it('lit les éditions d’une œuvre : couverture, ISBN, éditeur, collection, année, langue', () => {
+    // La forme des vraies réponses (L'étranger, novembre 2026).
+    const reponse = {
+      size: 471,
+      entries: [
+        { covers: [15166217, 15115103], publishers: ['Gallimard'], publish_date: '1984', languages: [{ key: '/languages/fre' }], physical_format: 'Paperback', series: ['Collection Folio No. 2'] },
+        { covers: [-1], isbn_13: ['9780679720201'], publishers: ['Vintage'], publish_date: 'March 13, 1989', languages: [{ key: '/languages/eng' }] },
+        { isbn_13: ['pas un isbn', '9782070360024'], isbn_10: ['2070360024'], publishers: [], publish_date: 'sans date' },
+        'pas une édition',
+      ],
+    }
+    expect(lireEditionsOpenLibrary(reponse)).toEqual([
+      { couverture: 15166217, isbn13: null, editeur: 'Gallimard', collection: 'Folio No. 2', annee: 1984, langue: 'fr' },
+      { couverture: null, isbn13: '9780679720201', editeur: 'Vintage', collection: null, annee: 1989, langue: 'en' },
+      { couverture: null, isbn13: '9782070360024', editeur: null, collection: null, annee: null, langue: null },
+    ])
+    expect(lireEditionsOpenLibrary({ error: 'notfound' })).toEqual([])
+    expect(lireEditionsOpenLibrary(null)).toEqual([])
   })
 
   it('retire les dates accolées au nom d’un auteur', () => {

@@ -9,6 +9,8 @@
 *Mise à jour du 19 novembre 2026 : suivi de lecture (étape 5) : relectures, date de fin approximative, progression des séries tirée des tomes, ressenti proposé quand je termine un livre, « Le mettre en pause » (§5, §6, §10.2, §11).*
 *Mise à jour du 19 novembre 2026 : ajout automatique (étape 6) : ordre des sources, couvertures, deux manières d'ajouter, fiche proposée par l'IA, fonction serveur « assistant » et sa sécurité (§3, §5, §6.1, §8, §10.2, §10.4, §11).*
 *Mise à jour du 19 novembre 2026 : nouvelle étape 10 « Nettoyage et optimisation » ; la revue de sécurité finale devient l'étape 11 et porte sur le code nettoyé (§11).*
+*Mise à jour du 19 novembre 2026 : corrections de couvertures (étape 6, suite) : couverture montrée en entier, grandes images, « Je l'ai acheté », « Choisir une image », « Chercher d'autres couvertures », fonction `noter_achat` (§3, §5, §6.1, §8, §10.2, §11).*
+*Mise à jour du 20 novembre 2026 : poids des couvertures : toute image est réduite au moment d'être rangée (§8.5, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -54,8 +56,8 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Langue de lecture | Français ou anglais. Le catalogue n'ajoute pas d'édition anglaise d'office. Quand j'ajoute un livre par son ISBN, l'édition est celle de mon exemplaire. Pour une œuvre écrite en anglais, « Découvrir ailleurs » indique si la version originale vaut le coup (ex. 1984 et son vocabulaire inventé). Si mon édition est en anglais, le titre original s'affiche en premier. Les fiches (synopsis, étiquettes) restent toujours en français. |
 | Anime | Média associé à l'œuvre (saisons, épisodes), jamais compté comme des livres. |
 | Hors connexion | Consultation possible. Les modifications demandent une connexion. |
-| Couvertures | Recherche automatique par ISBN (Google Books, puis Open Library), copie dans le stockage Supabase, couverture typographique générée en dernier recours. Une série montre le tome où j'en suis, sinon le tome 1 ; chaque tome montre la sienne dans son panneau ; la grille des tomes garde ses cercles (§8). |
-| Couvertures de manga | Par l'ISBN du tome français, aux mêmes sources. MangaDex est exclu définitivement : c'est un site de traductions de fans, sans droits sur les images (décidé le 19 novembre 2026). |
+| Couvertures | Recherche automatique par ISBN (Google Books, puis Open Library), copie dans le stockage Supabase, couverture typographique générée en dernier recours. L'image est montrée en entier, jamais rognée. Je peux aussi choisir une photo de mon exemplaire, ou la couverture d'une autre édition. Une série montre le tome où j'en suis, sinon le tome 1 ; chaque tome montre la sienne dans son panneau ; la grille des tomes garde ses cercles (§8). |
+| Couvertures de manga | Par l'ISBN du tome français, aux mêmes sources. MangaDex est exclu définitivement : c'est un site de traductions de fans, sans droits sur les images (décidé le 19 novembre 2026). Aucune autre source gratuite, légale et fiable n'est connue pour les tomes en français : la voie sûre est la photo de mon exemplaire et l'ISBN de mon exemplaire (§8.5). |
 | Ajouter une œuvre | Deux manières : remplir automatiquement (ISBN à 13 chiffres de mon exemplaire, ou titre seul) ou tout saisir moi-même. Pas de scan du code-barres : un champ à clavier numérique qui accepte chiffres, tirets et espaces (Safari sur iPhone n'a pas de lecteur de code-barres natif, et aucune bibliothèque n'est ajoutée pour cela). |
 | Source de chaque champ | Affichée sous le champ pendant l'ajout (« D'après la BnF »), jamais enregistrée : une fois validée, la fiche est la mienne. |
 | Citation du jour sur l'accueil | Retirée. |
@@ -130,13 +132,23 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 |---|---|
 | Accueil | Lectures en cours, la plus récemment touchée d'abord (carrousel de couvertures cliquables, rangée sans défilement sur iPad quand elle tient, progression en texte seul : « p. 75 sur 230 », « Lettre 12 », « Tome 4 sur 29 » ; bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre en pause » — nouveau nom de « Le mettre de côté », ce statut étant fusionné dans « En pause » ; après « J'ai terminé », le même panneau propose mon ressenti). Un anime n'y figure jamais. Puis une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées (étapes 7 et 8). Pas de barre de progression sur l'accueil. |
 | Bibliothèque | Grille de couvertures (2 colonnes sur iPhone, 4 sur iPad en portrait, 6 en paysage, quelle que soit la taille du texte), recherche (« Rechercher » ; VoiceOver : « Rechercher un titre ou un auteur »), bulles-menus Statut et Possession, panneau « Filtres » avec les six filtres. |
-| Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre (seulement « En cours » ou « En pause » ; unité et total choisis ici), synopsis sans spoiler, genre, longueur et atmosphère en une ligne, « Mon ressenti » (avec « Retirer »), « Mon parcours » en quelques mots, mon édition en une ligne (traduction et ISBN dans « Détails »), tomes (toucher un tome règle sa lecture et sa possession), notes et citations, média associé (épisodes vus avec − et +, statut). La fiche se termine sur l'œuvre, jamais sur la suppression. |
+| Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre (seulement « En cours » ou « En pause » ; unité et total choisis ici), synopsis sans spoiler, genre, longueur et atmosphère en une ligne, « Mon ressenti » (avec « Retirer »), « Mon parcours » en quelques mots, mon édition en une ligne (traduction et ISBN dans « Détails »), tomes (toucher un tome ouvre son panneau : sa lecture, sa possession, « Je l'ai acheté », « Choisir une image »), notes et citations, média associé (épisodes vus avec − et +, statut). La fiche se termine sur l'œuvre, jamais sur la suppression. |
 | Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6). |
 | Ajouter | Deux choix : « Remplir automatiquement », mis en avant (ISBN à 13 chiffres : l'édition exacte de mon exemplaire ; titre, et auteur si je veux : une liste d'œuvres où je choisis, puis la fiche commune à toutes les éditions, sans ISBN, éditeur ni pagination), et « Tout saisir moi-même » (le formulaire complet). Si l'ISBN est déjà dans ma bibliothèque, ou si une œuvre au titre très proche y est, l'appli me prévient avant d'aller plus loin et propose d'ouvrir sa fiche ou d'y ajouter l'édition. Le formulaire prérempli montre la source de chaque champ, la couverture trouvée (que je peux ne pas garder) et la proposition de l'IA (§8.4). Rien n'est enregistré sans ma validation. Hors connexion, la recherche est grisée. |
-| Modifier | Le même formulaire, rempli avec la fiche. Au bas : retirer la couverture, puis supprimer l'œuvre, après confirmation. |
-| Réglages | Thème, « Chercher les couvertures manquantes » (une demande à la fois, sans IA, avec la liste de ce qui a été trouvé ou non, œuvre par œuvre), export des données, compte, gestion des genres, thèmes et atmosphères. |
+| Modifier | Le même formulaire, rempli avec la fiche. Au bas : la couverture, toujours présente (« Choisir une image », « Chercher d'autres couvertures », et « Retirer cette couverture » s'il y en a une ; chaque geste est immédiat, hors du bouton « Enregistrer »), puis supprimer l'œuvre, après confirmation. |
+| Réglages | Thème, « Chercher les couvertures manquantes » (une demande à la fois, sans IA, avec la liste de ce qui a été trouvé ou non, œuvre par œuvre ; une couverture de moins de 450 px de large est dite « de petite taille »), « Remplacer les couvertures de petite taille » (§8.5), export des données, compte, gestion des genres, thèmes et atmosphères. |
 
 Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + (enregistrés une seconde après le dernier appui) et saisie directe. Quand j'atteins le total, la fiche propose doucement « J'ai terminé ce livre ? », sans jamais le faire à ma place.
+
+« Je l'ai acheté » (validé le 19 novembre 2026) : sur la fiche d'un livre que je n'ai pas encore, près de la possession ; pour une série, dans le panneau d'un tome que je n'ai pas. Le panneau se déroule en deux temps.
+- D'abord l'ISBN à 13 chiffres de mon exemplaire : même champ et même vérification que l'ajout automatique.
+- Puis ce que les catalogues en disent (éditeur, traduction, pages, langue, chacun avec sa source) et l'aperçu de la couverture, que je peux ne pas garder. Rien n'est enregistré avant « C'est mon exemplaire ».
+- L'appli me prévient si le livre trouvé semble être un autre titre ou un autre tome ; je peux quand même continuer.
+- Si l'ISBN est déjà celui d'une autre de mes œuvres, ou d'un autre tome de la même série, elle le dit (avec un lien vers la fiche) et n'enregistre rien.
+- Si aucun catalogue ne connaît l'ISBN, ou si la recherche ne répond pas : « Noter cet ISBN quand même ».
+- À la validation, un seul enregistrement (fonction `noter_achat`, §6.1), puis une phrase de confirmation. Mon statut de lecture, ma progression et mes notes ne bougent pas.
+
+Zone du haut de l'iPhone : un voile fixe, de la hauteur de la zone de l'heure et de la batterie, sur tous les écrans. Le contenu qui défile passe dessous sans se mêler à l'horloge. Sans encoche, il n'a aucune hauteur.
 
 Maquettes de référence : canvas « Ichnos — Maquettes » (Accueil, Fiche, Découvrir, panneau « Où j'en suis »), revues avec Impeccable le 17 novembre 2026.
 
@@ -201,6 +213,13 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 - Une ligne ne s'ajoute qu'à l'heure présente ; personne ne modifie ni ne supprime une ligne, même avec ma session.
 
 Chemins de couverture (`cover_path` des œuvres, éditions et tomes) : toujours `<mon identifiant>/<empreinte de l'image>.<jpg, png ou webp>`, dans mon dossier du stockage privé. La base refuse tout autre chemin.
+
+« Je l'ai acheté » (fonction `noter_achat`, ajoutée le 19 novembre 2026), en tout ou rien :
+- **Un livre.** L'édition de l'œuvre qui porte déjà cet ISBN est reprise, et seuls ses champs vides sont complétés : rien de ce que j'ai écrit n'est remplacé. Sinon, une édition est créée. Elle devient « mon édition » (`library_entries.edition_id`), et la possession passe à « possédé ».
+- **Sa couverture.** Celle que je garde est rangée sur cette édition : c'est elle qui s'affiche. Sans couverture sur l'édition achetée, celle qui s'affichait reste affichée : la couverture de mon ancienne édition, s'il y en avait une, devient celle de l'œuvre.
+- **Un tome.** Il reçoit l'ISBN de mon exemplaire et passe à « possédé » ; sa couverture n'est remplacée que si j'en garde une. Sa lecture ne change pas.
+- **Refus.** ISBN qui n'a pas 13 chiffres ou dont le chiffre de contrôle est faux ; ISBN déjà porté par une autre de mes œuvres ou par un autre tome de la même série (code `EO003`) ; série sans numéro de tome ; tout champ inconnu.
+- Elle ne touche jamais au synopsis, aux étiquettes, au statut de lecture, à la progression, au ressenti, aux dates, à l'historique, à la lecture des tomes, aux médias ni aux notes.
 
 ### 6.2 Possession et statut
 
@@ -305,8 +324,9 @@ Règles :
 
 Couvertures :
 - Par ISBN : Google Books, puis Open Library. Pour un manga, par l'ISBN du tome français ; aucune base de traductions de fans (§3).
-- La fonction construit elle-même l'adresse de l'image, vers ces deux sites seulement, vérifie que c'est une vraie image (ni vignette, ni image « indisponible »), et la rend à l'appli.
-- L'appli ne la range que lorsque je valide la fiche : dans un bucket privé de Supabase Storage, dans mon dossier, sous un nom tiré de son contenu. Elle est servie par URL signée et gardée sur l'appareil pour la consultation hors ligne ; à la déconnexion, cette copie est effacée.
+- La fonction construit elle-même l'adresse de l'image, vers ces deux sites seulement, vérifie que c'est une vraie image (ni vignette, ni image « indisponible »), et la rend à l'appli avec sa largeur et sa hauteur.
+- Elle cherche la plus grande image (§8.5), et interroge Google Books tel qu'on le voit depuis la Suisse (`country=CH`).
+- L'appli ne la range que lorsque je valide la fiche : dans un bucket privé de Supabase Storage, dans mon dossier, sous un nom tiré de son contenu. Elle est réduite juste avant (§8.5). Elle est servie par URL signée et gardée sur l'appareil pour la consultation hors ligne ; à la déconnexion, cette copie est effacée.
 - Une couverture trouvée par le seul titre m'est montrée avant d'être gardée, comme les autres : je peux toujours ne pas la garder, ou la retirer plus tard depuis « Modifier ».
 - Pour ce qui est déjà dans ma bibliothèque : « Chercher les couvertures manquantes », dans les Réglages (§5). Sans ISBN, rien n'est cherché, pour ne pas risquer une mauvaise couverture.
 
@@ -331,6 +351,49 @@ Précisions de l'étape 6 (validées le 19 novembre 2026) :
 - La proposition ne remplit que les champs encore vides : ce que j'ai écrit pendant qu'elle se préparait reste.
 - Les textes venus des catalogues sont traités comme des données, jamais comme des consignes (protection contre une consigne cachée dans une description).
 - Si l'IA ne répond pas, refuse, ou si la limite du jour est atteinte : une phrase calme, et la fiche se remplit à la main.
+
+### 8.5 Taille, affichage et choix des couvertures
+
+Validé le 19 novembre 2026, après le premier essai sur iPhone (couvertures floues, rognées, et trop peu de tomes illustrés).
+
+Affichage :
+- Une couverture est montrée en entier dans son cadre au format 2:3, jamais rognée. Les bandes qu'elle laisse prennent la couleur moyenne de ses bords, adoucie vers le fond de l'appli.
+
+Taille :
+- La fiche affiche la couverture sur près de 200 points : il faut environ 600 px de large pour une image nette sur iPhone. En dessous de 450 px, une couverture est dite « de petite taille », sauf si son grand côté atteint déjà 1200 px (voir « Poids ») : c'est alors la plus grande que l'appli range.
+- La fonction essaie les adresses de la plus grande image à la plus petite. Google Books : `fife=w1200-h1800`, puis `zoom=0`, puis `fife=w480-h720` (cette dernière ne rend souvent qu'une vignette). Open Library : l'image d'origine par numéro de couverture (`/b/id/<n>.jpg`), puis la taille « L ».
+- Sous 450 px, elle essaie les adresses suivantes et l'autre source, et garde la plus large.
+- Par ISBN, Open Library donne la couverture de l'édition elle-même : son numéro est lu sur la fiche de l'édition. Le numéro que rend sa recherche est celui de l'œuvre en général (souvent une autre édition) : il ne sert jamais pour un ISBN. L'adresse par ISBN (limitée à une centaine de demandes par 5 minutes) ne sert qu'en dernier recours.
+- Pour un livre sans image, Google Books renvoie parfois une fausse couverture grise, qui passe les autres contrôles. Elles sont reconnues à leur empreinte SHA-256 et traitées comme « pas de couverture ». Si Google en sert une autre : ajouter son empreinte dans `couverture.ts`, et un test.
+
+Poids (décidé le 20 novembre 2026) :
+- Toute image rangée dans mon stockage privé suit la même règle, qu'elle vienne d'un catalogue ou d'une photo : au plus 1200 px sur le grand côté, en JPEG de bonne qualité (0,85), soit 150 à 300 Ko environ. L'image d'origine d'un catalogue pèse parfois près de 1 Mo.
+- La réduction se fait sur l'appareil, au moment où l'image est rangée : à la validation de la fiche, à l'achat, au choix d'une autre couverture, à la recherche des couvertures manquantes et au remplacement des petites. Un aperçu que je ne garde pas n'est pas touché.
+- Une image n'est jamais agrandie. Déjà dans les 1200 px et sous 350 Ko, elle est rangée telle quelle (une photo recadrée n'est pas compressée deux fois) ; de bonne taille mais lourde, elle est recompressée, et la version la plus légère est gardée. Si la réduction échoue, l'image d'origine est rangée.
+- La marge reste large pour la fiche : une couverture ordinaire réduite à 1200 px de haut garde 750 à 800 px de large, pour 588 pixels affichés sur un iPhone.
+- Mesuré le 20 novembre 2026 sur L'Étranger en Folio : 911 × 1500 px et 937 Ko à l'origine, 729 × 1200 px et 138 Ko une fois rangée.
+
+« Remplacer les couvertures de petite taille » (Réglages) :
+- Chaque couverture rangée est mesurée sur l'appareil, sans rien changer à la base.
+- Seulement pour celles de petite taille dont l'ISBN est connu (celui de l'édition ou du tome qui porte la couverture) : la couverture de cette même édition est redemandée, et ne remplace l'ancienne que si, une fois rangée, elle est plus large. Une image déjà réduite à 1200 px n'est jamais tenue pour petite.
+- Même rythme que la recherche (une demande à la fois, pause de 1,5 s, « Arrêter »), et la liste de ce qui a été fait : « remplacée (300 → 800 px) », « pas de plus grande image », « sans ISBN, laissée telle quelle ».
+- Limite connue : une petite couverture que j'aurais choisie parmi d'autres éditions, rangée sur mon édition, peut être remplacée par celle de mon édition. Je peux la rechoisir.
+
+« Choisir une image » (dans « Modifier », et dans le panneau d'un tome) :
+- Un seul bouton : l'iPhone propose la photothèque, l'appareil photo ou les fichiers.
+- La photo s'affiche entière dans un panneau. Je peux la recadrer librement en faisant glisser ses quatre coins, ou la garder telle quelle.
+- Tout se fait sur l'appareil, sans dépendance ajoutée : l'image est réduite (même règle de poids que les autres couvertures) puis rangée dans mon stockage privé. Un fichier qui n'est pas une image, ou de plus de 30 Mo, est refusé.
+
+« Chercher d'autres couvertures » (dans « Modifier », pour une œuvre, jamais pour un tome) :
+- La recherche part avec le titre et le premier auteur ; je peux la corriger et la relancer. Pas d'IA.
+- Les images ne viennent que de Google Books (dans la langue de mon édition, français ou anglais) et d'Open Library. La BnF n'est interrogée que pour la collection, la hauteur du livre et l'année, rapprochées par l'ISBN : aucune image ne vient de la BnF.
+- Au plus huit propositions, sans doublon, de la plus probable à la moins probable : l'édition qui porte l'ISBN de mon édition ; puis le même éditeur ou la même collection ; puis les poches dans la langue demandée (18 cm au plus, ou collection de poche connue : Folio, Le Livre de Poche, Pocket, J'ai lu, 10/18, Points, GF, Babel), les plus récentes d'abord ; puis le reste.
+- Sous chaque image : « éditeur · collection · année », et « petite taille » s'il y a lieu. Je touche une image, puis « Garder cette couverture ». Rien n'est gardé sans mon choix.
+
+Où va une couverture que je choisis (photo ou autre édition) :
+- Là où elle s'affiche : sur mon édition si j'en ai une, sinon sur l'œuvre ; sur le tome pour un tome.
+- Pour une série, depuis « Modifier » : sur la série elle-même. Elle s'affiche tant qu'aucun tome n'a sa couverture ; chaque tome se règle dans son panneau.
+- « Je l'ai acheté » : sur l'édition achetée, qui devient la mienne (§6.1).
 
 ## 9. Catalogue initial
 
@@ -381,7 +444,7 @@ Import (validé le 18 novembre 2026) :
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
-- Six fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes, et garde les couvertures de ce qu'elle ne supprime pas), depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien, et, depuis l'étape 6, `reserver_appel_ia` (compte mes appels à l'IA des dernières 24 heures et en réserve un si la limite n'est pas atteinte). Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
+- Sept fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes, et garde les couvertures de ce qu'elle ne supprime pas), depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien, et, depuis l'étape 6, `reserver_appel_ia` (compte mes appels à l'IA des dernières 24 heures et en réserve un si la limite n'est pas atteinte) et `noter_achat` (« Je l'ai acheté » : mon édition ou le tome, son ISBN, sa couverture et la possession, en tout ou rien, §6.1). Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
 - Fonction serveur « assistant » (§7.6, §8) : une seule Edge Function porte tout ce qui a besoin d'une clé (Google Books, API Claude). L'étape 7b y ajoutera son action.
   - Elle n'est appelable que par le compte connecté : elle vérifie elle-même le jeton de session auprès de Supabase, à chaque appel. Sans compte, rien ne passe ; dans le doute (service de connexion muet), rien ne passe non plus.
@@ -390,6 +453,7 @@ Import (validé le 18 novembre 2026) :
   - Elle n'utilise aucune clé de service de Supabase : ce qu'elle lit et écrit dans la base (mon vocabulaire, la réservation d'un appel), elle le fait avec mon propre jeton, donc sous RLS.
   - Entrées relues champ par champ (ISBN à 13 chiffres valide, longueurs maximales), tout champ inconnu fait refuser la demande.
   - Elle ne télécharge une image que depuis Google Books et Open Library, à une adresse qu'elle construit elle-même ; une redirection n'est suivie que vers ces sites.
+  - Son action « autres couvertures » (§8.5) n'appelle pas l'IA et ne télécharge aucune image : elle ne rend que des références, que l'appli redemande une à une. La langue demandée ne peut être que le français ou l'anglais.
   - Une réponse d'erreur ne porte qu'un code. Rien de ce qu'un service extérieur répond n'est recopié.
   - Ses journaux : une ligne par appel (action, résultat, durée, état des sources), aucun contenu, aucun identifiant.
   - Au plus 30 appels à l'IA par 24 heures, réservés dans `ai_calls` avant chaque appel ; si la réservation ne peut pas être vérifiée, l'IA n'est pas appelée. En plus, une limite de dépense mensuelle est fixée dans la console Anthropic, sur un espace de travail dédié.
@@ -434,10 +498,13 @@ Points reportés :
 - **Étape 5, accueil.** Les lectures « En cours » apparaissent sur l'accueil, chacune avec le bouton « Où j'en suis » (§5).
 - **Étape 6, deux manières d'ajouter une œuvre.** Automatique avec l'ISBN à 13 chiffres (l'édition de mon exemplaire) ; ou avec le seul titre quand je n'ai pas encore d'édition précise : la fiche commune à toutes les éditions est remplie (synopsis, étiquettes, auteur), sans ISBN ni pagination. La saisie manuelle de l'étape 4 reste disponible comme deuxième option.
 - **Étape 6, à constater après la mise en ligne.** La fonction a été testée contre la vraie BnF et le vrai Open Library, mais Google Books et l'API Claude n'ont pu être essayés qu'avec de fausses réponses (aucune clé sur le poste de développement, c'est voulu). Leur premier essai réel se fait sur mes appareils, après la fusion : prévoir un tour de corrections. Constat du 19 novembre 2026 : Open Library a une couverture pour 16 de mes 31 éditions, et pour 3 tomes de manga sur 20 essayés ; la part de Google Books reste à mesurer.
+- **Étape 6, corrections de couvertures : à constater sur l'iPhone, après la fusion.** Google Books avec sa clé (effet de `langRestrict` et de `country=CH`, tailles réellement obtenues, autres images grises éventuelles : la clé n'est pas sur le poste de développement, c'est voulu). Le voile de la zone du haut (l'aperçu n'a pas d'encoche). La photothèque et l'appareil photo, le format HEIC, l'orientation des photos, le recadrage au doigt. « Remplacer les couvertures de petite taille » sur la vraie bibliothèque, et les limites de débit d'Open Library.
 - **Étape 7b, « Découvrir ailleurs ».** Elle ajoute une action à la fonction « assistant » (même sécurité, même limite d'appels) et réutilise la recherche par titre pour vérifier chaque proposition.
 - **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
 - **Étape 9, deux détails relevés par l'audit de l'étape 5.** Sur la fiche, VoiceOver annonce le chiffre de la progression à chaque appui sur − ou + : regrouper l'annonce au moment de l'enregistrement (une seconde après le dernier appui). La barre de défilement du carrousel « En ce moment » est visible sur ordinateur (invisible sur iPhone et iPad) : la rendre discrète sans gêner le défilement au clavier.
 - **Étape 9, relevés par l'audit de l'étape 6.** Chargement progressif des couvertures de la grille : aujourd'hui, toutes les couvertures de la bibliothèque sont demandées dès l'ouverture de l'écran ; ne charger que celles qui approchent de l'écran. Langue des titres originaux étrangers : la donner à VoiceOver par l'attribut `lang` (d'après la langue d'origine de l'œuvre), sur la fiche, dans les résultats de recherche et dans le formulaire, pour qu'un titre anglais ou allemand ne soit pas lu à la française.
+- **Étape 9, relevé par l'audit des corrections de couvertures.** Le recadrage d'une photo ne se fait qu'au doigt ou à la souris (« Image entière » reste le chemin au clavier) : permettre de déplacer les coins avec les flèches du clavier.
+- **Poids des couvertures trouvées : fait le 20 novembre 2026, sans attendre l'étape 10.** Relevé par l'audit des corrections de couvertures : la fonction garde désormais la plus grande image, et l'image d'origine d'Open Library pèse parfois près de 1 Mo. Toute image est maintenant réduite au moment d'être rangée (§8.5). Rien à reprendre pour les couvertures rangées avant ce changement : elles venaient de la taille « L » d'Open Library, 500 px de haut au plus.
 - **Étape 10, nettoyage des images qui ne servent plus.** Une couverture retirée, ou celle d'une œuvre supprimée, reste dans mon dossier du stockage privé : elle n'est jamais effacée sur le moment, car une même image (nommée d'après son contenu) peut servir à deux œuvres. Prévoir un nettoyage des images qui ne sont plus rattachées à aucune œuvre, édition ni tome.
 - **Étape 11, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 11, sans forcer. (Le tri des dépendances inutilisées, lui, se fait à l'étape 10.)
 

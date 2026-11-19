@@ -54,6 +54,31 @@ describe('squelette', () => {
   })
 })
 
+describe('zone du haut (heure et batterie de l’iPhone)', () => {
+  const bandeau = () => document.querySelector<HTMLElement>('[data-role="bandeau-haut"]')
+
+  it('pose un bandeau fixe de la hauteur de la zone de sécurité, sur tous les écrans', async () => {
+    await ouvrirConnecte()
+    expect(bandeau()).toHaveClass('fixed', 'top-0')
+    // Sans encoche, la zone de sécurité vaut 0 : le bandeau n'a aucune hauteur, rien ne change.
+    expect(bandeau()?.getAttribute('style')).toContain('env(safe-area-inset-top)')
+    aller('#/reglages')
+    expect(bandeau()).toBeInTheDocument()
+  })
+
+  it('ne gêne ni VoiceOver ni les appuis', async () => {
+    await ouvrirConnecte()
+    expect(bandeau()).toHaveAttribute('aria-hidden', 'true')
+    expect(bandeau()).toHaveClass('pointer-events-none')
+  })
+
+  it('est aussi là sur l’écran de connexion', async () => {
+    render(<App auth={authFictif().auth} />)
+    await screen.findByLabelText('Mon adresse e-mail')
+    expect(bandeau()).toBeInTheDocument()
+  })
+})
+
 describe('accès réservé', () => {
   it('sans connexion, ne montre que l’écran de connexion', async () => {
     render(<App auth={authFictif().auth} />)

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { titresAffiches } from '../catalogue/titres'
 import { cibleCouverture, couvertureAffichee } from '../couvertures/choix'
-import type { ChoixTomes, Depot, EchecEcriture, EnCours, Etiquette, ManqueCouverture, OeuvreDetaillee, OeuvreListee } from './depot'
+import type { ChoixTomes, CouvertureRangee, Depot, EchecEcriture, EnCours, Etiquette, ManqueCouverture, OeuvreDetaillee, OeuvreListee } from './depot'
 import { preparerEnvoi, type FichierCatalogue } from './envoiCatalogue'
 import {
   comparerTitres,
@@ -27,6 +27,8 @@ const DEJA_INSTALLE = 'IC001'
 /** Codes rendus par enregistrer_oeuvre, changer_statut, noter_progression et dater_fin (supabase/migrations). */
 const FICHE_INCOHERENTE = 'EO001'
 const OEUVRE_INTROUVABLE = 'EO002'
+/** Code rendu par noter_achat quand l'ISBN est déjà porté ailleurs dans ma bibliothèque. */
+const ISBN_AILLEURS = 'EO003'
 
 // Sans réseau, supabase-js ne reçoit aucune réponse : l'erreur n'a pas de code et rapporte l'échec de la requête.
 const estSansReseau = (erreur: ErreurBase) =>
@@ -446,6 +448,14 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
 
     changerPossessionTomes: (id: string, tomes: ChoixTomes, possession: Possession) => ecrireTomes(id, tomes, { ownership: possession }),
 
+    async noterAchat(id, achat) {
+      const { data, error } = await client.rpc('noter_achat', { oeuvre: id, achat })
+      if (error) return { ok: false, echec: error.code === ISBN_AILLEURS ? 'isbn_ailleurs' : echecEcriture(error) }
+      // L'identifiant de l'édition devenue la mienne, ou rien pour un tome.
+      if (data !== null && typeof data !== 'string') return { ok: false, echec: 'inconnu' }
+      return { ok: true, edition: data }
+    },
+
     async supprimerOeuvre(id) {
       // Les éditions, tomes, médias, notes et l'historique partent avec l'œuvre (on delete cascade).
       const { data, error } = await client.from('works').delete().eq('id', id).select('id')
@@ -524,6 +534,37 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
         })
       }
       return { ok: true, manques }
+    },
+
+    async listerCouvertures() {
+      const [oeuvres, editions, tomes] = await Promise.all([
+        client.from('works').select('id, title_fr, cover_path'),
+        client.from('editions').select('id, work_id, isbn, cover_path, created_at').order('created_at'),
+        client.from('volumes').select('work_id, number, isbn, cover_path').order('number'),
+      ])
+      const erreur = oeuvres.error ?? editions.error ?? tomes.error
+      if (erreur) return { ok: false, echec: echecLecture(erreur) }
+
+      type Oeuvre = { id: string; title_fr: string; cover_path: string | null }
+      type EditionLue = { id: string; work_id: string; isbn: string | null; cover_path: string | null }
+      type TomeLu = { work_id: string; number: number; isbn: string | null; cover_path: string | null }
+      const lesEditions = (editions.data ?? []) as EditionLue[]
+      const lesTomes = (tomes.data ?? []) as TomeLu[]
+
+      const couvertures: CouvertureRangee[] = []
+      const parTitre = [...((oeuvres.data ?? []) as Oeuvre[])].sort((a, b) => comparerTitres(a.title_fr, b.title_fr))
+      for (const oeuvre of parTitre) {
+        const commun = { oeuvre: oeuvre.id, titre: oeuvre.title_fr }
+        // Sur l'œuvre : la couverture n'est celle d'aucune édition précise, donc sans ISBN.
+        if (oeuvre.cover_path) couvertures.push({ ...commun, tome: null, chemin: oeuvre.cover_path, isbn: null, cible: { type: 'oeuvre' } })
+        for (const edition of lesEditions.filter((e) => e.work_id === oeuvre.id && e.cover_path)) {
+          couvertures.push({ ...commun, tome: null, chemin: edition.cover_path as string, isbn: edition.isbn, cible: { type: 'edition', edition: edition.id } })
+        }
+        for (const tome of lesTomes.filter((t) => t.work_id === oeuvre.id && t.cover_path).sort((a, b) => a.number - b.number)) {
+          couvertures.push({ ...commun, tome: tome.number, chemin: tome.cover_path as string, isbn: tome.isbn, cible: { type: 'tome', numero: tome.number } })
+        }
+      }
+      return { ok: true, couvertures }
     },
 
     async installerCatalogue() {

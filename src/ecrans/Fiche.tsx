@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { JeLaiAchete } from '../achat/JeLaiAchete'
 import { titresAffiches } from '../catalogue/titres'
 import { mentionTraduction, nomLangue } from '../catalogue/langues'
 import { couverturesDeLaFiche, type Edition, type Media, type OeuvreDetaillee, type Tome } from '../bibliotheque/depot'
@@ -37,6 +38,7 @@ import { LIEN_ACTION, Section } from '../composants/Section'
 import { MonParcours } from '../suivi/Parcours'
 import { ProgressionFiche } from '../suivi/ProgressionFiche'
 import { MonRessenti, ProposerRessenti } from '../suivi/Ressenti'
+import { ChoisirImage } from '../couvertures/ChoisirImage'
 import { couvertureAffichee } from '../couvertures/choix'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
@@ -149,6 +151,15 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   const [confirmation, setConfirmation] = useState<Possession | null>(null)
   // Passer à « Terminé » propose mon ressenti, sans obligation.
   const [ressenti, setRessenti] = useState(false)
+  // « Je l'ai acheté » : pour le livre, ou pour un tome de la série. L'annonce reste après la fermeture du panneau.
+  const [achat, setAchat] = useState<{ ouvert: boolean; tome: number | null }>({ ouvert: false, tome: null })
+  const [annonce, setAnnonce] = useState<string | null>(null)
+  // Après l'achat d'un livre, le bouton « Je l'ai acheté » disparaît : le focus va sur la
+  // confirmation plutôt que de retomber au début de la page. (Pour un tome, il revient sur le tome.)
+  const refAnnonce = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (annonce && !achat.ouvert && achat.tome === null) refAnnonce.current?.focus({ preventScroll: true })
+  }, [annonce, achat.ouvert, achat.tome])
 
   function changerStatut(statut: Statut) {
     modifier.statut.mutate(statut)
@@ -289,11 +300,32 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
               />
             )}
           </div>
+          {!oeuvre.estSerie && oeuvre.possession !== 'possede' && (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-disabled={!enLigne || undefined}
+              onClick={() => enLigne && setAchat({ ouvert: true, tome: null })}
+              className={LIEN_ACTION}
+            >
+              Je l’ai acheté
+            </button>
+          )}
           {!enLigne && (
             <p className="m-0 max-w-[30ch] text-sm text-discret min-[72rem]:max-w-none">
               Je pourrai changer le statut et la possession au retour du réseau.
             </p>
           )}
+          {/* Toujours présent : son contenu change quand un achat est noté (VoiceOver l'annonce). */}
+          <p
+            ref={refAnnonce}
+            tabIndex={-1}
+            role="status"
+            data-etat={annonce ? 'ouvert' : 'ferme'}
+            className="m-0 max-w-[34ch] text-sm text-discret outline-none empty:hidden min-[72rem]:max-w-none"
+          >
+            {annonce ?? ''}
+          </p>
           <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
             {derniereErreur ? MESSAGES_ECRITURE[derniereErreur] : ''}
           </p>
@@ -325,12 +357,14 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         )}
         {avecTomes && (
           <Tomes
+            oeuvre={oeuvre.id}
             titre={principal}
             tomes={oeuvre.tomes}
             enLigne={enLigne}
             changer={(tomes, valeur) => modifier.possessionTomes.mutate({ tomes, possession: valeur })}
             changerLecture={(tomes, lecture) => modifier.lectureTomes.mutate({ tomes, lecture })}
             changerTous={setConfirmation}
+            acheter={(numero) => setAchat({ ouvert: true, tome: numero })}
           />
         )}
         {oeuvre.medias.length > 0 && (
@@ -346,6 +380,23 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         choisir={(valeur) => {
           if (valeur !== oeuvre.appreciation) modifier.appreciation.mutate(valeur)
           setRessenti(false)
+        }}
+      />
+
+      {/* Placé après les tomes : leur panneau se referme avant que celui-ci s'ouvre. */}
+      <JeLaiAchete
+        ouvert={achat.ouvert}
+        oeuvre={oeuvre}
+        titre={principal}
+        tome={achat.tome}
+        fermer={() => setAchat((avant) => ({ ...avant, ouvert: false }))}
+        surAchat={() => {
+          setAnnonce(
+            achat.tome === null
+              ? `C’est noté : j’ai « ${principal} », avec l’ISBN de mon exemplaire.`
+              : `C’est noté : j’ai le tome ${achat.tome} de « ${principal} », avec l’ISBN de mon exemplaire.`,
+          )
+          setAchat((avant) => ({ ...avant, ouvert: false }))
         }}
       />
 
@@ -492,16 +543,22 @@ function MarqueLecture({ lecture, dansLaLegende = false }: { lecture: LectureTom
 }
 
 function Tomes({
+  oeuvre,
   titre,
   tomes,
   enLigne,
   changer,
   changerLecture,
   changerTous,
+  acheter,
 }: {
+  /** Identifiant de la série : pour ranger la photo d'un tome. */
+  oeuvre: string
   titre: string
   tomes: Tome[]
   enLigne: boolean
+  /** Ouvre « Je l'ai acheté » pour ce tome. */
+  acheter: (numero: number) => void
   changer: (tomes: { de: number; a: number }, possession: Possession) => void
   changerLecture: (tomes: { de: number; a: number }, lecture: LectureTome) => void
   /** Ouvre la confirmation qui applique une possession à tous les tomes. */
@@ -616,6 +673,24 @@ function Tomes({
               onChange={(possession) => changer({ de: tomeOuvert.numero, a: tomeOuvert.numero }, possession)}
               desactive={!enLigne}
             />
+            {/* Mon exemplaire : son ISBN quand je l'achète, et sa photo, la voie sûre pour la couverture d'un tome. */}
+            <div className="flex flex-col items-start gap-2.5">
+              {tomeOuvert.possession !== 'possede' && (
+                <Bouton
+                  variante="secondaire"
+                  aria-haspopup="dialog"
+                  occupe={!enLigne}
+                  onClick={() => {
+                    const numero = tomeOuvert.numero
+                    setOuvert(null)
+                    acheter(numero)
+                  }}
+                >
+                  Je l’ai acheté
+                </Bouton>
+              )}
+              <ChoisirImage oeuvre={oeuvre} cible={{ type: 'tome', numero: tomeOuvert.numero }} enLigne={enLigne} />
+            </div>
             {!enLigne && <p className="m-0 text-sm text-discret">Je pourrai changer ce tome au retour du réseau.</p>}
           </div>
         )}

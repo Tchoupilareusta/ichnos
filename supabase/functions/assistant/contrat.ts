@@ -64,11 +64,28 @@ export type OeuvrePourFiche = {
   descriptions: Description[]
 }
 
+/**
+ * Une édition qui a une image, proposée par « Chercher d'autres couvertures ». Elle ne porte
+ * qu'une référence : l'image est demandée ensuite, par l'action « couverture ».
+ */
+export type PropositionCouverture = {
+  ref: RefCouverture
+  editeur: string | null
+  collection: string | null
+  annee: number | null
+  /** Langue de l'édition, code à deux lettres. */
+  langue: string | null
+  /** Le catalogue qui a l'image : Google Books ou Open Library, jamais la BnF. */
+  source: Source
+}
+
 export type Demande =
   | { action: 'chercher_isbn'; isbn: string }
   | { action: 'chercher_titre'; titre: string; auteur?: string }
   | { action: 'couverture'; ref: RefCouverture }
   | { action: 'couverture'; isbn: string }
+  /** D'autres couvertures pour une œuvre : la langue voulue, et ce qu'on sait de mon édition, pour le tri. */
+  | { action: 'autres_couvertures'; titre: string; auteur?: string; langue: 'fr' | 'en'; isbn?: string; editeur?: string }
   | { action: 'fiche'; oeuvre: OeuvrePourFiche }
 
 export type ReponseIsbn = {
@@ -81,10 +98,19 @@ export type ReponseIsbn = {
 
 export type ReponseTitre = { resultats: Resultat[]; sources: EtatSources }
 
+export type ReponseAutresCouvertures = { propositions: PropositionCouverture[]; sources: EtatSources }
+
 export type TypeImage = 'image/jpeg' | 'image/png' | 'image/webp'
+/** Largeur et hauteur en pixels, lues dans le fichier ; null quand on ne sait pas les lire (WebP). */
 export type ReponseCouverture =
   | { trouve: false }
-  | { trouve: true; source: Source; image: { type: TypeImage; base64: string } }
+  | { trouve: true; source: Source; image: { type: TypeImage; base64: string }; largeur: number | null; hauteur: number | null }
+
+/**
+ * En dessous de cette largeur, une couverture est « de petite taille » : la fiche l'affiche sur
+ * près de 200 points, soit 600 pixels sur un iPhone. La fonction cherche alors plus grand ailleurs.
+ */
+export const LARGEUR_PETITE = 450
 
 /**
  * La proposition de l'IA. Elle ne contient jamais de donnée bibliographique

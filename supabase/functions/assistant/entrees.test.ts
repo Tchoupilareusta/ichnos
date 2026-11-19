@@ -72,6 +72,30 @@ describe('lireDemande', () => {
     expect(lireDemande({ action: 'fiche', oeuvre })).toEqual({ action: 'fiche', oeuvre })
   })
 
+  it('lit une demande d’autres couvertures : titre, langue, et ce qu’on sait de mon édition', () => {
+    expect(lireDemande({ action: 'autres_couvertures', titre: ' L’Étranger ', langue: 'fr' })).toEqual({ action: 'autres_couvertures', titre: 'L’Étranger', langue: 'fr' })
+    expect(
+      lireDemande({ action: 'autres_couvertures', titre: 'L’Étranger', auteur: 'Albert Camus', langue: 'en', isbn: '978-2-07-036002-4', editeur: 'Gallimard' }),
+    ).toEqual({ action: 'autres_couvertures', titre: 'L’Étranger', auteur: 'Albert Camus', langue: 'en', isbn: '9782070360024', editeur: 'Gallimard' })
+  })
+
+  it('refuse une demande d’autres couvertures mal formée', () => {
+    const base = { action: 'autres_couvertures', titre: 'L’Étranger', langue: 'fr' }
+    // La langue : français ou anglais, rien d'autre (elle entre dans une adresse).
+    expect(lireDemande({ ...base, langue: 'de' })).toBeNull()
+    expect(lireDemande({ ...base, langue: 'fr&key=x' })).toBeNull()
+    expect(lireDemande({ action: 'autres_couvertures', titre: 'L’Étranger' })).toBeNull()
+    expect(lireDemande({ ...base, titre: '   ' })).toBeNull()
+    expect(lireDemande({ ...base, titre: 'a'.repeat(201) })).toBeNull()
+    expect(lireDemande({ ...base, auteur: 'a'.repeat(121) })).toBeNull()
+    expect(lireDemande({ ...base, isbn: '9782070360025' })).toBeNull()
+    expect(lireDemande({ ...base, editeur: 'a'.repeat(121) })).toBeNull()
+    expect(lireDemande({ ...base, editeur: 'Galli\u0000mard' })).toBeNull()
+    // Rien de personnel ne voyage : ni statut, ni note, ni image.
+    expect(lireDemande({ ...base, statut: 'en_cours' })).toBeNull()
+    expect(lireDemande({ ...base, url: 'https://exemple.test/x.jpg' })).toBeNull()
+  })
+
   it('refuse une action inconnue ou absente', () => {
     expect(lireDemande({ action: 'supprimer_tout' })).toBeNull()
     expect(lireDemande({})).toBeNull()

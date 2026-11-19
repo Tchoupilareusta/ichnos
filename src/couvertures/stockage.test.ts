@@ -22,6 +22,8 @@ function fauxCaches() {
 }
 
 type Options = {
+  /** La réduction appliquée avant le rangement (par défaut : l'image est rendue telle quelle). */
+  reduire?: (image: Blob) => Promise<Blob>
   session?: boolean
   envoi?: { error: unknown }
   signature?: 'ok' | 'panne'
@@ -30,6 +32,7 @@ type Options = {
 
 function monde(options: Options = {}, partage?: ReturnType<typeof fauxCaches>) {
   const envois: { chemin: string; type: string | undefined; ecraser: boolean | undefined }[] = []
+  const corps: Blob[] = []
   const signatures: string[][] = []
   const telechargements: string[] = []
   const cache = partage ?? fauxCaches()
@@ -39,7 +42,8 @@ function monde(options: Options = {}, partage?: ReturnType<typeof fauxCaches>) {
     auth: { getSession: async () => ({ data: { session: options.session === false ? null : { user: { id: MOI } } }, error: null }) },
     storage: {
       from: (seau: string) => ({
-        upload: async (chemin: string, _corps: Blob, reglages: { contentType?: string; upsert?: boolean }) => {
+        upload: async (chemin: string, envoye: Blob, reglages: { contentType?: string; upsert?: boolean }) => {
+          corps.push(envoye)
           envois.push({ chemin: `${seau}:${chemin}`, type: reglages.contentType, ecraser: reglages.upsert })
           return options.envoi ?? { data: { path: chemin }, error: null }
         },
@@ -61,8 +65,9 @@ function monde(options: Options = {}, partage?: ReturnType<typeof fauxCaches>) {
     },
     creerAdresse: (blob) => `blob:essai/${blob.size}-${++numero}`,
     libererAdresse: () => {},
+    reduire: options.reduire ?? (async (blob) => blob),
   })
-  return { couvertures, envois, signatures, telechargements, cache }
+  return { couvertures, envois, corps, signatures, telechargements, cache }
 }
 
 describe('déposer une couverture', () => {
@@ -81,6 +86,38 @@ describe('déposer une couverture', () => {
     expect(a.chemin).toBe(b.chemin)
     expect(c.chemin).not.toBe(a.chemin)
     expect(c.chemin).toMatch(/\.png$/)
+  })
+
+  it('range l’image réduite, pas l’image d’origine : 1200 px au plus, en JPEG', async () => {
+    const reduite = image('image-reduite', 'image/jpeg')
+    const vues: Blob[] = []
+    const { couvertures, envois, corps } = monde({
+      reduire: async (origine) => {
+        vues.push(origine)
+        return reduite
+      },
+    })
+    const origine = image('grande-image-d-origine-en-png', 'image/png')
+    const depose = await couvertures.deposer(origine)
+    if (!depose.ok) throw new Error('dépôt attendu')
+    expect(vues).toEqual([origine])
+    // Le nom, l'extension et le contenu envoyé sont ceux de l'image réduite.
+    expect(depose.chemin).toMatch(/\.jpg$/)
+    expect(corps).toEqual([reduite])
+    expect(envois[0].type).toBe('image/jpeg')
+    const directe = await monde().couvertures.deposer(reduite)
+    expect(directe.ok && directe.chemin).toBe(depose.chemin)
+  })
+
+  it('range l’image telle quelle si la réduction échoue', async () => {
+    const { couvertures, corps } = monde({
+      reduire: async () => {
+        throw new Error('toile indisponible')
+      },
+    })
+    const origine = image()
+    expect((await couvertures.deposer(origine)).ok).toBe(true)
+    expect(corps).toEqual([origine])
   })
 
   it('tient pour réussie une image déjà rangée', async () => {

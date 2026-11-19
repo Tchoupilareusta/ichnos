@@ -7,6 +7,7 @@
 //   2. le jeton de session est vérifié auprès de Supabase : sans compte connecté, rien ne passe ;
 //   3. la demande est relue champ par champ ;
 //   4. l'action est exécutée. Seule « fiche » appelle l'IA, après avoir réservé l'appel dans la base.
+//      « autres_couvertures » n'interroge que les catalogues, et ne télécharge aucune image.
 // Les réponses d'erreur ne portent qu'un code. Rien de ce qu'un service extérieur répond
 // n'est recopié, ni dans une réponse ni dans le journal : une clé ne peut donc pas s'échapper.
 
@@ -19,21 +20,26 @@ import {
   type EtatSources,
   type OeuvrePourFiche,
   type RefCouverture,
+  type ReponseAutresCouvertures,
   type ReponseCouverture,
   type ReponseIsbn,
   type ReponseTitre,
 } from './contrat.ts'
+import { proposerCouvertures } from './autresCouvertures.ts'
 import { chercherCouverture, enBase64, type Recuperer } from './couverture.ts'
 import { LONGUEUR_MAX_CORPS, lireDemande } from './entrees.ts'
 import { construireDemande, SCHEMA_FICHE, validerFiche, type Vocabulaire } from './fiche.ts'
 import { completerAvecOriginal, fusionnerNotice, grouperResultats } from './notice.ts'
 import { adresseBnfIsbn, adresseBnfTitre, lireNoticesBnf } from './sources/bnf.ts'
-import { adresseGoogleIsbn, adresseGoogleTitre, lireVolumesGoogle, type VolumeGoogle } from './sources/google.ts'
+import { adresseGoogleCouvertures, adresseGoogleIsbn, adresseGoogleTitre, lireVolumesGoogle, type VolumeGoogle } from './sources/google.ts'
 import {
   adresseOpenLibraryEdition,
+  adresseOpenLibraryEditions,
   adresseOpenLibraryIsbn,
   adresseOpenLibraryTitre,
+  lireClesOeuvres,
   lireEditionOpenLibrary,
+  lireEditionsOpenLibrary,
   lireRechercheOpenLibrary,
 } from './sources/openLibrary.ts'
 
@@ -200,20 +206,59 @@ export function creerGestionnaire(deps: Dependances): (requete: Request) => Prom
     if ('ref' in demande) {
       refs.push(demande.ref)
     } else {
-      // Par ISBN : Google Books d'abord (il faut retrouver son identifiant de volume), puis Open Library.
-      const google = await lireGoogle(adresseGoogleIsbn(demande.isbn))
+      // Par ISBN : Google Books d'abord (il faut retrouver son identifiant de volume), puis Open Library
+      // (il faut le numéro de couverture de cette édition, pour avoir l'image d'origine).
+      const [google, edition] = await Promise.all([lireGoogle(adresseGoogleIsbn(demande.isbn)), lire(adresseOpenLibraryEdition(demande.isbn))])
       const volumes: VolumeGoogle[] = google.etat === 'ok' ? lireVolumesGoogle(json(google.texte)) : []
       const volume = volumes.find((v) => v.isbn13.includes(demande.isbn) && v.aCouverture)
       if (volume) refs.push({ source: 'google_books', id: volume.id })
-      refs.push({ source: 'open_library', isbn: demande.isbn })
+      const numero = edition.etat === 'ok' ? (lireEditionOpenLibrary(json(edition.texte))?.couverture ?? null) : null
+      // Sans numéro connu, l'adresse par ISBN reste le dernier recours : même édition, image plus petite.
+      refs.push(numero !== null ? { source: 'open_library', numero } : { source: 'open_library', isbn: demande.isbn })
     }
-    for (const ref of refs) {
-      const trouvee = await chercherCouverture(ref, recuperer)
-      if (trouvee) {
-        return { trouve: true, source: trouvee.source, image: { type: trouvee.image.type, base64: enBase64(trouvee.image.octets) } }
-      }
+    const trouvee = await chercherCouverture(refs, recuperer)
+    if (!trouvee) return { trouve: false }
+    const { image } = trouvee
+    return {
+      trouve: true,
+      source: trouvee.source,
+      image: { type: image.type, base64: enBase64(image.octets) },
+      largeur: image.largeur,
+      hauteur: image.hauteur,
     }
-    return { trouve: false }
+  }
+
+  /** Les œuvres d'Open Library dont on lit les éditions : les deux premières de la recherche. */
+  const OEUVRES_OPEN_LIBRARY = 2
+
+  /**
+   * D'autres couvertures pour une œuvre : des éditions qui ont une image, triées. Pas d'IA, donc
+   * pas de réservation d'appel ; aucune image n'est téléchargée ici.
+   */
+  async function autresCouvertures(
+    demande: Extract<Demande, { action: 'autres_couvertures' }>,
+  ): Promise<{ corps: ReponseAutresCouvertures; sources: EtatSources }> {
+    const [google, recherche, bnf] = await Promise.all([
+      lireGoogle(adresseGoogleCouvertures(demande.titre, demande.auteur, demande.langue)),
+      lire(adresseOpenLibraryTitre(demande.titre, demande.auteur)),
+      lire(adresseBnfTitre(demande.titre, demande.auteur)),
+    ])
+    const volumes = google.etat === 'ok' ? lireVolumesGoogle(json(google.texte)) : []
+    const notices = bnf.etat === 'ok' ? lireNoticesBnf(bnf.texte) : []
+    const cles = recherche.etat === 'ok' ? lireClesOeuvres(json(recherche.texte)).slice(0, OEUVRES_OPEN_LIBRARY) : []
+    const listes = await Promise.all(cles.map((cle) => lire(adresseOpenLibraryEditions(cle))))
+    const editions = listes.flatMap((liste) => (liste.etat === 'ok' ? lireEditionsOpenLibrary(json(liste.texte)) : []))
+
+    const sources: EtatSources = {
+      bnf: etat(bnf, notices.length > 0),
+      google_books: cleGoogle ? etat(google, volumes.length > 0) : 'non_configure',
+      open_library: etat(recherche, editions.length > 0),
+    }
+    const propositions = proposerCouvertures(
+      { langue: demande.langue, isbn: demande.isbn, editeur: demande.editeur },
+      { google: volumes, editions, bnf: notices },
+    )
+    return { corps: { propositions, sources }, sources }
   }
 
   /** Mon vocabulaire d'étiquettes, lu dans la base avec mon jeton (la RLS ne montre que le mien). */
@@ -335,6 +380,11 @@ export function creerGestionnaire(deps: Dependances): (requete: Request) => Prom
         }
         case 'couverture':
           return repondre(200, await couverture(demande))
+        case 'autres_couvertures': {
+          const resultat = await autresCouvertures(demande)
+          sources = resultat.sources
+          return repondre(200, resultat.corps)
+        }
         case 'fiche':
           return repondre(200, await fiche(demande.oeuvre, compte))
       }
