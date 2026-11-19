@@ -27,6 +27,8 @@ const DEJA_INSTALLE = 'IC001'
 /** Codes rendus par enregistrer_oeuvre, changer_statut, noter_progression et dater_fin (supabase/migrations). */
 const FICHE_INCOHERENTE = 'EO001'
 const OEUVRE_INTROUVABLE = 'EO002'
+/** Code rendu par noter_achat quand l'ISBN est déjà porté ailleurs dans ma bibliothèque. */
+const ISBN_AILLEURS = 'EO003'
 
 // Sans réseau, supabase-js ne reçoit aucune réponse : l'erreur n'a pas de code et rapporte l'échec de la requête.
 const estSansReseau = (erreur: ErreurBase) =>
@@ -445,6 +447,14 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
     changerMonEdition: (id, edition) => ecrireEntree(id, { edition_id: edition }),
 
     changerPossessionTomes: (id: string, tomes: ChoixTomes, possession: Possession) => ecrireTomes(id, tomes, { ownership: possession }),
+
+    async noterAchat(id, achat) {
+      const { data, error } = await client.rpc('noter_achat', { oeuvre: id, achat })
+      if (error) return { ok: false, echec: error.code === ISBN_AILLEURS ? 'isbn_ailleurs' : echecEcriture(error) }
+      // L'identifiant de l'édition devenue la mienne, ou rien pour un tome.
+      if (data !== null && typeof data !== 'string') return { ok: false, echec: 'inconnu' }
+      return { ok: true, edition: data }
+    },
 
     async supprimerOeuvre(id) {
       // Les éditions, tomes, médias, notes et l'historique partent avec l'œuvre (on delete cascade).

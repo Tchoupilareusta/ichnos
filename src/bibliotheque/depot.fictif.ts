@@ -311,6 +311,65 @@ export function depotFictif(
     async changerMonEdition(id, edition) {
       return modifier(id, 'monEdition', edition, (o) => ({ ...o, monEdition: edition }))
     },
+    // Ce que ferait la fonction noter_achat de la base, sans ses contrôles de forme.
+    async noterAchat(id, achat) {
+      appels.ecritures.push({ action: 'achat', id, valeur: achat })
+      if (depart.ecriture && !depart.ecriture.ok) return depart.ecriture
+      const oeuvre = oeuvres.find((o) => o.id === id)
+      if (!oeuvre) return { ok: false, echec: 'introuvable' }
+      const numero = achat.tome ?? null
+      if (oeuvre.estSerie !== (numero !== null)) return { ok: false, echec: 'invalide' }
+      const ailleurs = oeuvres.some(
+        (o) =>
+          (o.id !== id && (o.editions.some((e) => e.isbn === achat.isbn) || o.tomes.some((t) => t.isbn === achat.isbn))) ||
+          (o.id === id && o.tomes.some((t) => t.isbn === achat.isbn && t.numero !== numero)),
+      )
+      if (ailleurs) return { ok: false, echec: 'isbn_ailleurs' }
+      const remplacerOeuvre = (apres: OeuvreDetaillee) => void (oeuvres = oeuvres.map((o) => (o.id === id ? apres : o)))
+
+      if (numero !== null) {
+        if (!oeuvre.tomes.some((t) => t.numero === numero)) return { ok: false, echec: 'introuvable' }
+        remplacerOeuvre({
+          ...oeuvre,
+          tomes: oeuvre.tomes.map((t) =>
+            t.numero === numero ? { ...t, isbn: achat.isbn, possession: 'possede', couverture: achat.couverture ?? t.couverture ?? null } : t,
+          ),
+        })
+        return { ok: true, edition: null }
+      }
+
+      const ancienne = oeuvre.editions.find((e) => e.id === oeuvre.monEdition)
+      const reprise = oeuvre.editions.find((e) => e.isbn === achat.isbn)
+      const achetee = reprise
+        ? {
+            ...reprise,
+            publisher: reprise.publisher ?? achat.publisher ?? null,
+            language: reprise.language ?? achat.language ?? null,
+            format: reprise.format ?? achat.format ?? null,
+            translator: reprise.translator ?? achat.translator ?? null,
+            pageCount: reprise.pageCount ?? achat.page_count ?? null,
+            couverture: achat.couverture ?? reprise.couverture ?? null,
+          }
+        : {
+            id: `${id}-achat-${++compteur}`,
+            isbn: achat.isbn,
+            publisher: achat.publisher ?? null,
+            language: achat.language ?? null,
+            format: achat.format ?? null,
+            translator: achat.translator ?? null,
+            pageCount: achat.page_count ?? null,
+            couverture: achat.couverture ?? null,
+          }
+      remplacerOeuvre({
+        ...oeuvre,
+        editions: reprise ? oeuvre.editions.map((e) => (e.id === reprise.id ? achetee : e)) : [...oeuvre.editions, achetee],
+        monEdition: achetee.id,
+        possession: 'possede',
+        // Sans couverture sur l'édition achetée, celle qui s'affichait reste affichée.
+        couverture: !achetee.couverture && ancienne?.couverture ? ancienne.couverture : oeuvre.couverture,
+      })
+      return { ok: true, edition: achetee.id }
+    },
     async supprimerOeuvre(id) {
       const resultat = modifier(id, 'suppression', undefined, (o) => o)
       if (resultat.ok) oeuvres = oeuvres.filter((o) => o.id !== id)

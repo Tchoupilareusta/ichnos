@@ -764,3 +764,45 @@ describe('couvertures', () => {
     expect(await creerDepotSupabase(coupe.client, charger).listerCouvertures()).toEqual({ ok: false, echec: 'reseau' })
   })
 })
+
+describe('« Je l’ai acheté »', () => {
+  const ACHAT = { isbn: '9782070360024', publisher: 'Gallimard', language: 'fr', translator: null, page_count: 186, couverture: null }
+
+  it('note l’achat en un seul appel à la fonction noter_achat, et rend l’édition devenue la mienne', async () => {
+    const { client, rpc, requetes } = fauxClient({}, { data: 'edition-achetee' })
+    expect(await creerDepotSupabase(client, charger).noterAchat('w1', ACHAT)).toEqual({ ok: true, edition: 'edition-achetee' })
+    expect(rpc).toEqual([{ nom: 'noter_achat', arguments_: { oeuvre: 'w1', achat: ACHAT } }])
+    // Tout ou rien, dans la base : aucune autre écriture ne part de l'appli.
+    expect(requetes).toHaveLength(0)
+  })
+
+  it('pour un tome, ne rend pas d’édition', async () => {
+    const { client, rpc } = fauxClient({}, { data: null })
+    expect(await creerDepotSupabase(client, charger).noterAchat('w3', { isbn: '9782351423554', tome: 1 })).toEqual({ ok: true, edition: null })
+    expect(rpc[0].arguments_).toEqual({ oeuvre: 'w3', achat: { isbn: '9782351423554', tome: 1 } })
+  })
+
+  it('dit quand l’ISBN est déjà porté ailleurs dans ma bibliothèque', async () => {
+    const ailleurs = fauxClient({}, { error: { code: 'EO003', message: 'Cet ISBN est déjà dans ma bibliothèque.' } })
+    expect(await creerDepotSupabase(ailleurs.client, charger).noterAchat('w1', ACHAT)).toEqual({ ok: false, echec: 'isbn_ailleurs' })
+  })
+
+  it('rend les autres refus dans les mots de l’appli', async () => {
+    const cas: [{ code?: string; message?: string }, string][] = [
+      [{ code: 'EO001', message: 'ISBN faux.' }, 'invalide'],
+      [{ code: 'EO002', message: 'Œuvre introuvable.' }, 'introuvable'],
+      [{ code: '23514', message: 'violates check constraint' }, 'invalide'],
+      [SANS_RESEAU, 'reseau'],
+      [{ code: '42501', message: 'permission denied' }, 'inconnu'],
+    ]
+    for (const [error, echec] of cas) {
+      const { client } = fauxClient({}, { error })
+      expect(await creerDepotSupabase(client, charger).noterAchat('w1', ACHAT), echec).toEqual({ ok: false, echec })
+    }
+  })
+
+  it('ne croit pas une réponse inattendue', async () => {
+    const { client } = fauxClient({}, { data: { id: 'x' } })
+    expect(await creerDepotSupabase(client, charger).noterAchat('w1', ACHAT)).toEqual({ ok: false, echec: 'inconnu' })
+  })
+})

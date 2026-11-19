@@ -214,6 +214,26 @@ export type Installation = { ok: true } | { ok: false; echec: EchecInstallation 
 export type Ecriture = { ok: true } | { ok: false; echec: EchecEcriture }
 export type Enregistrement = { ok: true; id: string } | { ok: false; echec: EchecEcriture }
 
+/**
+ * « Je l'ai acheté » : l'ISBN de mon exemplaire et ce que les catalogues en disent, envoyés à la
+ * fonction noter_achat de la base. `tome` pour un tome de série ; `couverture` : le chemin d'une
+ * image déjà rangée, si j'en garde une.
+ */
+export type Achat = {
+  isbn: string
+  publisher?: string | null
+  language?: string | null
+  format?: string | null
+  translator?: string | null
+  page_count?: number | null
+  tome?: number
+  couverture?: string | null
+}
+/** « isbn_ailleurs » : cet ISBN est déjà celui d'une autre de mes œuvres, ou d'un autre tome de la série. */
+export type EchecAchat = EchecEcriture | 'isbn_ailleurs'
+/** L'édition devenue la mienne (null pour un tome). */
+export type NoteAchat = { ok: true; edition: string | null } | { ok: false; echec: EchecAchat }
+
 /** Les tomes visés par un changement de possession : tous, ou une plage (« les tomes 1 à 8 »). */
 export type ChoixTomes = 'tous' | { de: number; a: number }
 
@@ -242,6 +262,8 @@ export interface Depot {
   changerPossession(id: string, possession: Possession): Promise<Ecriture>
   changerPossessionTomes(id: string, tomes: ChoixTomes, possession: Possession): Promise<Ecriture>
   changerMonEdition(id: string, edition: string | null): Promise<Ecriture>
+  /** « Je l'ai acheté » : mon édition (ou le tome), son ISBN, sa couverture et la possession, en tout ou rien (fonction noter_achat). */
+  noterAchat(id: string, achat: Achat): Promise<NoteAchat>
   supprimerOeuvre(id: string): Promise<Ecriture>
   /** Range le chemin d'une couverture sur l'œuvre, une de ses éditions ou un de ses tomes ; null la retire. */
   definirCouverture(id: string, cible: CibleCouverture, chemin: string | null): Promise<Ecriture>
@@ -275,6 +297,7 @@ export const DEPOT_ABSENT: Depot = {
   changerPossession: absent,
   changerPossessionTomes: absent,
   changerMonEdition: absent,
+  noterAchat: absent,
   supprimerOeuvre: absent,
   definirCouverture: absent,
   trouverParIsbn: absent,
