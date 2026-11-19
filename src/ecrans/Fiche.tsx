@@ -1,7 +1,7 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { titresAffiches } from '../catalogue/titres'
 import { mentionTraduction, nomLangue } from '../catalogue/langues'
-import type { Edition, OeuvreDetaillee, Tome } from '../bibliotheque/depot'
+import type { Edition, Media, OeuvreDetaillee, Tome } from '../bibliotheque/depot'
 import {
   LONGUEURS,
   POSSESSIONS,
@@ -12,16 +12,31 @@ import {
   libelleTypeMedia,
   possessionAffichee,
   type Possession,
+  type Statut,
 } from '../bibliotheque/modele'
 import { EchecDepot, useModifierOeuvre, useOeuvre } from '../bibliotheque/requetes'
+import {
+  LECTURES_TOME,
+  STATUTS_MEDIA,
+  libelleLectureTome,
+  libelleStatutMedia,
+  texteEpisodes,
+  type LectureTome,
+  type StatutMedia,
+} from '../bibliotheque/suivi'
 import { texteConfirmationTomes, titreConfirmationTomes } from '../bibliotheque/tomes'
 import { Bouton } from '../composants/Bouton'
 import { ChampTexte, Pastilles } from '../composants/Champs'
 import { Dialogue } from '../composants/Dialogue'
-import { IconeChevronBas, IconeModifier, IconeRetour } from '../composants/Icones'
+import { Feuille } from '../composants/Feuille'
+import { IconeAjouter, IconeChevronBas, IconeCoche, IconeModifier, IconeMoins, IconeRetour, IconeSignet } from '../composants/Icones'
 import { IconePossession, IconeStatut } from '../composants/IconesLecture'
 import { Menu } from '../composants/Menu'
 import { EtatVide, BoutonPrincipal, Page } from '../composants/Page'
+import { LIEN_ACTION, Section } from '../composants/Section'
+import { MonParcours } from '../suivi/Parcours'
+import { ProgressionFiche } from '../suivi/ProgressionFiche'
+import { MonRessenti, ProposerRessenti } from '../suivi/Ressenti'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
@@ -30,7 +45,6 @@ import { revenir, useRoute } from '../navigation/useRoute'
 const PASTILLE = 'flex min-h-11 items-center gap-1.5 rounded-pilule pr-3.5 pl-3.5 text-[0.9375rem]'
 const PASTILLE_DOUCE = `${PASTILLE} border-0 bg-accent-doux font-bold text-accent-texte`
 const PASTILLE_CLAIRE = `${PASTILLE} border border-bordure bg-surface font-semibold text-encre`
-const TITRE_SECTION = 'm-0 font-titre text-2xl'
 const ANCRE_TOMES = 'mes-tomes'
 
 const OPTIONS_STATUT = STATUTS.map((s) => ({ ...s, icone: <IconeStatut statut={s.valeur} taille={19} /> }))
@@ -132,6 +146,13 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   const enLigne = useEnLigne()
   const modifier = useModifierOeuvre(oeuvre.id)
   const [confirmation, setConfirmation] = useState<Possession | null>(null)
+  // Passer à « Terminé » propose mon ressenti, sans obligation.
+  const [ressenti, setRessenti] = useState(false)
+
+  function changerStatut(statut: Statut) {
+    modifier.statut.mutate(statut)
+    if (statut === 'termine') setRessenti(true)
+  }
 
   const edition = oeuvre.editions.find((e) => e.id === oeuvre.monEdition) ?? null
   const { principal, secondaire } = titresDe(oeuvre, edition?.language)
@@ -146,7 +167,19 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
     oeuvre.tomes.map((t) => t.possession),
   )
 
-  const erreurs = [modifier.statut, modifier.possession, modifier.possessionTomes, modifier.monEdition]
+  const erreurs = [
+    modifier.statut,
+    modifier.possession,
+    modifier.possessionTomes,
+    modifier.monEdition,
+    modifier.progression,
+    modifier.unite,
+    modifier.total,
+    modifier.dateFin,
+    modifier.appreciation,
+    modifier.lectureTomes,
+    modifier.media,
+  ]
     .map((mutation) => mutation.error?.echec)
     .filter(Boolean)
   const derniereErreur = erreurs[0]
@@ -222,7 +255,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
               classeBouton={PASTILLE_DOUCE}
               options={OPTIONS_STATUT}
               valeur={oeuvre.statut}
-              onChoisir={(valeur) => modifier.statut.mutate(valeur)}
+              onChoisir={changerStatut}
               desactive={!enLigne}
             />
             {avecTomes ? (
@@ -266,7 +299,25 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-10 min-[72rem]:col-start-2">
+        {(oeuvre.statut === 'en_cours' || oeuvre.statut === 'en_pause') && (
+          <ProgressionFiche
+            oeuvre={oeuvre}
+            titre={principal}
+            enLigne={enLigne}
+            modifier={modifier}
+            terminer={() => changerStatut('termine')}
+          />
+        )}
         <Resume oeuvre={oeuvre} edition={edition} />
+        {(oeuvre.statut === 'en_cours' || oeuvre.statut === 'termine' || oeuvre.statut === 'en_pause' || oeuvre.appreciation) && (
+          <MonRessenti valeur={oeuvre.appreciation} choisir={(valeur) => modifier.appreciation.mutate(valeur)} enLigne={enLigne} />
+        )}
+        <MonParcours
+          historique={oeuvre.historique}
+          statut={oeuvre.statut}
+          enLigne={enLigne}
+          dater={(date, precision) => modifier.dateFin.mutate({ date, precision })}
+        />
         {oeuvre.editions.length > 0 && (
           <MonEdition oeuvre={oeuvre} edition={edition} enLigne={enLigne} choisir={(valeur) => modifier.monEdition.mutate(valeur)} />
         )}
@@ -276,11 +327,25 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
             tomes={oeuvre.tomes}
             enLigne={enLigne}
             changer={(tomes, valeur) => modifier.possessionTomes.mutate({ tomes, possession: valeur })}
+            changerLecture={(tomes, lecture) => modifier.lectureTomes.mutate({ tomes, lecture })}
             changerTous={setConfirmation}
           />
         )}
-        {oeuvre.medias.length > 0 && <Medias oeuvre={oeuvre} />}
+        {oeuvre.medias.length > 0 && (
+          <Medias oeuvre={oeuvre} enLigne={enLigne} changer={(media, valeurs) => modifier.media.mutate({ media, ...valeurs })} />
+        )}
       </div>
+
+      <ProposerRessenti
+        ouvert={ressenti}
+        titre={principal}
+        valeur={oeuvre.appreciation}
+        fermer={() => setRessenti(false)}
+        choisir={(valeur) => {
+          if (valeur !== oeuvre.appreciation) modifier.appreciation.mutate(valeur)
+          setRessenti(false)
+        }}
+      />
 
       <Dialogue
         ouvert={confirmation !== null}
@@ -295,37 +360,6 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         {confirmation && texteConfirmationTomes(oeuvre.tomes, confirmation)}
       </Dialogue>
     </div>
-  )
-}
-
-function Section({
-  titre,
-  children,
-  complement,
-  ancre,
-}: {
-  titre: string
-  children: ReactNode
-  complement?: ReactNode
-  /** Identifiant de la section, quand un bouton de la fiche y mène (elle reçoit alors le focus). */
-  ancre?: string
-}) {
-  const id = useId()
-  return (
-    <section
-      id={ancre}
-      tabIndex={ancre ? -1 : undefined}
-      aria-labelledby={id}
-      className="flex max-w-[65ch] flex-col gap-3 outline-none"
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id={id} className={TITRE_SECTION}>
-          {titre}
-        </h2>
-        {complement}
-      </div>
-      {children}
-    </section>
   )
 }
 
@@ -443,21 +477,38 @@ const STYLE_TOME: Record<Possession, string> = {
   non_possede: 'border border-bordure bg-transparent font-semibold text-discret',
 }
 
+const PASTILLE_LECTURE = 'flex size-[1.125rem] items-center justify-center rounded-full border border-bordure bg-surface text-accent-texte'
+
+/** La marque de lecture d'un tome, posée dans son coin : une coche s'il est lu, un signet s'il est en cours. */
+function MarqueLecture({ lecture, dansLaLegende = false }: { lecture: LectureTome; dansLaLegende?: boolean }) {
+  if (lecture === 'a_lire') return null
+  return (
+    <span aria-hidden="true" className={`${PASTILLE_LECTURE} ${dansLaLegende ? '' : 'absolute -top-1.5 -right-1.5'}`}>
+      {lecture === 'lu' ? <IconeCoche taille={12} /> : <IconeSignet taille={10} />}
+    </span>
+  )
+}
+
 function Tomes({
   titre,
   tomes,
   enLigne,
   changer,
+  changerLecture,
   changerTous,
 }: {
   titre: string
   tomes: Tome[]
   enLigne: boolean
   changer: (tomes: { de: number; a: number }, possession: Possession) => void
+  changerLecture: (tomes: { de: number; a: number }, lecture: LectureTome) => void
   /** Ouvre la confirmation qui applique une possession à tous les tomes. */
   changerTous: (possession: Possession) => void
 }) {
   const [plage, setPlage] = useState(false)
+  const [ouvert, setOuvert] = useState<number | null>(null)
+  const tomeOuvert = tomes.find((t) => t.numero === ouvert) ?? null
+
   return (
     <Section
       titre="Mes tomes"
@@ -486,19 +537,26 @@ function Tomes({
             {p.libelle}
           </li>
         ))}
+        {(['lu', 'en_cours'] as const).map((lecture) => (
+          <li key={lecture} className="flex items-center gap-2">
+            <MarqueLecture lecture={lecture} dansLaLegende />
+            {libelleLectureTome(lecture)}
+          </li>
+        ))}
       </ul>
-      <ul aria-label={`Tomes de ${titre}`} className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-2 p-0">
+      <ul aria-label={`Tomes de ${titre}`} className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-2 p-0 pt-1.5">
         {tomes.map((tome) => (
-          <li key={tome.numero} className="flex">
-            <Menu
-              nom={`Tome ${tome.numero}${tome.titre ? `, ${tome.titre}` : ''} : ${libellePossession(tome.possession)}. Changer`}
-              contenuBouton={tome.numero}
-              classeBouton={`flex h-11 w-full min-w-11 items-center justify-center rounded-pilule text-[0.9375rem] tabular-nums ${STYLE_TOME[tome.possession]}`}
-              options={POSSESSIONS}
-              valeur={tome.possession}
-              onChoisir={(valeur) => changer({ de: tome.numero, a: tome.numero }, valeur)}
-              desactive={!enLigne}
-            />
+          <li key={tome.numero} className="relative flex">
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-label={`Tome ${tome.numero}${tome.titre ? `, ${tome.titre}` : ''} : ${libelleLectureTome(tome.lecture).toLocaleLowerCase('fr')}, ${libellePossession(tome.possession).toLocaleLowerCase('fr')}. Changer`}
+              onClick={() => setOuvert(tome.numero)}
+              className={`flex h-11 w-full min-w-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] tabular-nums ${STYLE_TOME[tome.possession]}`}
+            >
+              {tome.numero}
+            </button>
+            <MarqueLecture lecture={tome.lecture} />
           </li>
         ))}
       </ul>
@@ -507,8 +565,9 @@ function Tomes({
           premier={tomes[0].numero}
           dernier={tomes[tomes.length - 1].numero}
           fermer={() => setPlage(false)}
-          appliquer={(de, a, possession) => {
-            changer({ de, a }, possession)
+          appliquer={(de, a, choix) => {
+            if (choix.type === 'lecture') changerLecture({ de, a }, choix.valeur)
+            else changer({ de, a }, choix.valeur)
             setPlage(false)
           }}
           enLigne={enLigne}
@@ -518,14 +577,49 @@ function Tomes({
           type="button"
           aria-disabled={!enLigne || undefined}
           onClick={() => enLigne && setPlage(true)}
-          className="flex min-h-11 cursor-pointer items-center self-start border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60"
+          className={`${LIEN_ACTION} self-start`}
         >
           Changer plusieurs tomes
         </button>
       )}
+
+      {/* Toucher un tome : sa lecture et sa possession, réglées tout de suite. */}
+      <Feuille
+        ouvert={tomeOuvert !== null}
+        titre={tomeOuvert ? `Tome ${tomeOuvert.numero}` : ''}
+        sousTitre={tomeOuvert?.titre ?? undefined}
+        fermer={() => setOuvert(null)}
+      >
+        {tomeOuvert && (
+          <div className="flex flex-col gap-6">
+            <Pastilles
+              legende="Ma lecture"
+              options={LECTURES_TOME}
+              valeur={tomeOuvert.lecture}
+              onChange={(lecture) => changerLecture({ de: tomeOuvert.numero, a: tomeOuvert.numero }, lecture)}
+              desactive={!enLigne}
+            />
+            <Pastilles
+              legende="Ma possession"
+              options={POSSESSIONS}
+              valeur={tomeOuvert.possession}
+              onChange={(possession) => changer({ de: tomeOuvert.numero, a: tomeOuvert.numero }, possession)}
+              desactive={!enLigne}
+            />
+            {!enLigne && <p className="m-0 text-sm text-discret">Je pourrai changer ce tome au retour du réseau.</p>}
+          </div>
+        )}
+      </Feuille>
     </Section>
   )
 }
+
+type ChoixPlage = { type: 'lecture'; valeur: LectureTome } | { type: 'possession'; valeur: Possession }
+
+const CE_QUE_JE_CHANGE: { valeur: 'lecture' | 'possession'; libelle: string }[] = [
+  { valeur: 'lecture', libelle: 'Ma lecture' },
+  { valeur: 'possession', libelle: 'Ma possession' },
+]
 
 function PlageDeTomes({
   premier,
@@ -536,12 +630,14 @@ function PlageDeTomes({
 }: {
   premier: number
   dernier: number
-  appliquer: (de: number, a: number, possession: Possession) => void
+  appliquer: (de: number, a: number, choix: ChoixPlage) => void
   fermer: () => void
   enLigne: boolean
 }) {
   const [de, setDe] = useState(String(premier))
   const [a, setA] = useState(String(dernier))
+  const [type, setType] = useState<'lecture' | 'possession'>('lecture')
+  const [lecture, setLecture] = useState<LectureTome>('lu')
   const [possession, setPossession] = useState<Possession>('possede')
   const [erreur, setErreur] = useState<string | null>(null)
 
@@ -556,7 +652,7 @@ function PlageDeTomes({
           setErreur(`Choisir des tomes entre ${premier} et ${dernier}, le premier avant le dernier.`)
           return
         }
-        appliquer(debut, fin, possession)
+        appliquer(debut, fin, type === 'lecture' ? { type, valeur: lecture } : { type, valeur: possession })
       }}
       className="flex flex-col gap-5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce"
     >
@@ -575,7 +671,16 @@ function PlageDeTomes({
           {erreur}
         </p>
       )}
-      <Pastilles legende="Ces tomes, je…" options={POSSESSIONS} valeur={possession} onChange={setPossession} />
+      <Pastilles legende="Je change…" options={CE_QUE_JE_CHANGE} valeur={type} onChange={setType} />
+      {type === 'lecture' ? (
+        <Pastilles legende="Ces tomes, je les ai…" options={[
+          { valeur: 'lu' as const, libelle: 'Lus' },
+          { valeur: 'en_cours' as const, libelle: 'En cours' },
+          { valeur: 'a_lire' as const, libelle: 'À lire' },
+        ]} valeur={lecture} onChange={setLecture} />
+      ) : (
+        <Pastilles legende="Ces tomes, je…" options={POSSESSIONS} valeur={possession} onChange={setPossession} />
+      )}
       <div className="flex flex-wrap gap-3">
         <Bouton type="submit" occupe={!enLigne}>
           Appliquer
@@ -588,25 +693,109 @@ function PlageDeTomes({
   )
 }
 
-function Medias({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
+const BOUTON_EPISODE =
+  'flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-pilule p-0 transition-transform duration-200 active:scale-95 aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:scale-100'
+
+const OPTIONS_STATUT_MEDIA = STATUTS_MEDIA
+
+function Medias({
+  oeuvre,
+  enLigne,
+  changer,
+}: {
+  oeuvre: OeuvreDetaillee
+  enLigne: boolean
+  changer: (media: string, valeurs: { vus?: number | null; statut?: StatutMedia }) => void
+}) {
   return (
     <Section titre="À l’écran">
-      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-        {oeuvre.medias.map((media) => {
-          // « Anime · 2 saisons · 48 épisodes » ; le titre seulement s'il diffère de celui de l'œuvre.
-          const titre = media.titre && media.titre !== oeuvre.titreFr ? ` « ${media.titre} »` : ''
-          const details = [
-            `${libelleTypeMedia(media.type)}${titre}`,
-            media.saisons !== null ? `${media.saisons} saison${media.saisons > 1 ? 's' : ''}` : null,
-            media.episodes !== null ? `${media.episodes} épisode${media.episodes > 1 ? 's' : ''}` : null,
-          ].filter(Boolean)
-          return (
-            <li key={media.id} className="text-[1.0625rem]">
-              {details.join(' · ')}
-            </li>
-          )
-        })}
+      <ul className="m-0 flex list-none flex-col gap-6 p-0">
+        {oeuvre.medias.map((media) => (
+          <UnMedia key={media.id} media={media} titreOeuvre={oeuvre.titreFr} enLigne={enLigne} changer={(v) => changer(media.id, v)} />
+        ))}
       </ul>
     </Section>
+  )
+}
+
+/** Un média associé : « Anime · 2 saisons · 48 épisodes », puis l'épisode vu avec − et +, et son statut. */
+function UnMedia({
+  media,
+  titreOeuvre,
+  enLigne,
+  changer,
+}: {
+  media: Media
+  titreOeuvre: string
+  enLigne: boolean
+  changer: (valeurs: { vus?: number | null; statut?: StatutMedia }) => void
+}) {
+  // Le titre seulement s'il diffère de celui de l'œuvre.
+  const titre = media.titre && media.titre !== titreOeuvre ? ` « ${media.titre} »` : ''
+  const nom = `${libelleTypeMedia(media.type)}${titre}`
+  const details = [
+    nom,
+    media.saisons !== null ? `${media.saisons} saison${media.saisons > 1 ? 's' : ''}` : null,
+    media.episodes !== null ? `${media.episodes} épisode${media.episodes > 1 ? 's' : ''}` : null,
+  ].filter(Boolean)
+  const vus = media.episodesVus ?? 0
+  const auBout = media.episodes !== null && vus >= media.episodes
+  const episode = texteEpisodes(media.episodesVus, media.episodes)
+
+  return (
+    <li className="flex flex-col gap-3">
+      <p className="m-0 text-[1.0625rem]">{details.join(' · ')}</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="Un épisode de moins"
+            aria-disabled={!enLigne || vus === 0 || undefined}
+            onClick={() => enLigne && vus > 0 && changer({ vus: vus - 1 })}
+            className={`${BOUTON_EPISODE} border border-bordure bg-fond text-encre`}
+          >
+            <IconeMoins taille={16} />
+          </button>
+          <p className="m-0 min-w-[9.5rem] text-center text-[1.0625rem] tabular-nums" aria-live="polite">
+            {episode ?? <span className="text-discret">Aucun épisode vu</span>}
+          </p>
+          <button
+            type="button"
+            aria-label="Un épisode de plus"
+            aria-disabled={!enLigne || auBout || undefined}
+            onClick={() => {
+              if (!enLigne || auBout) return
+              // Le premier épisode vu fait passer de « À voir » à « En cours ».
+              changer(media.statut === 'a_voir' ? { vus: vus + 1, statut: 'en_cours' } : { vus: vus + 1 })
+            }}
+            className={`${BOUTON_EPISODE} border border-accent bg-accent text-sur-accent`}
+          >
+            <IconeAjouter taille={16} />
+          </button>
+        </div>
+        <Menu
+          nom={`${nom} : ${libelleStatutMedia(media.statut)}. Changer`}
+          contenuBouton={
+            <>
+              {libelleStatutMedia(media.statut)}
+              <IconeChevronBas taille={16} />
+            </>
+          }
+          classeBouton={PASTILLE_CLAIRE}
+          options={OPTIONS_STATUT_MEDIA}
+          valeur={media.statut}
+          onChoisir={(statut) => changer({ statut })}
+          desactive={!enLigne}
+        />
+      </div>
+      {auBout && media.statut !== 'termine' && (
+        <div data-etat="visible" className="flex flex-wrap items-center gap-3 rounded-carte bg-accent-doux p-4">
+          <p className="m-0 text-[1.0625rem]">J’ai vu le dernier épisode. Vu ?</p>
+          <Bouton occupe={!enLigne} onClick={() => changer({ statut: 'termine' })}>
+            Oui, vu
+          </Bouton>
+        </div>
+      )}
+    </li>
   )
 }

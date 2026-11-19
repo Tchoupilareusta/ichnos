@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { titresAffiches } from '../catalogue/titres'
-import type { ChoixTomes, Depot, EchecEcriture, Etiquette, OeuvreDetaillee, OeuvreListee } from './depot'
+import type { ChoixTomes, Depot, EchecEcriture, EnCours, Etiquette, OeuvreDetaillee, OeuvreListee } from './depot'
 import { preparerEnvoi, type FichierCatalogue } from './envoiCatalogue'
 import {
   comparerTitres,
@@ -14,6 +14,7 @@ import {
   type Statut,
   type TypeMedia,
 } from './modele'
+import type { Appreciation, Evenement, LectureTome, PrecisionDate, StatutMedia, TypeEvenement, Unite } from './suivi'
 
 /** La seule partie du client Supabase dont la bibliothèque a besoin. */
 export type ClientDonnees = Pick<SupabaseClient, 'from' | 'rpc'>
@@ -22,7 +23,7 @@ type ErreurBase = { code?: string; message?: string; details?: string | null }
 
 /** Code rendu par la fonction importer_catalogue quand la bibliothèque contient déjà des œuvres. */
 const DEJA_INSTALLE = 'IC001'
-/** Codes rendus par la fonction enregistrer_oeuvre (supabase/migrations). */
+/** Codes rendus par enregistrer_oeuvre, changer_statut, noter_progression et dater_fin (supabase/migrations). */
 const FICHE_INCOHERENTE = 'EO001'
 const OEUVRE_INTROUVABLE = 'EO002'
 
@@ -136,7 +137,7 @@ type LigneEdition = {
   translator: string | null
   page_count: number | null
 }
-type LigneTome = { number: number; title: string | null; isbn: string | null; ownership: Possession }
+type LigneTome = { number: number; title: string | null; isbn: string | null; ownership: Possession; reading_status: LectureTome }
 type LigneMedia = {
   id: string
   kind: TypeMedia
@@ -144,8 +145,74 @@ type LigneMedia = {
   seasons: number | null
   episodes_total: number | null
   episodes_watched: number | null
+  status: string
 }
-type LigneEntree = { reading_status: Statut; ownership: Possession; edition_id: string | null }
+type LigneEvenement = { kind: TypeEvenement; value: number | null; occurred_at: string; date_precision: PrecisionDate }
+type LigneEntree = {
+  reading_status: Statut
+  ownership: Possession
+  edition_id: string | null
+  progress_unit: Unite | null
+  progress_current: number | null
+  progress_total: number | null
+  appreciation: Appreciation | null
+  reading_events?: UnOuPlusieurs<LigneEvenement>
+}
+
+const COLONNES_ENTREE =
+  'reading_status, ownership, edition_id, progress_unit, progress_current, progress_total, appreciation, reading_events(kind, value, occurred_at, date_precision)'
+
+/** « en pause » ou « abandonné » (anciennes valeurs possibles d'un média) se lisent « en cours ». */
+const statutMedia = (statut: string): StatutMedia => (statut === 'a_voir' || statut === 'termine' ? statut : 'en_cours')
+
+const versEvenements = (lignes: UnOuPlusieurs<LigneEvenement>): Evenement[] =>
+  tous(lignes)
+    .map((e) => ({ type: e.kind, valeur: e.value, date: e.occurred_at, precision: e.date_precision }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+// ---------------------------------------------------------------------------
+// Lectures en cours (accueil)
+// ---------------------------------------------------------------------------
+
+type LigneEnCours = {
+  appreciation: Appreciation | null
+  progress_unit: Unite | null
+  progress_current: number | null
+  progress_total: number | null
+  editions: UnOuPlusieurs<{ page_count: number | null; language: string | null }>
+  works: UnOuPlusieurs<{
+    id: string
+    title_fr: string
+    title_original: string | null
+    original_language: string | null
+    is_series: boolean
+    work_authors: UnOuPlusieurs<LienAuteur>
+    volumes: UnOuPlusieurs<{ number: number; reading_status: LectureTome }>
+  }>
+}
+
+const COLONNES_EN_COURS =
+  'appreciation, progress_unit, progress_current, progress_total, updated_at, editions(page_count, language), works(id, title_fr, title_original, original_language, is_series, work_authors(role, authors(name)), volumes(number, reading_status))'
+
+export function versEnCours(ligne: LigneEnCours): EnCours | null {
+  const oeuvre = premier(ligne.works)
+  if (!oeuvre) return null
+  const edition = premier(ligne.editions)
+  return {
+    id: oeuvre.id,
+    titre: titresAffiches(oeuvre, edition?.language).principal,
+    auteurs: nomsAuteurs(oeuvre.work_authors),
+    estSerie: oeuvre.is_series,
+    unite: ligne.progress_unit,
+    position: ligne.progress_current,
+    total: ligne.progress_total,
+    pagesEdition: edition?.page_count ?? null,
+    tomes: tous(oeuvre.volumes)
+      .map((v) => ({ numero: v.number, lecture: v.reading_status }))
+      .sort((a, b) => a.numero - b.numero),
+    appreciation: ligne.appreciation ?? null,
+  }
+}
 
 const COLONNES_FICHE =
   'id, title_fr, title_original, original_language, first_published_year, form, synopsis, tone, density, length, is_series, work_authors(role, authors(name)), work_tags(tags(kind, name, is_interest))'
@@ -187,7 +254,7 @@ export function versOeuvreDetaillee(
     })),
     tomes: [...tomes]
       .sort((a, b) => a.number - b.number)
-      .map((t) => ({ numero: t.number, titre: t.title, isbn: t.isbn, possession: t.ownership })),
+      .map((t) => ({ numero: t.number, titre: t.title, isbn: t.isbn, possession: t.ownership, lecture: t.reading_status })),
     medias: medias.map((m) => ({
       id: m.id,
       type: m.kind,
@@ -195,10 +262,16 @@ export function versOeuvreDetaillee(
       saisons: m.seasons,
       episodes: m.episodes_total,
       episodesVus: m.episodes_watched,
+      statut: statutMedia(m.status),
     })),
     statut: entree?.reading_status ?? 'a_decouvrir',
     possession: entree?.ownership ?? 'non_possede',
     monEdition: entree?.edition_id ?? null,
+    unite: entree?.progress_unit ?? null,
+    position: entree?.progress_current ?? null,
+    total: entree?.progress_total ?? null,
+    appreciation: entree?.appreciation ?? null,
+    historique: versEvenements(entree?.reading_events),
   }
 }
 
@@ -216,6 +289,22 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
     return { ok: true as const }
   }
 
+  /** Une fonction de la base, en tout ou rien. */
+  async function appeler(fonction: string, parametres: Record<string, unknown>) {
+    const { error } = await client.rpc(fonction, parametres)
+    if (error) return { ok: false as const, echec: echecEcriture(error) }
+    return { ok: true as const }
+  }
+
+  async function ecrireTomes(id: string, tomes: ChoixTomes, valeurs: Record<string, unknown>) {
+    let requete = client.from('volumes').update(valeurs).eq('work_id', id)
+    if (tomes !== 'tous') requete = requete.gte('number', tomes.de).lte('number', tomes.a)
+    const { data, error } = await requete.select('number')
+    if (error) return { ok: false as const, echec: echecEcriture(error) }
+    if (!data || data.length === 0) return { ok: false as const, echec: 'introuvable' as const }
+    return { ok: true as const }
+  }
+
   return {
     async listerOeuvres() {
       const { data, error } = await client.from('works').select(COLONNES)
@@ -226,14 +315,25 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
       return { ok: true, oeuvres }
     },
 
+    async listerEnCours() {
+      const { data, error } = await client
+        .from('library_entries')
+        .select(COLONNES_EN_COURS)
+        .eq('reading_status', 'en_cours')
+        .order('updated_at', { ascending: false })
+      if (error) return { ok: false, echec: echecLecture(error) }
+      const lectures = ((data ?? []) as unknown as LigneEnCours[]).map(versEnCours).filter((l): l is EnCours => l !== null)
+      return { ok: true, lectures }
+    },
+
     async lireOeuvre(id) {
       // Cinq lectures en parallèle, chacune limitée à cette œuvre (et, par la RLS, à mes lignes).
       const [oeuvre, editions, tomes, medias, entree] = await Promise.all([
         client.from('works').select(COLONNES_FICHE).eq('id', id).maybeSingle(),
         client.from('editions').select('id, isbn, publisher, language, format, translator, page_count, created_at').eq('work_id', id).order('created_at'),
-        client.from('volumes').select('number, title, isbn, ownership').eq('work_id', id).order('number'),
-        client.from('media').select('id, kind, title, seasons, episodes_total, episodes_watched, created_at').eq('work_id', id).order('created_at'),
-        client.from('library_entries').select('reading_status, ownership, edition_id').eq('work_id', id).maybeSingle(),
+        client.from('volumes').select('number, title, isbn, ownership, reading_status').eq('work_id', id).order('number'),
+        client.from('media').select('id, kind, title, seasons, episodes_total, episodes_watched, status, created_at').eq('work_id', id).order('created_at'),
+        client.from('library_entries').select(COLONNES_ENTREE).eq('work_id', id).maybeSingle(),
       ])
       const erreur = [oeuvre, editions, tomes, medias, entree].find((reponse) => reponse.error)?.error
       if (erreur) return { ok: false, echec: echecLecture(erreur) }
@@ -277,20 +377,36 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
       return { ok: true, id: data }
     },
 
-    changerStatut: (id, statut) => ecrireEntree(id, { reading_status: statut }),
+    changerStatut: (id, statut) => appeler('changer_statut', { oeuvre: id, statut }),
+
+    noterProgression: (id, valeur) => appeler('noter_progression', { oeuvre: id, valeur }),
+
+    // Une nouvelle unité : la position repart de zéro (« p. 75 » ne veut rien dire en lettres).
+    changerUnite: (id, unite, total) => ecrireEntree(id, { progress_unit: unite, progress_total: total, progress_current: null }),
+
+    changerTotal: (id, total) => ecrireEntree(id, { progress_total: total }),
+
+    daterFin: (id, date, precision) => appeler('dater_fin', { oeuvre: id, jour: date, precision_date: date ? precision : null }),
+
+    changerAppreciation: (id, appreciation) => ecrireEntree(id, { appreciation }),
+
+    changerLectureTomes: (id, tomes, lecture) => ecrireTomes(id, tomes, { reading_status: lecture }),
+
+    async changerMedia(id, media, valeurs) {
+      const changement: Record<string, unknown> = {}
+      if (valeurs.vus !== undefined) changement.episodes_watched = valeurs.vus
+      if (valeurs.statut !== undefined) changement.status = valeurs.statut
+      const { data, error } = await client.from('media').update(changement).eq('id', media).eq('work_id', id).select('id')
+      if (error) return { ok: false, echec: echecEcriture(error) }
+      if (!data || data.length === 0) return { ok: false, echec: 'introuvable' }
+      return { ok: true }
+    },
 
     changerPossession: (id, possession) => ecrireEntree(id, { ownership: possession }),
 
     changerMonEdition: (id, edition) => ecrireEntree(id, { edition_id: edition }),
 
-    async changerPossessionTomes(id: string, tomes: ChoixTomes, possession: Possession) {
-      let requete = client.from('volumes').update({ ownership: possession }).eq('work_id', id)
-      if (tomes !== 'tous') requete = requete.gte('number', tomes.de).lte('number', tomes.a)
-      const { data, error } = await requete.select('number')
-      if (error) return { ok: false, echec: echecEcriture(error) }
-      if (!data || data.length === 0) return { ok: false, echec: 'introuvable' }
-      return { ok: true }
-    },
+    changerPossessionTomes: (id: string, tomes: ChoixTomes, possession: Possession) => ecrireTomes(id, tomes, { ownership: possession }),
 
     async supprimerOeuvre(id) {
       // Les éditions, tomes, médias, notes et l'historique partent avec l'œuvre (on delete cascade).

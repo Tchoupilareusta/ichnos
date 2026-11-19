@@ -102,3 +102,16 @@ export const IconeCoche = (p: Props) => (
     <path d="m5 12.5 4.5 4.5L19 7.5" />
   </Svg>
 )
+
+export const IconeMoins = (p: Props) => (
+  <Svg {...p} epaisseur={2}>
+    <path d="M5 12h14" />
+  </Svg>
+)
+
+/** Le signet du bouton « Où j'en suis » (maquette Accueil). */
+export const IconeSignet = (p: Props) => (
+  <Svg {...p} epaisseur={2}>
+    <path d="M6 3h12v18l-6-4-6 4z" />
+  </Svg>
+)

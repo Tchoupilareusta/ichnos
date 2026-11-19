@@ -6,6 +6,7 @@
 *Mise à jour du 18 novembre 2026 : corrections après essai sur iPhone : cinq statuts, libellés de possession, ordre des filtres, allègement de la bibliothèque et de la fiche, icônes ; ajout d'une œuvre à l'étape 6 (§2, §3, §5, §6, §11).*
 *Mise à jour du 19 novembre 2026 : bulles-menus Statut et Possession, grille à colonnes fixes, recherche (§3, §5).*
 *Mise à jour du 19 novembre 2026 : animations des interactions, à faire à l'étape 9 (§4.3, §11).*
+*Mise à jour du 19 novembre 2026 : suivi de lecture (étape 5) : relectures, date de fin approximative, progression des séries tirée des tomes, ressenti proposé quand je termine un livre, « Le mettre en pause » (§5, §6, §10.2, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -122,14 +123,14 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 
 | Écran | Contenu |
 |---|---|
-| Accueil | Lectures en cours (carrousel de couvertures cliquables, progression en texte seul, bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre en pause »), une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées. Pas de barre de progression sur l'accueil. |
+| Accueil | Lectures en cours, la plus récemment touchée d'abord (carrousel de couvertures cliquables, rangée sans défilement sur iPad quand elle tient, progression en texte seul : « p. 75 sur 230 », « Lettre 12 », « Tome 4 sur 29 » ; bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre en pause » — nouveau nom de « Le mettre de côté », ce statut étant fusionné dans « En pause » ; après « J'ai terminé », le même panneau propose mon ressenti). Un anime n'y figure jamais. Puis une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées (étapes 7 et 8). Pas de barre de progression sur l'accueil. |
 | Bibliothèque | Grille de couvertures (2 colonnes sur iPhone, 4 sur iPad en portrait, 6 en paysage, quelle que soit la taille du texte), recherche (« Rechercher » ; VoiceOver : « Rechercher un titre ou un auteur »), bulles-menus Statut et Possession, panneau « Filtres » avec les six filtres. |
-| Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre, synopsis sans spoiler, genre, longueur et atmosphère en une ligne, mon édition en une ligne (traduction et ISBN dans « Détails »), appréciation, notes et citations, média associé en une ligne. La fiche se termine sur l'œuvre, jamais sur la suppression. |
+| Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre (seulement « En cours » ou « En pause » ; unité et total choisis ici), synopsis sans spoiler, genre, longueur et atmosphère en une ligne, « Mon ressenti » (avec « Retirer »), « Mon parcours » en quelques mots, mon édition en une ligne (traduction et ISBN dans « Détails »), tomes (toucher un tome règle sa lecture et sa possession), notes et citations, média associé (épisodes vus avec − et +, statut). La fiche se termine sur l'œuvre, jamais sur la suppression. |
 | Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6). |
 | Ajouter / modifier | Saisie manuelle ou recherche par ISBN, couverture automatique, synopsis et étiquettes proposés en suggestion (§8.4), correction de chaque champ. La suppression d'une œuvre se fait au bas de « Modifier », après confirmation. |
 | Réglages | Thème, export des données, compte, gestion des genres, thèmes et atmosphères. |
 
-Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + et saisie directe.
+Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + (enregistrés une seconde après le dernier appui) et saisie directe. Quand j'atteins le total, la fiche propose doucement « J'ai terminé ce livre ? », sans jamais le faire à ma place.
 
 Maquettes de référence : canvas « Ichnos — Maquettes » (Accueil, Fiche, Découvrir, panneau « Où j'en suis »), revues avec Impeccable le 17 novembre 2026.
 
@@ -169,17 +170,18 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 - `work_id`, `edition_id` (facultatif)
 - `reading_status` : en cours, envie de lire, terminé, à découvrir, en pause (« abandonné » fusionné dans « en pause » le 18 novembre 2026)
 - `ownership` : possédé, à acheter, non possédé (pour une série, calculé à partir des tomes)
-- `progress_unit` : page, chapitre, tome, lettre, section, pourcentage
-- `progress_current`, `progress_total` (facultatifs)
+- `progress_unit` : page, chapitre, tome, lettre, section, pourcentage (vide tant que je n'ai rien choisi : l'appli propose « page »)
+- `progress_current`, `progress_total` (facultatifs ; inutilisés pour une série, dont la progression vient des tomes, §6.3)
 - `appreciation` (facultative, voir §6.4)
 - `started_at`, `finished_at` (facultatifs)
 
 **`reading_events`** — historique discret, jamais affiché sous forme de statistiques.
 - `entry_id`, `kind` (commencé, progression, mis en pause, repris, terminé), `value`, `occurred_at`
-- Permet aussi les relectures.
+- `date_precision` : jour, mois ou année. Seule une date de fin saisie à la main peut être approximative : « en 2019 » est enregistré au 1er janvier 2019 avec la précision « année », et ne s'affiche jamais autrement (ajouté le 19 novembre 2026).
+- Permet aussi les relectures : chaque « commencé » ouvre une lecture.
 
 **`media`** — médias associés.
-- `work_id`, `kind` (anime, film…), `title`, `seasons`, `episodes_total`, `episodes_watched`, `status`
+- `work_id`, `kind` (anime, film…), `title`, `seasons`, `episodes_total`, `episodes_watched`, `status` (à l'écran : « À voir », « En cours », « Vu »)
 
 **`notes`** — citations et réflexions.
 - `work_id`, `kind` (citation, commentaire, réflexion), `body`, `location` (ex. « p. 75 », « lettre 12 »), `created_at`
@@ -200,8 +202,14 @@ Possession d'une série (validé le 18 novembre 2026), calculée à partir de se
 ### 6.3 Progression et éditions
 
 - La progression s'exprime dans l'unité choisie. Le pourcentage est calculé quand un total est connu.
-- La pagination dépend de l'édition. Le total se renseigne pour son propre exemplaire, il n'est jamais deviné.
-- Une progression peut rester vide.
+- La pagination dépend de l'édition. Le total se renseigne pour son propre exemplaire, il n'est jamais deviné. Si mon édition a un nombre de pages connu, il est proposé comme total pour l'unité « page » (« d'après mon édition ») et reste modifiable.
+- Une progression peut rester vide. Changer d'unité remet la position à zéro.
+- Série (validé le 19 novembre 2026) : une seule source, les tomes. Le tome courant est le plus haut tome « en cours », ou à défaut le plus haut tome « lu » ; le total est le nombre de tomes. Noter « tome 6 » : le tome 6 passe en cours, les précédents pas encore lus passent lus, un tome suivant resté en cours repasse à lire. La grille corrige un tome ou une plage (« J'ai lu du tome 1 au tome 8 »).
+- Changements de statut (fonction `changer_statut`, en tout ou rien) : passer en « En cours » note la date de début si elle est vide et un événement « commencé », ou « repris » si une lecture est ouverte (livre en pause) ; « Terminé » note la date de fin et « terminé », mais seulement si une lecture était commencée dans l'appli : rien n'est inventé pour un livre lu autrefois ; « En pause » note « mis en pause ».
+- Relecture : repasser un livre terminé en « En cours » ouvre une nouvelle lecture. La progression repart de zéro (unité et total gardés), les tomes d'une série repassent « à lire », l'historique de la lecture précédente reste intact.
+- Date de fin saisie à la main, facultative, sur la fiche d'un livre terminé : au jour, au mois ou à l'année près (« Terminé en 2019 »). Jamais à venir, jamais avant le début de la lecture.
+- Une seule trace de progression par jour et par livre (la dernière position du jour).
+- « Mon parcours » sur la fiche : « Commencé le 3 mars · terminé le 20 avril », puis les relectures. Jamais de statistiques, de pages par jour ni de séries de jours.
 
 ### 6.4 Appréciation
 
@@ -212,6 +220,8 @@ Choix facultatif parmi quelques mots :
 - « À relire un jour »
 
 Les deux premiers renforcent les thèmes de l'œuvre dans les recommandations. Le troisième les atténue doucement, sans jamais exclure un auteur ou un genre.
+
+Il est proposé, sans obligation, quand je termine un livre (« Plus tard » ferme sans rien choisir), puis se voit et se change sur la fiche sous « Mon ressenti ». Un lien « Retirer » l'efface ; toucher à nouveau le mot choisi aussi.
 
 ## 7. Recommandations (version 1)
 
@@ -337,7 +347,7 @@ Import (validé le 18 novembre 2026) :
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
-- Deux fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9) et `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes). Elles s'exécutent avec les droits de l'appelant, donc sous RLS. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
+- Cinq fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes), et, depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien. Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
 - API Claude (§7.6, §8.4) :
   - une seule Edge Function porte tous les appels à l'API Claude ;
@@ -371,7 +381,7 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 2 | Base de données et sécurité : schéma, RLS, stockage, connexion par e-mail et mot de passe, Action de migrations | Fable 5.2, élevé |
 | 3 | Catalogue initial : vérification, étiquettes, synopsis, import | Fable 5.2, élevé |
 | 4 | Bibliothèque et fiches : grille, recherche, filtres, ajout, modification, statuts, possession | Opus 5.5, moyen |
-| 5 | Suivi de lecture : unités, tomes, média associé, mise à jour rapide | Opus 5.5, élevé |
+| 5 | Suivi de lecture : unités, tomes, média associé, mise à jour rapide, ressenti facultatif proposé quand je termine un livre (§6.4) | Opus 5.5, élevé |
 | 6 | Couvertures, métadonnées automatiques et fiche automatique (§8.4) | Fable 5.2, élevé |
 | 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil | Fable 5.2, élevé |
 | 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
@@ -384,6 +394,7 @@ Points reportés :
 - **Étape 5, accueil.** Les lectures « En cours » apparaissent sur l'accueil, chacune avec le bouton « Où j'en suis » (§5).
 - **Étape 6, deux manières d'ajouter une œuvre.** Automatique avec l'ISBN à 13 chiffres (l'édition de mon exemplaire) ; ou avec le seul titre quand je n'ai pas encore d'édition précise : la fiche commune à toutes les éditions est remplie (synopsis, étiquettes, auteur), sans ISBN ni pagination. La saisie manuelle de l'étape 4 reste disponible comme deuxième option.
 - **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
+- **Étape 9, deux détails relevés par l'audit de l'étape 5.** Sur la fiche, VoiceOver annonce le chiffre de la progression à chaque appui sur − ou + : regrouper l'annonce au moment de l'enregistrement (une seconde après le dernier appui). La barre de défilement du carrousel « En ce moment » est visible sur ordinateur (invisible sur iPhone et iPad) : la rendre discrète sans gêner le défilement au clavier.
 - **Étape 10, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 10, sans forcer.
 
 Signal pour monter l'effort : un fichier oublié, des tests non lancés, une modification abandonnée en cours de route.

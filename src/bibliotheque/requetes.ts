@@ -5,12 +5,14 @@ import type {
   EchecEcriture,
   EchecFiche,
   Ecriture,
+  EnCours,
   FicheEnvoi,
   OeuvreDetaillee,
   OeuvreListee,
   Vocabulaire,
 } from './depot'
 import type { Possession, Statut } from './modele'
+import { historiqueAvecFin, type Appreciation, type LectureTome, type PrecisionDate, type StatutMedia, type Unite } from './suivi'
 
 /** Échec d'une lecture ou d'une écriture, porté jusqu'à l'écran qui choisit ses mots. */
 export class EchecDepot<T extends string = EchecFiche | EchecEcriture> extends Error {
@@ -24,6 +26,7 @@ export class EchecDepot<T extends string = EchecFiche | EchecEcriture> extends E
 export const CLES = {
   oeuvres: ['oeuvres'] as const,
   oeuvre: (id: string) => ['oeuvre', id] as const,
+  enCours: ['en-cours'] as const,
   vocabulaire: ['vocabulaire'] as const,
 }
 
@@ -60,6 +63,18 @@ export function useOeuvres() {
   })
 }
 
+export function useEnCours() {
+  const { depot } = useSession()
+  return useQuery<EnCours[], EchecDepot>({
+    queryKey: CLES.enCours,
+    queryFn: async () => {
+      const lecture = await depot.listerEnCours()
+      if (!lecture.ok) throw new EchecDepot(lecture.echec)
+      return lecture.lectures
+    },
+  })
+}
+
 export function useOeuvre(id: string) {
   const { depot } = useSession()
   return useQuery<OeuvreDetaillee, EchecDepot>({
@@ -88,6 +103,17 @@ const verifier = (resultat: Ecriture) => {
   if (!resultat.ok) throw new EchecDepot(resultat.echec)
 }
 
+type Contexte = { avant?: OeuvreDetaillee; liste?: EnCours[] }
+
+/** Noter le tome N d'une série (comme noter_progression) : N en cours, les précédents lus, un suivant en cours repasse à lire. */
+function tomesApres<T extends { numero: number; lecture: LectureTome }>(tomes: T[], valeur: number | null): T[] {
+  if (valeur === null) return tomes
+  return tomes.map((t) => ({
+    ...t,
+    lecture: t.numero < valeur ? 'lu' : t.numero === valeur ? 'en_cours' : t.lecture === 'en_cours' ? 'a_lire' : t.lecture,
+  }))
+}
+
 /** Les écritures depuis la fiche. Après chacune, la fiche et la bibliothèque se relisent. */
 export function useModifierOeuvre(id: string) {
   const { depot } = useSession()
@@ -101,6 +127,7 @@ export function useModifierOeuvre(id: string) {
       : Promise.all([
           client.invalidateQueries({ queryKey: CLES.oeuvre(id) }),
           client.invalidateQueries({ queryKey: CLES.oeuvres }),
+          client.invalidateQueries({ queryKey: CLES.enCours }),
         ])
 
   // Le statut, la possession et mon édition s'affichent tout de suite ; en cas d'échec, l'ancienne valeur revient.
@@ -112,11 +139,36 @@ export function useModifierOeuvre(id: string) {
       return { avant }
     }
   }
-  const retablir = (_e: unknown, _v: unknown, contexte: { avant?: OeuvreDetaillee } | undefined) => {
+  const retablir = (_e: unknown, _v: unknown, contexte: Contexte | undefined) => {
     if (contexte?.avant) client.setQueryData(CLES.oeuvre(id), contexte.avant)
+    if (contexte?.liste) client.setQueryData(CLES.enCours, contexte.liste)
   }
 
-  const statut = useMutation<void, EchecDepot, Statut, { avant?: OeuvreDetaillee }>({
+  /** Une écriture de la fiche ou du panneau « Où j'en suis » : affichée tout de suite, annulée en cas d'échec. */
+  function ecriture<V>(
+    ecrire: (valeur: V) => Promise<Ecriture>,
+    surLaFiche: (oeuvre: OeuvreDetaillee, valeur: V) => OeuvreDetaillee,
+    surLaListe?: (lecture: EnCours, valeur: V) => EnCours,
+  ) {
+    return {
+      mutationKey,
+      mutationFn: async (valeur: V) => verifier(await ecrire(valeur)),
+      onMutate: async (valeur: V): Promise<Contexte> => {
+        const { avant } = await optimiste((o) => surLaFiche(o, valeur))()
+        let liste: EnCours[] | undefined
+        if (surLaListe) {
+          await client.cancelQueries({ queryKey: CLES.enCours })
+          liste = client.getQueryData<EnCours[]>(CLES.enCours)
+          if (liste) client.setQueryData(CLES.enCours, liste.map((l) => (l.id === id ? surLaListe(l, valeur) : l)))
+        }
+        return { avant, liste }
+      },
+      onError: retablir,
+      onSettled: relire,
+    }
+  }
+
+  const statut = useMutation<void, EchecDepot, Statut, Contexte>({
     mutationKey,
     mutationFn: async (valeur) => verifier(await depot.changerStatut(id, valeur)),
     onMutate: (valeur) => optimiste((o) => ({ ...o, statut: valeur }))(),
@@ -124,7 +176,7 @@ export function useModifierOeuvre(id: string) {
     onSettled: relire,
   })
 
-  const possession = useMutation<void, EchecDepot, Possession, { avant?: OeuvreDetaillee }>({
+  const possession = useMutation<void, EchecDepot, Possession, Contexte>({
     mutationKey,
     mutationFn: async (valeur) => verifier(await depot.changerPossession(id, valeur)),
     onMutate: (valeur) => optimiste((o) => ({ ...o, possession: valeur }))(),
@@ -151,7 +203,7 @@ export function useModifierOeuvre(id: string) {
     onSettled: relire,
   })
 
-  const monEdition = useMutation<void, EchecDepot, string | null, { avant?: OeuvreDetaillee }>({
+  const monEdition = useMutation<void, EchecDepot, string | null, Contexte>({
     mutationKey,
     mutationFn: async (valeur) => verifier(await depot.changerMonEdition(id, valeur)),
     onMutate: (valeur) => optimiste((o) => ({ ...o, monEdition: valeur }))(),
@@ -167,7 +219,80 @@ export function useModifierOeuvre(id: string) {
     },
   })
 
-  return { statut, possession, possessionTomes, monEdition, suppression }
+  const progression = useMutation<void, EchecDepot, number | null, Contexte>(
+    ecriture(
+      (valeur) => depot.noterProgression(id, valeur),
+      (o, valeur) => (o.estSerie ? { ...o, tomes: tomesApres(o.tomes, valeur) } : { ...o, position: valeur }),
+      (l, valeur) => (l.estSerie ? { ...l, tomes: tomesApres(l.tomes, valeur) } : { ...l, position: valeur }),
+    ),
+  )
+
+  const unite = useMutation<void, EchecDepot, { unite: Unite; total: number | null }, Contexte>(
+    ecriture(
+      ({ unite: u, total }) => depot.changerUnite(id, u, total),
+      (o, { unite: u, total }) => ({ ...o, unite: u, total, position: null }),
+      (l, { unite: u, total }) => ({ ...l, unite: u, total, position: null }),
+    ),
+  )
+
+  const total = useMutation<void, EchecDepot, number | null, Contexte>(
+    ecriture(
+      (valeur) => depot.changerTotal(id, valeur),
+      (o, valeur) => ({ ...o, total: valeur }),
+      (l, valeur) => ({ ...l, total: valeur }),
+    ),
+  )
+
+  const dateFin = useMutation<void, EchecDepot, { date: string | null; precision: PrecisionDate }, Contexte>(
+    ecriture(
+      ({ date, precision }) => depot.daterFin(id, date, precision),
+      (o, { date, precision }) => ({ ...o, historique: historiqueAvecFin(o.historique, date, precision) }),
+    ),
+  )
+
+  const appreciation = useMutation<void, EchecDepot, Appreciation | null, Contexte>(
+    ecriture(
+      (valeur) => depot.changerAppreciation(id, valeur),
+      (o, valeur) => ({ ...o, appreciation: valeur }),
+    ),
+  )
+
+  const lectureTomes = useMutation<void, EchecDepot, { tomes: ChoixTomes; lecture: LectureTome }, Contexte>(
+    ecriture(
+      ({ tomes, lecture }) => depot.changerLectureTomes(id, tomes, lecture),
+      (o, { tomes, lecture }) => ({
+        ...o,
+        tomes: o.tomes.map((t) => (tomes === 'tous' || (t.numero >= tomes.de && t.numero <= tomes.a) ? { ...t, lecture } : t)),
+      }),
+    ),
+  )
+
+  const media = useMutation<void, EchecDepot, { media: string; vus?: number | null; statut?: StatutMedia }, Contexte>(
+    ecriture(
+      ({ media: m, ...valeurs }) => depot.changerMedia(id, m, valeurs),
+      (o, { media: m, vus, statut: s }) => ({
+        ...o,
+        medias: o.medias.map((x) =>
+          x.id === m ? { ...x, episodesVus: vus !== undefined ? vus : x.episodesVus, statut: s ?? x.statut } : x,
+        ),
+      }),
+    ),
+  )
+
+  return {
+    statut,
+    possession,
+    possessionTomes,
+    monEdition,
+    suppression,
+    progression,
+    unite,
+    total,
+    dateFin,
+    appreciation,
+    lectureTomes,
+    media,
+  }
 }
 
 /** Enregistrement du formulaire : tout ou rien, puis la fiche, la bibliothèque et le vocabulaire se relisent. */

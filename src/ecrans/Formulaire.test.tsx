@@ -109,8 +109,8 @@ describe('modification d’une œuvre', () => {
           statut: 'en_cours',
           auteurs: [{ nom: 'Makoto Yukimura', role: 'auteur' }],
           tomes: [
-            { numero: 1, titre: null, isbn: null, possession: 'possede' },
-            { numero: 2, titre: null, isbn: null, possession: 'non_possede' },
+            { numero: 1, titre: null, isbn: null, possession: 'possede', lecture: 'a_lire' },
+            { numero: 2, titre: null, isbn: null, possession: 'non_possede', lecture: 'a_lire' },
           ],
         }),
       ],
@@ -171,7 +171,7 @@ describe('modification d’une œuvre', () => {
           id: 'vin',
           titreFr: 'Vinland Saga',
           estSerie: true,
-          tomes: [1, 2, 3].map((numero) => ({ numero, titre: null, isbn: null, possession: 'possede' as const })),
+          tomes: [1, 2, 3].map((numero) => ({ numero, titre: null, isbn: null, possession: 'possede' as const, lecture: 'a_lire' as const })),
         }),
       ],
     })
