@@ -123,6 +123,14 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
   })
   // L'édition confiée par l'écran « Ajouter » est reprise une seule fois.
   useEffect(() => oublierEdition(), [])
+  // Ouvert par la recherche automatique, le formulaire remplace l'écran précédent sans changer d'adresse :
+  // VoiceOver et le clavier repartent du début du contenu, en haut de la page.
+  const ouvertParLaRecherche = apport !== null
+  useEffect(() => {
+    if (!ouvertParLaRecherche) return
+    window.scrollTo(0, 0)
+    document.getElementById('contenu')?.focus({ preventScroll: true })
+  }, [ouvertParLaRecherche])
 
   // D'où vient chaque champ rempli par la recherche. Dès que je corrige un champ, sa source ne vaut plus.
   const [provenance, setProvenance] = useState<Provenance>(apport?.provenance ?? {})
@@ -268,7 +276,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
   return (
     <Page
       entete={
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={quitter}
@@ -553,9 +561,9 @@ function ApercuCouverture({
 }) {
   const visible = trouvee !== null && garder
   return (
-    <section aria-label="Couverture" data-etat={visible ? 'image' : 'typographique'} className="flex items-center gap-5">
+    <section aria-label="Couverture" data-etat={visible ? 'image' : 'typographique'} className="flex flex-wrap items-center gap-5">
       <Couverture titre={titre || 'Sans titre'} graine="apercu" apercu={visible ? adresse : null} className="w-24 shrink-0" />
-      <div className="flex min-w-0 flex-col items-start gap-2">
+      <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-2">
         {cherche ? (
           <p role="status" className="m-0 text-[0.9375rem] text-discret">
             Je cherche la couverture…
@@ -564,7 +572,7 @@ function ApercuCouverture({
           <p className="m-0 text-[0.9375rem] text-discret">Pas de couverture trouvée : celle d’Ichnos s’affichera.</p>
         ) : garder ? (
           <>
-            <p className="m-0 text-[0.9375rem]">Couverture trouvée sur {libelleSource(trouvee.source).replace(/^la /, 'la ')}.</p>
+            <p className="m-0 text-[0.9375rem]">Couverture trouvée sur {libelleSource(trouvee.source)}.</p>
             <button type="button" onClick={() => setGarder(false)} className={LIEN}>
               Ne pas garder cette couverture
             </button>
@@ -638,9 +646,9 @@ function CouvertureRangee({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLign
       <h2 id="couverture-rangee" className="m-0 font-titre text-2xl">
         Couverture
       </h2>
-      <div className="flex items-center gap-5">
+      <div className="flex flex-wrap items-center gap-5">
         <Couverture titre={oeuvre.titreFr} graine={oeuvre.id} chemin={chemin} className="w-24 shrink-0" />
-        <div className="flex min-w-0 flex-col items-start gap-1">
+        <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-1">
           <button
             type="button"
             aria-disabled={!enLigne || retrait.isPending || undefined}

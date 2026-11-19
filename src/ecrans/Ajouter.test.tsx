@@ -209,7 +209,7 @@ describe('œuvre déjà dans ma bibliothèque', () => {
     await chercherIsbn(ISBN)
     expect(screen.getByRole('heading', { level: 1, name: 'Déjà dans ma bibliothèque' })).toBeInTheDocument()
     expect(screen.getByText(/Cet ISBN est celui de « Momo »/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ouvrir la fiche de Momo' })).toHaveAttribute('href', '#/oeuvre/momo')
+    expect(screen.getByRole('link', { name: 'Ouvrir sa fiche : Momo' })).toHaveAttribute('href', '#/oeuvre/momo')
     expect(assistant.appels.chercherIsbn).toEqual([])
   })
 
@@ -218,11 +218,11 @@ describe('œuvre déjà dans ma bibliothèque', () => {
     const { depot, assistant } = await ouvrir({ depot: dejaLa(), assistant: assistantFictif({ isbn: reponseIsbnFictive({ notice: MOMO }), fiche: { ok: true, valeur: ficheFictive() } }) })
     await chercherIsbn(autreIsbn)
     expect(screen.getByRole('heading', { level: 1, name: 'Déjà dans ma bibliothèque ?' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ouvrir la fiche de Momo' })).toHaveAttribute('href', '#/oeuvre/momo')
+    expect(screen.getByRole('link', { name: 'Ouvrir sa fiche : Momo' })).toHaveAttribute('href', '#/oeuvre/momo')
     // Pas d'appel à l'IA tant que je n'ai pas dit que c'est une autre œuvre.
     expect(assistant.appels.proposerFiche).toHaveLength(0)
 
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Ajouter cette édition à sa fiche' })))
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Ajouter cette édition à sa fiche : Momo' })))
     await attendre()
     expect(window.location.hash).toBe('#/oeuvre/momo/modifier')
     expect(screen.getByRole('heading', { level: 1, name: 'Modifier la fiche' })).toBeInTheDocument()
@@ -251,14 +251,14 @@ describe('ajout par titre', () => {
     await chercherTitre('Momo', 'Ende')
     expect(assistant.appels.chercherTitre).toEqual([{ titre: 'Momo', auteur: 'Ende' }])
     expect(screen.getByRole('heading', { level: 1, name: 'Quelle œuvre ?' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Choisir Momo, de Michael Ende' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Choisir Momo, de Mayu Sakai' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Momo, de Michael Ende : choisir cette œuvre' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Momo, de Mayu Sakai : choisir cette œuvre' })).toBeInTheDocument()
   })
 
   it('remplit la fiche commune à toutes les éditions, sans ISBN, éditeur ni pagination', async () => {
     const { depot, couvertures } = await ouvrir({ assistant: assistantFictif({ titre: reponseTitreFictive(RESULTATS), couverture: IMAGE }) })
     await chercherTitre('Momo')
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Choisir Momo, de Michael Ende' })))
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Momo, de Michael Ende : choisir cette œuvre' })))
     await attendre()
     expect(screen.getByLabelText('Titre en français')).toHaveValue('Momo')
     expect(screen.getByLabelText('Première parution')).toHaveValue('1973')
@@ -389,6 +389,42 @@ describe('fiche proposée par l’IA', () => {
     fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo, corrigé' } })
     await attendre()
     expect(assistant.appels.proposerFiche).toHaveLength(1)
+  })
+})
+
+describe('repères pour VoiceOver et le clavier', () => {
+  it('à chaque nouvel écran, repart du haut : le titre des résultats, puis le début du formulaire', async () => {
+    const haut: unknown[][] = []
+    window.scrollTo = ((...args: unknown[]) => void haut.push(args)) as typeof window.scrollTo
+    await ouvrir({ assistant: assistantFictif({ titre: reponseTitreFictive([resultatFictif({ titre: 'Momo', auteurs: { valeur: ['Michael Ende'], source: 'bnf' } })]) }) })
+    await chercherTitre('Momo')
+    expect(screen.getByRole('heading', { level: 1, name: 'Quelle œuvre ?' })).toHaveFocus()
+
+    haut.length = 0
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Momo, de Michael Ende : choisir cette œuvre' })))
+    await attendre()
+    // Le formulaire s'ouvre : le focus va au début du contenu, et la page remonte en haut.
+    expect(screen.getByRole('main')).toHaveFocus()
+    expect(haut).toContainEqual([0, 0])
+  })
+
+  it('annonce la recherche en cours dans une zone toujours présente', async () => {
+    await ouvrir()
+    const zones = principal().getAllByRole('status')
+    expect(zones).toHaveLength(2)
+    expect(zones.every((zone) => zone.textContent === '')).toBe(true)
+  })
+
+  it('dit simplement que l’ISBN est déjà là quand le titre de l’œuvre n’est pas encore connu', async () => {
+    const depot = depotFictif({
+      oeuvres: [oeuvreFictive({ id: 'momo', titreFr: 'Momo', editions: [{ id: 'e1', isbn: ISBN, publisher: null, language: null, format: null, translator: null, pageCount: null }] })],
+    })
+    // La liste de la bibliothèque n'arrive pas : le titre reste inconnu de l'écran.
+    depot.depot.listerOeuvres = async () => ({ ok: false, echec: 'reseau' })
+    await ouvrir({ depot })
+    await chercherIsbn(ISBN)
+    expect(screen.getByText('Cet ISBN est déjà dans ma bibliothèque.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ouvrir sa fiche' })).toHaveAttribute('href', '#/oeuvre/momo')
   })
 })
 

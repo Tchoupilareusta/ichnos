@@ -71,8 +71,13 @@ function AjoutAutomatique() {
   // À chaque changement d'étape, VoiceOver et le clavier repartent du titre de l'écran.
   const premiere = useRef(true)
   useEffect(() => {
-    if (premiere.current) premiere.current = false
-    else refEntete.current?.focus()
+    if (premiere.current) {
+      premiere.current = false
+      return
+    }
+    // La recherche par titre se lance plus bas dans la page : le nouvel écran se lit depuis le haut.
+    window.scrollTo(0, 0)
+    refEntete.current?.focus({ preventScroll: true })
   }, [etape.nom])
 
   /** La fiche est prête : je préviens si une œuvre très proche est déjà là, sinon le formulaire s'ouvre. */
@@ -183,14 +188,18 @@ function AjoutAutomatique() {
   }
 
   if (etape.nom === 'deja') {
-    const nom = etape.titre ?? 'une œuvre'
+    const nom = etape.titre
     return (
       <Page entete={entete}>
         <Avertissement refEntete={refEntete} titre="Déjà dans ma bibliothèque">
           <p className="m-0 max-w-[60ch] text-[1.0625rem] leading-relaxed">
-            {etape.tome ? `Cet ISBN est celui du tome ${etape.tome} de « ${nom} »` : `Cet ISBN est celui de « ${nom} »`}, déjà dans ma bibliothèque.
+            {!nom
+              ? 'Cet ISBN est déjà dans ma bibliothèque.'
+              : etape.tome
+                ? `Cet ISBN est celui du tome ${etape.tome} de « ${nom} », déjà dans ma bibliothèque.`
+                : `Cet ISBN est celui de « ${nom} », déjà dans ma bibliothèque.`}
           </p>
-          <a href={LIENS.oeuvre(etape.oeuvre)} aria-label={`Ouvrir la fiche de ${nom}`} className={`${LIEN_PLEIN} self-start`}>
+          <a href={LIENS.oeuvre(etape.oeuvre)} aria-label={nom ? `Ouvrir sa fiche : ${nom}` : undefined} className={`${LIEN_PLEIN} self-start`}>
             Ouvrir sa fiche
           </a>
         </Avertissement>
@@ -220,11 +229,15 @@ function AjoutAutomatique() {
                   « {oeuvre.titre} »{oeuvre.auteurs.length > 0 ? `, de ${oeuvre.auteurs.join(', ')},` : ''} est déjà dans ma bibliothèque.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <a href={LIENS.oeuvre(oeuvre.id)} aria-label={`Ouvrir la fiche de ${oeuvre.titre}`} className={LIEN_PLEIN}>
+                  <a href={LIENS.oeuvre(oeuvre.id)} aria-label={`Ouvrir sa fiche : ${oeuvre.titre}`} className={LIEN_PLEIN}>
                     Ouvrir sa fiche
                   </a>
                   {isbnTrouve && (
-                    <Bouton variante="secondaire" onClick={() => ajouterEdition(oeuvre)}>
+                    <Bouton
+                      variante="secondaire"
+                      aria-label={`${apport.tome ? 'Noter ce tome sur sa fiche' : 'Ajouter cette édition à sa fiche'} : ${oeuvre.titre}`}
+                      onClick={() => ajouterEdition(oeuvre)}
+                    >
                       {apport.tome ? 'Noter ce tome sur sa fiche' : 'Ajouter cette édition à sa fiche'}
                     </Bouton>
                   )}
@@ -325,12 +338,10 @@ function AjoutAutomatique() {
 /** Sous un formulaire de recherche : ce qui se passe, ou ce qui n'a rien donné. L'état est porté par data-etat, pour l'étape 9. */
 function Retour({ recherche, message }: { recherche: boolean; message: string | null }) {
   return (
-    <div data-etat={recherche || message ? 'ouvert' : 'ferme'} className="flex flex-col empty:hidden">
-      {recherche && (
-        <p role="status" className="m-0 text-sm text-discret">
-          Je cherche dans les catalogues…
-        </p>
-      )}
+    <div data-etat={recherche || message ? 'ouvert' : 'ferme'} className="flex flex-col">
+      <p role="status" className="m-0 text-sm text-discret empty:hidden">
+        {recherche ? 'Je cherche dans les catalogues…' : ''}
+      </p>
       {message && !recherche && (
         <p role="alert" className={MESSAGE}>
           {message}
@@ -351,7 +362,7 @@ function Avertissement({ titre, refEntete, children }: { titre: string; refEntet
   )
 }
 
-/** Un résultat de recherche : tout le bloc est un bouton, nommé pour VoiceOver (« Choisir Momo, de Michael Ende »). */
+/** Un résultat de recherche : tout le bloc est un bouton, nommé pour VoiceOver (« Momo, de Michael Ende : choisir cette œuvre »). */
 function CarteResultat({ resultat, choisir }: { resultat: Resultat; choisir: () => void }) {
   const titre = resultat.titre.valeur
   const auteurs = resultat.auteurs?.valeur.join(', ') ?? null
@@ -366,7 +377,7 @@ function CarteResultat({ resultat, choisir }: { resultat: Resultat; choisir: () 
     <button
       type="button"
       onClick={choisir}
-      aria-label={`Choisir ${titre}${auteurs ? `, de ${auteurs}` : ''}`}
+      aria-label={`${titre}${auteurs ? `, de ${auteurs}` : ''} : choisir cette œuvre`}
       className="flex min-h-16 w-full cursor-pointer flex-col items-start gap-1 rounded-carte border border-bordure bg-surface px-5 py-4 text-left text-encre transition-transform duration-200 active:scale-[0.99]"
     >
       <span className="font-titre text-xl leading-tight">{titre}</span>

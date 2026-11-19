@@ -66,7 +66,7 @@ describe('Réglages : couvertures manquantes', () => {
       'Sans ISBN : pas d’ISBN connu, pas cherchée',
       'Vinland Saga : 1 couverture de tome trouvée sur 2 cherchées · 1 tome sans ISBN',
     ])
-    expect(section().getByText('Recherche terminée.')).toBeInTheDocument()
+    expect(section().getByRole('status')).toHaveTextContent('Recherche terminée.')
     expect(couvertures.deposees).toHaveLength(2)
     expect(depot.appels.ecritures.filter((e) => e.action === 'couverture')).toHaveLength(2)
     // Aucune fiche demandée à l'IA.
@@ -78,7 +78,10 @@ describe('Réglages : couvertures manquantes', () => {
     await lancer()
     await laisserPasser(500)
     expect(assistant.appels.couverture).toHaveLength(1)
-    expect(section().getByRole('status')).toHaveTextContent('Je cherche : Momo')
+    // Le détail défile à l'écran sans être annoncé à chaque œuvre : VoiceOver n'entend que le début et la fin.
+    expect(section().getByText(/Je cherche : Momo/)).toBeInTheDocument()
+    expect(section().getByText(/Je cherche : Momo/)).not.toHaveAttribute('role')
+    expect(section().getByRole('status')).toHaveTextContent('Recherche en cours')
     await laisserPasser(1500)
     expect(assistant.appels.couverture).toHaveLength(2)
   })

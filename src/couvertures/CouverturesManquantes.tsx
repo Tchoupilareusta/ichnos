@@ -90,8 +90,9 @@ export function CouverturesManquantes() {
         </Bouton>
       )}
       {!enLigne && !enCours && <p className="m-0 text-sm text-discret">Hors connexion : la recherche attendra le retour du réseau.</p>}
+      {/* Le détail défile sans être annoncé : la zone d'annonce, plus bas, ne dit que le début et la fin. */}
       {enCours && (
-        <p role="status" className="m-0 text-[0.9375rem] text-discret">
+        <p className="m-0 text-[0.9375rem] text-discret">
           {avancement?.enCours ? `Je cherche : ${avancement.enCours}…` : 'Je regarde ce qui manque…'}
         </p>
       )}
@@ -106,11 +107,9 @@ export function CouverturesManquantes() {
             ))}
         </ul>
       )}
-      {fin && (
-        <p role="status" className="m-0 text-[0.9375rem] font-semibold">
-          {fin}
-        </p>
-      )}
+      <p role="status" className="m-0 text-[0.9375rem] font-semibold empty:hidden">
+        {enCours ? <span className="sr-only">Recherche en cours…</span> : (fin ?? '')}
+      </p>
     </section>
   )
 }
