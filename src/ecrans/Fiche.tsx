@@ -673,25 +673,24 @@ function Tomes({
               onChange={(possession) => changer({ de: tomeOuvert.numero, a: tomeOuvert.numero }, possession)}
               desactive={!enLigne}
             />
-            {/* La photo de mon exemplaire : la voie sûre pour la couverture d'un tome. */}
-            <div className="flex flex-col items-start gap-2">
+            {/* Mon exemplaire : son ISBN quand je l'achète, et sa photo, la voie sûre pour la couverture d'un tome. */}
+            <div className="flex flex-col items-start gap-2.5">
+              {tomeOuvert.possession !== 'possede' && (
+                <Bouton
+                  variante="secondaire"
+                  aria-haspopup="dialog"
+                  occupe={!enLigne}
+                  onClick={() => {
+                    const numero = tomeOuvert.numero
+                    setOuvert(null)
+                    acheter(numero)
+                  }}
+                >
+                  Je l’ai acheté
+                </Bouton>
+              )}
               <ChoisirImage oeuvre={oeuvre} cible={{ type: 'tome', numero: tomeOuvert.numero }} enLigne={enLigne} />
             </div>
-            {tomeOuvert.possession !== 'possede' && (
-              <Bouton
-                variante="secondaire"
-                aria-haspopup="dialog"
-                occupe={!enLigne}
-                onClick={() => {
-                  const numero = tomeOuvert.numero
-                  setOuvert(null)
-                  acheter(numero)
-                }}
-                className="self-start"
-              >
-                Je l’ai acheté
-              </Bouton>
-            )}
             {!enLigne && <p className="m-0 text-sm text-discret">Je pourrai changer ce tome au retour du réseau.</p>}
           </div>
         )}
