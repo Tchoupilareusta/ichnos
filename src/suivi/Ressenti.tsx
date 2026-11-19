@@ -59,7 +59,7 @@ export function MonRessenti({
   enLigne: boolean
 }) {
   return (
-    <Section titre="Mon ressenti" complement={<span className="text-sm text-discret">facultatif</span>}>
+    <Section titre="Mon ressenti" complement={<span className="mr-auto text-sm text-discret">facultatif</span>}>
       <Mots valeur={valeur} choisir={choisir} desactive={!enLigne} libelle="Mon ressenti" />
       {valeur && (
         <button
@@ -91,7 +91,7 @@ export function ProposerRessenti({
   fermer: () => void
 }) {
   return (
-    <Feuille ouvert={ouvert} titre="Mon ressenti" sousTitre={titre} fermer={fermer} libelleFermer="Plus tard">
+    <Feuille ouvert={ouvert} titre="Mon ressenti" sousTitre={titre} fermer={fermer} libelleFermer="Plus tard" fermetureDiscrete>
       <ContenuRessenti valeur={valeur} choisir={choisir} />
     </Feuille>
   )

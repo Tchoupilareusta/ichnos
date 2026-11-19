@@ -14,6 +14,7 @@ export function Feuille({
   sousTitre,
   fermer,
   libelleFermer,
+  fermetureDiscrete = false,
   children,
 }: {
   ouvert: boolean
@@ -22,6 +23,8 @@ export function Feuille({
   fermer: () => void
   /** Sans libellé, une croix « Fermer » prend place à droite du titre. */
   libelleFermer?: string
+  /** « Plus tard » : un bouton de fermeture discret, quand le choix est dans le contenu. */
+  fermetureDiscrete?: boolean
   children: ReactNode
 }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -83,7 +86,11 @@ export function Feuille({
             )}
           </div>
           {children}
-          {libelleFermer && <Bouton onClick={fermer}>{libelleFermer}</Bouton>}
+          {libelleFermer && (
+            <Bouton variante={fermetureDiscrete ? 'secondaire' : 'principal'} onClick={fermer}>
+              {libelleFermer}
+            </Bouton>
+          )}
         </div>
       )}
     </dialog>

@@ -57,7 +57,8 @@ export function OuJenSuis({
   const sousTitre =
     lecture.estSerie && enregistre.total !== null
       ? `${enregistre.total} tomes`
-      : lecture.pagesEdition !== null
+      : // Les pages de mon édition, seulement quand elles sont le total que j'utilise (sinon « 217 pages » et « sur 190 » se contrediraient).
+        lecture.pagesEdition !== null && enregistre.unite === 'page' && enregistre.total === lecture.pagesEdition
         ? `Mon édition · ${lecture.pagesEdition} pages`
         : lecture.auteurs.join(', ') || undefined
 
@@ -95,7 +96,7 @@ export function OuJenSuis({
 
   if (etape === 'ressenti')
     return (
-      <Feuille ouvert={ouvert} titre="Mon ressenti" sousTitre={lecture.titre} fermer={fermer} libelleFermer="Plus tard">
+      <Feuille ouvert={ouvert} titre="Mon ressenti" sousTitre={lecture.titre} fermer={fermer} libelleFermer="Plus tard" fermetureDiscrete>
         <div data-etape="ressenti" className="flex flex-col gap-4">
           <ContenuRessenti
             valeur={lecture.appreciation}
