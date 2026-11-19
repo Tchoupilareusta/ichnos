@@ -213,7 +213,13 @@ export function AutresCouvertures({
           </details>
 
           <p role="status" className="m-0 text-[0.9375rem] text-discret empty:hidden">
-            {recherche === 'en_cours' ? 'Je cherche dans les catalogues…' : enAttente ? 'Les images arrivent…' : ''}
+            {recherche === 'en_cours'
+              ? 'Je cherche dans les catalogues…'
+              : enAttente
+                ? 'Les images arrivent…'
+                : pretes.length > 0
+                  ? `${pretes.length} couverture${pretes.length > 1 ? 's' : ''} proposée${pretes.length > 1 ? 's' : ''}.`
+                  : ''}
           </p>
           {rienTrouve && (
             <p className="m-0 text-[1.0625rem] leading-relaxed">

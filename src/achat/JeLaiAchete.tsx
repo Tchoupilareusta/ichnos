@@ -39,10 +39,12 @@ const SANS_CATALOGUE: Record<'inconnu' | 'muets' | 'hors_ligne', string> = {
   hors_ligne: 'Pas de connexion à internet : la recherche attendra le retour du réseau.',
 }
 
-const TITRES: Record<Etape['nom'], string> = {
-  isbn: 'Je l’ai acheté',
-  exemplaire: 'Ce qui a été trouvé',
-  ailleurs: 'Déjà dans ma bibliothèque',
+/** Le titre du panneau dit où j'en suis : c'est lui que VoiceOver annonce quand l'étape change. */
+function titreDe(etape: Etape): string {
+  if (etape.nom === 'isbn') return 'Je l’ai acheté'
+  if (etape.nom === 'ailleurs') return 'Déjà dans ma bibliothèque'
+  if (etape.catalogues === 'connu') return 'Ce qui a été trouvé'
+  return etape.catalogues === 'inconnu' ? 'ISBN inconnu des catalogues' : 'Recherche indisponible'
 }
 
 const MESSAGE = 'm-0 rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte'
@@ -217,7 +219,7 @@ export function JeLaiAchete({
     : []
 
   return (
-    <Feuille ouvert={ouvert} titre={TITRES[etape.nom]} sousTitre={tome === null ? titre : `${titre}, tome ${tome}`} fermer={fermer}>
+    <Feuille ouvert={ouvert} titre={titreDe(etape)} sousTitre={tome === null ? titre : `${titre}, tome ${tome}`} fermer={fermer}>
       <div data-etat={etape.nom} className="flex flex-col gap-5">
         {etape.nom === 'isbn' && (
           <form noValidate onSubmit={chercher} className="flex flex-col gap-4">

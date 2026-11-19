@@ -243,6 +243,8 @@ describe('« Je l’ai acheté » : un livre', () => {
     await ouvrirAchat()
     await saisirIsbn(ISBN)
     expect(panneau().getByText(/Aucun catalogue ne connaît cet ISBN/)).toBeInTheDocument()
+    // Le titre du panneau le dit aussi : c'est lui que VoiceOver annonce quand l'étape change.
+    expect(screen.getByRole('dialog', { name: 'ISBN inconnu des catalogues' })).toBeInTheDocument()
     await valider('Noter cet ISBN quand même')
     expect(achats(depot)).toEqual([{ action: 'achat', id: 'etr', valeur: { isbn: ISBN } }])
     expect(await screen.findByRole('button', { name: 'Possession : Je l’ai. Changer' })).toBeInTheDocument()
@@ -253,6 +255,7 @@ describe('« Je l’ai acheté » : un livre', () => {
     await ouvrirAchat()
     await saisirIsbn(ISBN)
     expect(panneau().getByText(/La recherche automatique ne répond pas pour le moment/)).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Recherche indisponible' })).toBeInTheDocument()
     await valider('Noter cet ISBN quand même')
     expect(achats(depot)).toEqual([{ action: 'achat', id: 'etr', valeur: { isbn: ISBN } }])
   })

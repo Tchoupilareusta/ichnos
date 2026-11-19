@@ -140,6 +140,8 @@ describe('« Chercher d’autres couvertures »', () => {
     await chercherAutres()
     expect(choix().map((bouton) => bouton.querySelector('[data-role="legende"]')?.textContent)).toEqual(['Gallimard · Folio · 2001', 'Hatier · petite taille', '1957'])
     expect(choix()[1]).toHaveAccessibleName('Couverture : Hatier, de petite taille')
+    // Une fois les images arrivées, VoiceOver entend combien il y en a.
+    expect(panneau().getByRole('status')).toHaveTextContent('3 couvertures proposées.')
     // Chaque image est demandée par sa référence, à l'action « couverture » qui existe déjà.
     expect(faux.appels.couverture).toEqual([
       { ref: { source: 'open_library', numero: 1001 } },
@@ -155,6 +157,7 @@ describe('« Chercher d’autres couvertures »', () => {
     await ouvrir('#/oeuvre/etr/modifier', { assistant: faux.assistant })
     await chercherAutres()
     expect(choix()).toHaveLength(1)
+    expect(panneau().getByRole('status')).toHaveTextContent('1 couverture proposée.')
   })
 
   it('ne demande jamais plus de trois images à la fois', async () => {

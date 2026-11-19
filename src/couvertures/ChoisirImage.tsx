@@ -154,7 +154,7 @@ export function ChoisirImage({
             {/* La marge laisse la place aux poignées, qui débordent de moitié autour de l'image. */}
             <div className="flex justify-center p-[1.375rem]">
               <div ref={refZone} data-testid="zone-recadrage" className="relative inline-block touch-none select-none">
-                <img src={image.apercu} alt="" draggable={false} className="block h-auto max-h-[42dvh] w-auto max-w-full rounded-[3px]" />
+                <img src={image.apercu} alt="La photo choisie" draggable={false} className="block h-auto max-h-[42dvh] w-auto max-w-full rounded-[3px]" />
                 {/* Ce qui sera coupé est assombri ; le cadre clair entoure ce qui sera gardé. */}
                 <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[3px]">
                   <div
@@ -178,6 +178,8 @@ export function ChoisirImage({
                     onPointerMove={mouvement}
                     onPointerUp={finGlisse}
                     onPointerCancel={finGlisse}
+                    // Geste repris par le système (appel, notification) sans « pointerup » : il est abandonné.
+                    onLostPointerCapture={finGlisse}
                     className={`absolute flex size-11 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center ${
                       coin === 'haut-gauche' || coin === 'bas-droite' ? 'cursor-nwse-resize' : 'cursor-nesw-resize'
                     }`}

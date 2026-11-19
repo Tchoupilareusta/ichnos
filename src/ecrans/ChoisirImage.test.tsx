@@ -108,6 +108,7 @@ describe('choisir une image', () => {
     expect(panneau.getByRole('button', { name: 'Garder cette image' })).toBeInTheDocument()
     expect(panneau.getByRole('button', { name: 'Image entière' })).toBeInTheDocument()
     expect(panneau.getByText(/Je fais glisser les coins/)).toBeInTheDocument()
+    expect(panneau.getByRole('img', { name: 'La photo choisie' })).toBeInTheDocument()
     expect(couvertures.deposees).toHaveLength(0)
     expect(depot.appels.ecritures).toHaveLength(0)
   })
@@ -167,6 +168,21 @@ describe('choisir une image', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Image entière' }))
     await garder()
     expect(recadrages[1]).toEqual({ x: 0, y: 0, largeur: 3000, hauteur: 4000 })
+  })
+
+  it('un geste interrompu (appel, notification) ne laisse pas le cadre accroché au pointeur', async () => {
+    await ouvrir('#/oeuvre/momo/modifier')
+    await choisir(photo())
+    const zone = screen.getByTestId('zone-recadrage')
+    zone.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 400, right: 300, bottom: 400, x: 0, y: 0, toJSON: () => ({}) })
+    const coin = screen.getByTestId('coin-haut-gauche')
+    fireEvent.pointerDown(coin, { pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerMove(coin, { pointerId: 1, clientX: 30, clientY: 30 })
+    // Le système reprend le geste sans « pointerup » : la poignée perd le pointeur.
+    fireEvent.lostPointerCapture(coin, { pointerId: 1 })
+    fireEvent.pointerMove(coin, { pointerId: 1, clientX: 150, clientY: 200 })
+    await garder()
+    expect(recadrages[0]).toEqual({ x: 300, y: 300, largeur: 2700, hauteur: 3700 })
   })
 
   it('les poignées sont assez grandes pour le doigt, et ne gênent ni le défilement ni VoiceOver', async () => {
