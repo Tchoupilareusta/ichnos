@@ -20,6 +20,17 @@ export type EditionOpenLibrary = {
 
 export type OeuvreOpenLibrary = { titre: string; auteurs: string[]; annee: number | null; couverture: number | null }
 
+/** Une édition d'une œuvre, telle que la liste d'Open Library la donne. Ce qui manque est null. */
+export type EditionListee = {
+  /** Numéro de la couverture de cette édition, ou null si elle n'en a pas. */
+  couverture: number | null
+  isbn13: string | null
+  editeur: string | null
+  collection: string | null
+  annee: number | null
+  langue: string | null
+}
+
 const CHAMPS_RECHERCHE = 'key,title,author_name,first_publish_year,cover_i'
 
 export const adresseOpenLibraryEdition = (isbn: string) => `https://openlibrary.org/isbn/${isbn}.json`
@@ -32,6 +43,9 @@ export function adresseOpenLibraryTitre(titre: string, auteur?: string) {
   if (auteur) parametres.set('author', auteur)
   return `https://openlibrary.org/search.json?${parametres}`
 }
+
+/** Les éditions d'une œuvre (deux cents au plus : une œuvre connue en a des centaines, en toutes langues). */
+export const adresseOpenLibraryEditions = (cle: string) => `https://openlibrary.org/works/${cle}/editions.json?limit=200`
 
 const estObjet = (valeur: unknown): valeur is Record<string, unknown> =>
   typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur)
@@ -58,8 +72,40 @@ export function lireEditionOpenLibrary(reponse: unknown): EditionOpenLibrary | n
     traducteur: traducteur ?? null,
     langueOriginale: langueDe(reponse.translated_from),
     titreOriginal: texte(reponse.translation_of),
-    couverture: liste(reponse.covers).find((numero): numero is number => typeof numero === 'number' && Number.isInteger(numero) && numero > 0) ?? null,
+    couverture: numeroCouverture(reponse.covers),
   }
+}
+
+const numeroCouverture = (valeur: unknown): number | null =>
+  liste(valeur).find((numero): numero is number => typeof numero === 'number' && Number.isInteger(numero) && numero > 0) ?? null
+
+/**
+ * Les clés des œuvres d'une recherche (« OL1230613W »). Une clé entre dans une adresse :
+ * tout ce qui ne ressemble pas exactement à une clé d'œuvre est écarté.
+ */
+export function lireClesOeuvres(reponse: unknown): string[] {
+  if (!estObjet(reponse)) return []
+  return liste(reponse.docs)
+    .map((doc) => (estObjet(doc) ? /^\/works\/(OL\d{1,12}W)$/.exec(texte(doc.key) ?? '')?.[1] : undefined))
+    .filter((cle): cle is string => cle !== undefined)
+}
+
+export function lireEditionsOpenLibrary(reponse: unknown): EditionListee[] {
+  if (!estObjet(reponse)) return []
+  const editions: EditionListee[] = []
+  for (const entree of liste(reponse.entries)) {
+    if (!estObjet(entree)) continue
+    const annee = /\b(1[4-9]\d\d|20\d\d)\b/.exec(texte(entree.publish_date) ?? '')?.[1]
+    editions.push({
+      couverture: numeroCouverture(entree.covers),
+      isbn13: liste(entree.isbn_13).map(texte).find((isbn): isbn is string => isbn !== null && /^97[89]\d{10}$/.test(isbn)) ?? null,
+      editeur: texte(liste(entree.publishers)[0]),
+      collection: texte(liste(entree.series)[0])?.replace(/^collection\s+/i, '').trim() || null,
+      annee: annee ? Number(annee) : null,
+      langue: langueDe(entree.languages),
+    })
+  }
+  return editions
 }
 
 export function lireRechercheOpenLibrary(reponse: unknown): OeuvreOpenLibrary[] {

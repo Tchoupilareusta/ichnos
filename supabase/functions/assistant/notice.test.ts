@@ -21,6 +21,9 @@ const bnf = (champs: Partial<NoticeBnf>): NoticeBnf => ({
   langueOriginale: null,
   titreOriginal: null,
   description: null,
+  collection: null,
+  annee: null,
+  hauteur: null,
   ...champs,
 })
 const google = (champs: Partial<VolumeGoogle>): VolumeGoogle => ({
@@ -34,6 +37,7 @@ const google = (champs: Partial<VolumeGoogle>): VolumeGoogle => ({
   manga: false,
   aCouverture: false,
   isbn13: [],
+  annee: null,
   ...champs,
 })
 const edition = (champs: Partial<EditionOpenLibrary>): EditionOpenLibrary => ({

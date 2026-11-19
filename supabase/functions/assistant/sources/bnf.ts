@@ -1,7 +1,8 @@
 // Catalogue général de la BnF, par son API publique SRU (sans clé).
 // Les notices sont au format UNIMARC en XML. On lit seulement les champs utiles :
 //   010 $a ISBN · 101 langue ($c langue d'origine) · 200 titre ($h numéro de tome)
-//   210 ou 214 $c éditeur · 215 $a pagination · 330 $a résumé · 454 $t titre original
+//   210 ou 214 $c éditeur, $d année · 215 $a pagination, $d hauteur · 225 $a collection
+//   330 $a résumé · 454 $t titre original
 //   461 $v numéro de tome · 700/701 auteurs · 702 $4 730 traducteur.
 // Règle : ce que la notice ne dit pas clairement reste vide.
 
@@ -22,6 +23,12 @@ export type NoticeBnf = {
   langueOriginale: string | null
   titreOriginal: string | null
   description: string | null
+  /** La collection (« Folio »), sans le mot « Collection ». */
+  collection: string | null
+  /** L'année de cette édition (« impr. 2013 », « DL 2022 »), pas celle de l'œuvre. */
+  annee: number | null
+  /** La hauteur du livre en centimètres : 18 ou moins, c'est un poche. */
+  hauteur: number | null
 }
 
 const BASE = 'https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&recordSchema=unimarcXchange'
@@ -73,6 +80,18 @@ const entier = (texte: string | null): number | null => {
   const trouve = texte?.match(/\d+/)
   const nombre = trouve ? Number(trouve[0]) : NaN
   return Number.isInteger(nombre) && nombre > 0 && nombre < 10000 ? nombre : null
+}
+
+/** « impr. 2013 », « DL 2022 », « 1991 » : l'année, si elle est écrite en toutes lettres. */
+const anneeEdition = (texte: string | null): number | null => {
+  const trouve = texte?.match(/\b(1[4-9]\d\d|20\d\d)\b/)
+  return trouve ? Number(trouve[1]) : null
+}
+
+/** « 18 cm » : la hauteur du livre. Un format ancien (« in-8 ») reste inconnu. */
+const hauteurLivre = (texte: string | null): number | null => {
+  const trouve = texte?.match(/\b(\d{1,2})\s*cm\b/)
+  return trouve ? Number(trouve[1]) : null
 }
 
 /** « Ende » + « Michael » donne « Michael Ende ». */
@@ -128,6 +147,9 @@ function lireNotice(notice: string): NoticeBnf {
     // « Momo : ein Märchen-Roman » : on garde le titre, pas son complément.
     titreOriginal: premier(zones, '454', 't')?.split(' : ')[0].trim() || null,
     description: premier(zones, '330', 'a'),
+    collection: premier(zones, '225', 'a')?.replace(/^collection\s+/i, '').trim() || null,
+    annee: anneeEdition(premier(zones, '210', 'd') ?? premier(zones, '214', 'd')),
+    hauteur: hauteurLivre(premier(zones, '215', 'd')),
   }
 }
 
