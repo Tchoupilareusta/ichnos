@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { LARGEUR_PETITE, type EchecAssistant, type ImageTrouvee, type PropositionCouverture } from '../ajout/assistant'
+import type { EchecAssistant, ImageTrouvee, PropositionCouverture } from '../ajout/assistant'
 import type { OeuvreDetaillee } from '../bibliotheque/depot'
 import { isbnValide } from '../bibliotheque/modele'
 import { useRangerCouverture } from '../bibliotheque/requetes'
@@ -11,6 +11,7 @@ import { useSession } from '../session/Session'
 import type { CibleCouverture } from './choix'
 import { ECHECS_RANGEMENT } from './ChoisirImage'
 import { Couverture } from './Couverture'
+import { estPetite } from './reduction'
 
 /** Combien d'images sont demandées en même temps, au plus. */
 const IMAGES_A_LA_FOIS = 3
@@ -29,7 +30,7 @@ type Proposee = { cle: string; proposition: PropositionCouverture; etat: 'attent
 /** « Gallimard · Folio · 2013 », et pour VoiceOver « Couverture : Gallimard, Folio, 2013, de petite taille ». */
 function decrire(proposee: Extract<Proposee, { etat: 'prete' }>) {
   const { editeur, collection, annee } = proposee.proposition
-  const petite = proposee.trouvee.largeur !== null && proposee.trouvee.largeur < LARGEUR_PETITE
+  const petite = estPetite(proposee.trouvee)
   const reperes = [editeur, collection, annee === null ? null : String(annee)].filter((repere): repere is string => !!repere)
   return {
     legende: [...reperes, ...(petite ? ['petite taille'] : [])].join(' · ') || 'Édition sans précision',

@@ -4,7 +4,7 @@ import { CLES } from '../bibliotheque/requetes'
 import { Bouton } from '../composants/Bouton'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { useSession } from '../session/Session'
-import { largeurImage } from './mesure'
+import { tailleImage } from './mesure'
 import {
   chercherCouverturesManquantes,
   PAUSE_ENTRE_DEMANDES,
@@ -91,7 +91,7 @@ export function CouverturesManquantes() {
       if (action === 'recherche') {
         await chercherCouverturesManquantes({ ...commun, surAvancement: (avancement) => setBilan({ action, avancement }) })
       } else {
-        await remplacerPetitesCouvertures({ ...commun, mesurer: largeurImage, surAvancement: (avancement) => setBilan({ action, avancement }) })
+        await remplacerPetitesCouvertures({ ...commun, mesurer: tailleImage, surAvancement: (avancement) => setBilan({ action, avancement }) })
       }
     } finally {
       setEnCours(null)

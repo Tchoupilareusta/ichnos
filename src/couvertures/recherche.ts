@@ -4,8 +4,9 @@
 // « Remplacer les couvertures de petite taille » suit le même rythme, pour les couvertures
 // déjà rangées de moins de 450 px de large.
 
-import { LARGEUR_PETITE, type Assistant } from '../ajout/assistant'
+import type { Assistant } from '../ajout/assistant'
 import type { Depot } from '../bibliotheque/depot'
+import { estPetite, tailleRangee } from './reduction'
 import type { Couvertures } from './stockage'
 
 /** Ce qui a été trouvé pour une œuvre (pour une série : parmi ses tomes). */
@@ -78,8 +79,7 @@ export async function chercherCouverturesManquantes(outils: {
       const deposee = await couvertures.deposer(reponse.valeur.image)
       if (deposee.ok && (await depot.definirCouverture(manque.oeuvre, manque.cible, deposee.chemin)).ok) {
         resultat.trouvees += 1
-        const largeur = reponse.valeur.largeur
-        if (largeur !== null && largeur < LARGEUR_PETITE) resultat.petites += 1
+        if (estPetite(reponse.valeur)) resultat.petites += 1
       }
     }
     await attendre()
@@ -108,16 +108,17 @@ export type AvancementRemplacement = {
 }
 
 /**
- * Mesure chaque couverture rangée, sur l'appareil. Pour celles de moins de 450 px de large dont
- * l'ISBN est connu, redemande la couverture de cette même édition, et ne la remplace que si
- * l'image trouvée est plus large. Rien d'autre ne change dans la base.
+ * Mesure chaque couverture rangée, sur l'appareil. Pour celles de petite taille (moins de 450 px
+ * de large, et pas déjà réduites à 1200 px) dont l'ISBN est connu, redemande la couverture de
+ * cette même édition, et ne la remplace que si l'image trouvée, une fois rangée, est plus large.
+ * Rien d'autre ne change dans la base.
  */
 export async function remplacerPetitesCouvertures(outils: {
   depot: Depot
   assistant: Assistant
   couvertures: Couvertures
-  /** La largeur d'une image : une adresse affichable, ou une image pas encore rangée. Null si elle ne se lit pas. */
-  mesurer: (source: string | Blob) => Promise<number | null>
+  /** La taille d'une image : une adresse affichable, ou une image pas encore rangée. Null si elle ne se lit pas. */
+  mesurer: (source: string | Blob) => Promise<{ largeur: number; hauteur: number } | null>
   attendre: () => Promise<void>
   continuer: () => boolean
   surAvancement: (avancement: AvancementRemplacement) => void
@@ -134,16 +135,18 @@ export async function remplacerPetitesCouvertures(outils: {
   if (!lecture.ok) return dire({ arret: lecture.echec === 'reseau' ? 'reseau' : 'indisponible' })
 
   // Une même image peut être rangée à deux endroits : elle n'est mesurée qu'une fois.
-  const largeurs = new Map<string, number | null>()
+  const tailles = new Map<string, { largeur: number; hauteur: number } | null>()
   for (const rangee of lecture.couvertures) {
     if (!continuer()) return dire({ arret: 'arrete' })
-    if (!largeurs.has(rangee.chemin)) {
+    if (!tailles.has(rangee.chemin)) {
       const adresse = await couvertures.adresse(rangee.chemin)
-      largeurs.set(rangee.chemin, adresse ? await mesurer(adresse) : null)
+      tailles.set(rangee.chemin, adresse ? await mesurer(adresse) : null)
     }
-    const avant = largeurs.get(rangee.chemin) ?? null
-    // Illisible (hors connexion, image disparue) : on n'y touche pas. Assez grande : rien à faire.
-    if (avant === null || avant >= LARGEUR_PETITE) continue
+    const taille = tailles.get(rangee.chemin) ?? null
+    // Illisible (hors connexion, image disparue) : on n'y touche pas. Assez grande, ou déjà réduite
+    // à 1200 px : rien à faire.
+    if (taille === null || !estPetite(taille)) continue
+    const avant = taille.largeur
 
     const commun = { oeuvre: rangee.oeuvre, titre: rangee.titre, tome: rangee.tome }
     if (!rangee.isbn) {
@@ -156,7 +159,13 @@ export async function remplacerPetitesCouvertures(outils: {
     if (!reponse.ok) return dire({ arret: reponse.echec === 'reseau' ? 'reseau' : 'indisponible' })
 
     const trouvee = reponse.valeur
-    const apres = trouvee ? (trouvee.largeur ?? (await mesurer(trouvee.image))) : null
+    // La taille qu'aura l'image trouvée une fois rangée (elle est réduite à 1200 px au plus).
+    const brute = !trouvee
+      ? null
+      : trouvee.largeur !== null && trouvee.hauteur !== null
+        ? { largeur: trouvee.largeur, hauteur: trouvee.hauteur }
+        : await mesurer(trouvee.image)
+    const apres = brute ? tailleRangee(brute).largeur : null
     let remplacee = false
     if (trouvee && apres !== null && apres > avant) {
       const deposee = await couvertures.deposer(trouvee.image)

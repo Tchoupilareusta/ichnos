@@ -189,14 +189,17 @@ describe('remplacement des couvertures de petite taille', () => {
       assistant?: ReturnType<typeof assistantFictif>
       continuer?: () => boolean
       largeurs?: Record<string, number | null>
+      /** Hauteurs particulières (par défaut : une fois et demie la largeur). */
+      hauteurs?: Record<string, number>
       depot?: ReturnType<typeof depotFictif>
       couvertures?: ReturnType<typeof couverturesFictives>
     } = {},
   ) {
     const depot = options.depot ?? ILLUSTREE()
-    const assistant = options.assistant ?? assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1237 }) })
+    const assistant = options.assistant ?? assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1200 }) })
     const couvertures = options.couvertures ?? couverturesFictives()
     const largeurs = options.largeurs ?? LARGEURS
+    const hauteurs = options.hauteurs ?? {}
     const pauses: number[] = []
     const etapes: AvancementRemplacement[] = []
     const mesurees: string[] = []
@@ -209,7 +212,8 @@ describe('remplacement des couvertures de petite taille', () => {
         const adresse = String(source)
         mesurees.push(adresse)
         const nom = Object.keys(largeurs).find((cle) => adresse.includes(`/${cle}0`))
-        return nom ? largeurs[nom] : null
+        const largeur = nom ? largeurs[nom] : null
+        return largeur === null ? null : { largeur, hauteur: hauteurs[nom as string] ?? Math.round(largeur * 1.5) }
       },
       attendre: async () => void pauses.push(assistant.appels.couverture.length),
       continuer: options.continuer ?? (() => true),
@@ -237,7 +241,7 @@ describe('remplacement des couvertures de petite taille', () => {
     const assistant = assistantFictif({
       couverture: (demande) =>
         'isbn' in demande && demande.isbn === '9782747024693'
-          ? imageFictive({ largeur: 800, hauteur: 1237 })
+          ? imageFictive({ largeur: 800, hauteur: 1200 })
           : 'isbn' in demande && demande.isbn === '9782070368228'
             ? imageFictive({ largeur: 300, hauteur: 450 })
             : { ok: true, valeur: null },
@@ -266,7 +270,7 @@ describe('remplacement des couvertures de petite taille', () => {
       depot: depot.depot,
       assistant: assistant.assistant,
       couvertures: couverturesFictives().couvertures,
-      mesurer: async (source) => (typeof source === 'string' ? 300 : 640),
+      mesurer: async (source) => (typeof source === 'string' ? { largeur: 300, hauteur: 450 } : { largeur: 640, hauteur: 960 }),
       attendre: async () => {},
       continuer: () => true,
       surAvancement: (avancement) => etapes.push(avancement),
@@ -274,8 +278,24 @@ describe('remplacement des couvertures de petite taille', () => {
     expect(bilan.lignes).toEqual([{ oeuvre: 'momo', titre: 'Momo', tome: null, issue: 'remplacee', avant: 300, apres: 640 }])
   })
 
+  it('compare avec la taille qu’aura l’image une fois rangée (1200 px au plus), et l’annonce', async () => {
+    // La même édition chez Open Library : 911 × 1500 à l'origine, 729 × 1200 une fois rangée.
+    const assistant = assistantFictif({ couverture: imageFictive({ largeur: 911, hauteur: 1500 }) })
+    const depot = depotFictif({ oeuvres: [oeuvreFictive({ id: 'momo', titreFr: 'Momo', editions: [avecCouverture('e1', '9782747024693', 'momo')], monEdition: 'e1' })] })
+    const bilan = await remplacer({ assistant, depot }).fin
+    expect(bilan.lignes).toEqual([{ oeuvre: 'momo', titre: 'Momo', tome: null, issue: 'remplacee', avant: 300, apres: 729 }])
+  })
+
+  it('ne tient pas pour petite une image déjà réduite à 1200 px, même étroite', async () => {
+    // Une couverture très haute : 400 × 1200 après réduction. Rien de plus grand n'existe pour elle.
+    const { fin, assistant } = remplacer({ largeurs: { ...LARGEURS, momo: 400 }, hauteurs: { momo: 1200 } })
+    const bilan = await fin
+    expect(bilan.lignes.some((ligne) => ligne.oeuvre === 'momo')).toBe(false)
+    expect(assistant.appels.couverture).not.toContainEqual({ isbn: '9782747024693' })
+  })
+
   it('laisse de côté une couverture qu’elle n’arrive pas à mesurer', async () => {
-    const assistant = assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1237 }) })
+    const assistant = assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1200 }) })
     const { fin } = remplacer({ assistant, largeurs: { ...LARGEURS, momo: null } })
     const bilan = await fin
     expect(bilan.lignes.some((ligne) => ligne.oeuvre === 'momo')).toBe(false)
@@ -298,7 +318,7 @@ describe('remplacement des couvertures de petite taille', () => {
 
   it('s’arrête quand je le demande, et garde ce qui est déjà remplacé', async () => {
     // L'arrêt est demandé pendant la première demande : il vaut aussi pendant les mesures qui suivent.
-    const assistant = assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1237 }) })
+    const assistant = assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1200 }) })
     const { fin, couvertures } = remplacer({ assistant, continuer: () => assistant.appels.couverture.length < 1 })
     const bilan = await fin
     expect(assistant.appels.couverture).toHaveLength(1)

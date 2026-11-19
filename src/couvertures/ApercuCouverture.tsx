@@ -1,7 +1,8 @@
-import { LARGEUR_PETITE, type ImageTrouvee } from '../ajout/assistant'
+import type { ImageTrouvee } from '../ajout/assistant'
 import { libelleSource } from '../ajout/preremplir'
 import { LIEN_ACTION } from '../composants/Section'
 import { Couverture } from './Couverture'
+import { estPetite } from './reduction'
 
 /**
  * La couverture trouvée par la recherche, avant validation : je la vois, et je peux ne pas la
@@ -24,7 +25,7 @@ export function ApercuCouverture({
   setGarder: (garder: boolean) => void
 }) {
   const visible = trouvee !== null && garder
-  const petite = trouvee !== null && trouvee.largeur !== null && trouvee.largeur < LARGEUR_PETITE
+  const petite = trouvee !== null && estPetite(trouvee)
   return (
     <section aria-label="Couverture" data-etat={visible ? 'image' : 'typographique'} className="flex flex-wrap items-center gap-5">
       <Couverture titre={titre || 'Sans titre'} graine="apercu" apercu={visible ? adresse : null} className="w-24 shrink-0" />

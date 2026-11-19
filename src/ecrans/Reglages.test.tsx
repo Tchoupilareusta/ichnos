@@ -8,7 +8,10 @@ import { authFictif } from '../session/auth.fictif'
 // jsdom ne sait pas décoder une image : la mesure des couvertures rangées est simulée.
 // La fausse adresse porte le chemin de l'image, et le chemin sa largeur (« …/0300….jpg » : 300 px).
 vi.mock('../couvertures/mesure', () => ({
-  largeurImage: async (source: string | Blob) => (typeof source === 'string' ? Number(/\/(\d{4})/.exec(source)?.[1] ?? NaN) || null : null),
+  tailleImage: async (source: string | Blob) => {
+    const largeur = typeof source === 'string' ? Number(/\/(\d{4})/.exec(source)?.[1] ?? NaN) || null : null
+    return largeur === null ? null : { largeur, hauteur: Math.round(largeur * 1.5) }
+  },
 }))
 
 const IMAGE = imageFictive()
@@ -169,7 +172,7 @@ describe('Réglages : remplacer les couvertures de petite taille', () => {
   it('remplace ce qui peut l’être et montre, œuvre par œuvre, ce qui a été fait', async () => {
     const assistant = assistantFictif({
       couverture: (demande) =>
-        'isbn' in demande && demande.isbn === '9782070368228' ? { ok: true, valeur: null } : imageFictive({ largeur: 800, hauteur: 1237 }),
+        'isbn' in demande && demande.isbn === '9782070368228' ? { ok: true, valeur: null } : imageFictive({ largeur: 800, hauteur: 1200 }),
     })
     const { depot, couvertures } = await ouvrir({ depot: ILLUSTREE(), assistant })
     await remplacer()
@@ -200,7 +203,7 @@ describe('Réglages : remplacer les couvertures de petite taille', () => {
   })
 
   it('va au même rythme que la recherche, et s’arrête quand je le demande', async () => {
-    const { assistant, couvertures } = await ouvrir({ depot: ILLUSTREE(), assistant: assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1237 }) }) })
+    const { assistant, couvertures } = await ouvrir({ depot: ILLUSTREE(), assistant: assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1200 }) }) })
     await remplacer()
     await laisserPasser(500)
     expect(assistant.appels.couverture).toHaveLength(1)

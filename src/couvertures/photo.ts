@@ -83,7 +83,7 @@ export type LecturePhoto = { ok: true; image: ImageLue } | { ok: false; echec: E
 export type PhotoDecodee = { largeur: number; hauteur: number; image: unknown; liberer?: () => void }
 
 /** Décode la photo, en la redressant d'après son orientation (une photo prise « couchée » revient droite). */
-async function decoderDansLeNavigateur(fichier: Blob): Promise<PhotoDecodee> {
+export async function decoderPhoto(fichier: Blob): Promise<PhotoDecodee> {
   if (typeof createImageBitmap === 'function') {
     try {
       const photo = await createImageBitmap(fichier, { imageOrientation: 'from-image' })
@@ -125,7 +125,7 @@ type OutilsLecture = {
  * Ne lève jamais d'erreur : une photo qui ne se lit pas est « illisible ».
  */
 export async function lireImage(fichier: Blob, outils: Partial<OutilsLecture> = {}): Promise<LecturePhoto> {
-  const decoder = outils.decoder ?? decoderDansLeNavigateur
+  const decoder = outils.decoder ?? decoderPhoto
   const creerToile = outils.creerToile ?? toileDuNavigateur
   const creerAdresse = outils.creerAdresse ?? ((image: Blob) => URL.createObjectURL(image))
   const libererAdresse = outils.libererAdresse ?? ((adresse: string) => URL.revokeObjectURL(adresse))
@@ -150,8 +150,11 @@ export async function lireImage(fichier: Blob, outils: Partial<OutilsLecture> = 
   }
 }
 
-/** La partie choisie de la photo, en JPEG, le grand côté à 1200 px au plus. Null si elle ne peut pas être produite. */
-export async function recadrer(image: ImageLue, cadre: Cadre, creerToile: () => ToilePhoto = toileDuNavigateur): Promise<Blob | null> {
+/**
+ * Une partie d'une image, en JPEG de qualité 0,85, le grand côté à 1200 px au plus : la forme sous
+ * laquelle toute couverture est rangée. Null si elle ne peut pas être produite.
+ */
+export async function enJpeg(source: unknown, cadre: Cadre, creerToile: () => ToilePhoto = toileDuNavigateur): Promise<Blob | null> {
   try {
     const { largeur, hauteur } = tailleSortie(cadre)
     const toile = creerToile()
@@ -162,9 +165,13 @@ export async function recadrer(image: ImageLue, cadre: Cadre, creerToile: () => 
     // Un fond clair sous une image transparente (PNG) : le JPEG n'a pas de transparence.
     dessin.fillStyle = '#ffffff'
     dessin.fillRect(0, 0, largeur, hauteur)
-    dessin.drawImage(image.source, cadre.x, cadre.y, cadre.largeur, cadre.hauteur, 0, 0, largeur, hauteur)
+    dessin.drawImage(source, cadre.x, cadre.y, cadre.largeur, cadre.hauteur, 0, 0, largeur, hauteur)
     return await versBlob(toile, QUALITE)
   } catch {
     return null
   }
 }
+
+/** La partie choisie de la photo, prête à être rangée. Null si elle ne peut pas être produite. */
+export const recadrer = (image: ImageLue, cadre: Cadre, creerToile?: () => ToilePhoto): Promise<Blob | null> =>
+  enJpeg(image.source, cadre, creerToile)

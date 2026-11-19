@@ -3,12 +3,16 @@
 // consultation hors connexion. Jamais dans le dépôt GitHub. (docs/reference.md §8)
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { reduireImage } from './reduction'
 
 export type Depose = { ok: true; chemin: string } | { ok: false; echec: 'reseau' | 'inconnu' }
 
 /** Ce que l'appli attend du stockage des couvertures (Supabase en vrai, un faux dans les tests). */
 export interface Couvertures {
-  /** Range une image dans mon dossier et rend son chemin. La même image a toujours le même chemin. */
+  /**
+   * Range une image dans mon dossier et rend son chemin. Elle est d'abord réduite sur l'appareil
+   * (1200 px au plus sur le grand côté, JPEG). La même image a toujours le même chemin.
+   */
   deposer(image: Blob): Promise<Depose>
   /** Une adresse affichable pour une couverture rangée, ou null (hors connexion et jamais vue, ou disparue). */
   adresse(chemin: string): Promise<string | null>
@@ -39,6 +43,8 @@ type Outils = {
   recuperer?: (adresse: string) => Promise<Response>
   creerAdresse?: (image: Blob) => string
   libererAdresse?: (adresse: string) => void
+  /** La réduction appliquée à toute image avant de la ranger. */
+  reduire?: (image: Blob) => Promise<Blob>
 }
 
 async function empreinte(image: Blob): Promise<string> {
@@ -54,6 +60,7 @@ export function creerCouverturesSupabase(client: ClientStockage, outils: Outils 
   const recuperer = outils.recuperer ?? ((adresse: string) => fetch(adresse))
   const creerAdresse = outils.creerAdresse ?? ((image: Blob) => URL.createObjectURL(image))
   const libererAdresse = outils.libererAdresse ?? ((adresse: string) => URL.revokeObjectURL(adresse))
+  const reduire = outils.reduire ?? ((image: Blob) => reduireImage(image))
   // Une image n'est jamais supprimée du stockage ici : nommée d'après son contenu, elle peut
   // servir à deux œuvres. Une image devenue inutile reste dans mon dossier privé, sans conséquence.
 
@@ -111,13 +118,16 @@ export function creerCouverturesSupabase(client: ClientStockage, outils: Outils 
   }
 
   return {
-    async deposer(image) {
-      const extension = EXTENSIONS[image.type]
-      if (!extension) return { ok: false, echec: 'inconnu' }
+    async deposer(origine) {
+      if (!EXTENSIONS[origine.type]) return { ok: false, echec: 'inconnu' }
       try {
         const { data } = await client.auth.getSession()
         const moi = data.session?.user.id
         if (!moi) return { ok: false, echec: 'inconnu' }
+        // Toute image rangée suit la même règle de poids. Si la réduction échoue, l'image d'origine est rangée.
+        const image = await reduire(origine).catch(() => origine)
+        const extension = EXTENSIONS[image.type]
+        if (!extension) return { ok: false, echec: 'inconnu' }
         const chemin = `${moi}/${await empreinte(image)}.${extension}`
         const { error } = await client.storage.from(SEAU).upload(chemin, image, {
           contentType: image.type,

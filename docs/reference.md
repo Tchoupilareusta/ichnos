@@ -10,6 +10,7 @@
 *Mise à jour du 19 novembre 2026 : ajout automatique (étape 6) : ordre des sources, couvertures, deux manières d'ajouter, fiche proposée par l'IA, fonction serveur « assistant » et sa sécurité (§3, §5, §6.1, §8, §10.2, §10.4, §11).*
 *Mise à jour du 19 novembre 2026 : nouvelle étape 10 « Nettoyage et optimisation » ; la revue de sécurité finale devient l'étape 11 et porte sur le code nettoyé (§11).*
 *Mise à jour du 19 novembre 2026 : corrections de couvertures (étape 6, suite) : couverture montrée en entier, grandes images, « Je l'ai acheté », « Choisir une image », « Chercher d'autres couvertures », fonction `noter_achat` (§3, §5, §6.1, §8, §10.2, §11).*
+*Mise à jour du 20 novembre 2026 : poids des couvertures : toute image est réduite au moment d'être rangée (§8.5, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -325,7 +326,7 @@ Couvertures :
 - Par ISBN : Google Books, puis Open Library. Pour un manga, par l'ISBN du tome français ; aucune base de traductions de fans (§3).
 - La fonction construit elle-même l'adresse de l'image, vers ces deux sites seulement, vérifie que c'est une vraie image (ni vignette, ni image « indisponible »), et la rend à l'appli avec sa largeur et sa hauteur.
 - Elle cherche la plus grande image (§8.5), et interroge Google Books tel qu'on le voit depuis la Suisse (`country=CH`).
-- L'appli ne la range que lorsque je valide la fiche : dans un bucket privé de Supabase Storage, dans mon dossier, sous un nom tiré de son contenu. Elle est servie par URL signée et gardée sur l'appareil pour la consultation hors ligne ; à la déconnexion, cette copie est effacée.
+- L'appli ne la range que lorsque je valide la fiche : dans un bucket privé de Supabase Storage, dans mon dossier, sous un nom tiré de son contenu. Elle est réduite juste avant (§8.5). Elle est servie par URL signée et gardée sur l'appareil pour la consultation hors ligne ; à la déconnexion, cette copie est effacée.
 - Une couverture trouvée par le seul titre m'est montrée avant d'être gardée, comme les autres : je peux toujours ne pas la garder, ou la retirer plus tard depuis « Modifier ».
 - Pour ce qui est déjà dans ma bibliothèque : « Chercher les couvertures manquantes », dans les Réglages (§5). Sans ISBN, rien n'est cherché, pour ne pas risquer une mauvaise couverture.
 
@@ -359,22 +360,29 @@ Affichage :
 - Une couverture est montrée en entier dans son cadre au format 2:3, jamais rognée. Les bandes qu'elle laisse prennent la couleur moyenne de ses bords, adoucie vers le fond de l'appli.
 
 Taille :
-- La fiche affiche la couverture sur près de 200 points : il faut environ 600 px de large pour une image nette sur iPhone. En dessous de 450 px, une couverture est dite « de petite taille ».
+- La fiche affiche la couverture sur près de 200 points : il faut environ 600 px de large pour une image nette sur iPhone. En dessous de 450 px, une couverture est dite « de petite taille », sauf si son grand côté atteint déjà 1200 px (voir « Poids ») : c'est alors la plus grande que l'appli range.
 - La fonction essaie les adresses de la plus grande image à la plus petite. Google Books : `fife=w1200-h1800`, puis `zoom=0`, puis `fife=w480-h720` (cette dernière ne rend souvent qu'une vignette). Open Library : l'image d'origine par numéro de couverture (`/b/id/<n>.jpg`), puis la taille « L ».
 - Sous 450 px, elle essaie les adresses suivantes et l'autre source, et garde la plus large.
 - Par ISBN, Open Library donne la couverture de l'édition elle-même : son numéro est lu sur la fiche de l'édition. Le numéro que rend sa recherche est celui de l'œuvre en général (souvent une autre édition) : il ne sert jamais pour un ISBN. L'adresse par ISBN (limitée à une centaine de demandes par 5 minutes) ne sert qu'en dernier recours.
 - Pour un livre sans image, Google Books renvoie parfois une fausse couverture grise, qui passe les autres contrôles. Elles sont reconnues à leur empreinte SHA-256 et traitées comme « pas de couverture ». Si Google en sert une autre : ajouter son empreinte dans `couverture.ts`, et un test.
 
+Poids (décidé le 20 novembre 2026) :
+- Toute image rangée dans mon stockage privé suit la même règle, qu'elle vienne d'un catalogue ou d'une photo : au plus 1200 px sur le grand côté, en JPEG de bonne qualité (0,85), soit 150 à 300 Ko environ. L'image d'origine d'un catalogue pèse parfois près de 1 Mo.
+- La réduction se fait sur l'appareil, au moment où l'image est rangée : à la validation de la fiche, à l'achat, au choix d'une autre couverture, à la recherche des couvertures manquantes et au remplacement des petites. Un aperçu que je ne garde pas n'est pas touché.
+- Une image n'est jamais agrandie. Déjà dans les 1200 px et sous 350 Ko, elle est rangée telle quelle (une photo recadrée n'est pas compressée deux fois) ; de bonne taille mais lourde, elle est recompressée, et la version la plus légère est gardée. Si la réduction échoue, l'image d'origine est rangée.
+- La marge reste large pour la fiche : une couverture ordinaire réduite à 1200 px de haut garde 750 à 800 px de large, pour 588 pixels affichés sur un iPhone.
+- Mesuré le 20 novembre 2026 sur L'Étranger en Folio : 911 × 1500 px et 937 Ko à l'origine, 729 × 1200 px et 138 Ko une fois rangée.
+
 « Remplacer les couvertures de petite taille » (Réglages) :
 - Chaque couverture rangée est mesurée sur l'appareil, sans rien changer à la base.
-- Seulement pour celles de moins de 450 px dont l'ISBN est connu (celui de l'édition ou du tome qui porte la couverture) : la couverture de cette même édition est redemandée, et ne remplace l'ancienne que si elle est plus large.
+- Seulement pour celles de petite taille dont l'ISBN est connu (celui de l'édition ou du tome qui porte la couverture) : la couverture de cette même édition est redemandée, et ne remplace l'ancienne que si, une fois rangée, elle est plus large. Une image déjà réduite à 1200 px n'est jamais tenue pour petite.
 - Même rythme que la recherche (une demande à la fois, pause de 1,5 s, « Arrêter »), et la liste de ce qui a été fait : « remplacée (300 → 800 px) », « pas de plus grande image », « sans ISBN, laissée telle quelle ».
 - Limite connue : une petite couverture que j'aurais choisie parmi d'autres éditions, rangée sur mon édition, peut être remplacée par celle de mon édition. Je peux la rechoisir.
 
 « Choisir une image » (dans « Modifier », et dans le panneau d'un tome) :
 - Un seul bouton : l'iPhone propose la photothèque, l'appareil photo ou les fichiers.
 - La photo s'affiche entière dans un panneau. Je peux la recadrer librement en faisant glisser ses quatre coins, ou la garder telle quelle.
-- Tout se fait sur l'appareil, sans dépendance ajoutée : l'image est réduite (grand côté de 1200 px au plus, JPEG) puis rangée dans mon stockage privé. Un fichier qui n'est pas une image, ou de plus de 30 Mo, est refusé.
+- Tout se fait sur l'appareil, sans dépendance ajoutée : l'image est réduite (même règle de poids que les autres couvertures) puis rangée dans mon stockage privé. Un fichier qui n'est pas une image, ou de plus de 30 Mo, est refusé.
 
 « Chercher d'autres couvertures » (dans « Modifier », pour une œuvre, jamais pour un tome) :
 - La recherche part avec le titre et le premier auteur ; je peux la corriger et la relancer. Pas d'IA.
@@ -496,7 +504,7 @@ Points reportés :
 - **Étape 9, deux détails relevés par l'audit de l'étape 5.** Sur la fiche, VoiceOver annonce le chiffre de la progression à chaque appui sur − ou + : regrouper l'annonce au moment de l'enregistrement (une seconde après le dernier appui). La barre de défilement du carrousel « En ce moment » est visible sur ordinateur (invisible sur iPhone et iPad) : la rendre discrète sans gêner le défilement au clavier.
 - **Étape 9, relevés par l'audit de l'étape 6.** Chargement progressif des couvertures de la grille : aujourd'hui, toutes les couvertures de la bibliothèque sont demandées dès l'ouverture de l'écran ; ne charger que celles qui approchent de l'écran. Langue des titres originaux étrangers : la donner à VoiceOver par l'attribut `lang` (d'après la langue d'origine de l'œuvre), sur la fiche, dans les résultats de recherche et dans le formulaire, pour qu'un titre anglais ou allemand ne soit pas lu à la française.
 - **Étape 9, relevé par l'audit des corrections de couvertures.** Le recadrage d'une photo ne se fait qu'au doigt ou à la souris (« Image entière » reste le chemin au clavier) : permettre de déplacer les coins avec les flèches du clavier.
-- **Étape 10, poids des couvertures trouvées.** Depuis les corrections de l'étape 6, la fonction garde la plus grande image : l'image d'origine d'Open Library pèse parfois près de 1 Mo, rangée et gardée sur l'appareil telle quelle. Les réduire avant de les ranger, comme « Choisir une image » le fait déjà (1200 px, JPEG). Relevé par l'audit.
+- **Poids des couvertures trouvées : fait le 20 novembre 2026, sans attendre l'étape 10.** Relevé par l'audit des corrections de couvertures : la fonction garde désormais la plus grande image, et l'image d'origine d'Open Library pèse parfois près de 1 Mo. Toute image est maintenant réduite au moment d'être rangée (§8.5). Rien à reprendre pour les couvertures rangées avant ce changement : elles venaient de la taille « L » d'Open Library, 500 px de haut au plus.
 - **Étape 10, nettoyage des images qui ne servent plus.** Une couverture retirée, ou celle d'une œuvre supprimée, reste dans mon dossier du stockage privé : elle n'est jamais effacée sur le moment, car une même image (nommée d'après son contenu) peut servir à deux œuvres. Prévoir un nettoyage des images qui ne sont plus rattachées à aucune œuvre, édition ni tome.
 - **Étape 11, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 11, sans forcer. (Le tri des dépendances inutilisées, lui, se fait à l'étape 10.)
 

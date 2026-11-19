@@ -196,6 +196,13 @@ describe('« Je l’ai acheté » : un livre', () => {
     expect(panneau().getByText('Couverture trouvée sur Open Library, de petite taille.')).toBeInTheDocument()
   })
 
+  it('ne dit pas petite une couverture étroite qui fait déjà 1200 px de haut', async () => {
+    await ouvrirFiche('etr', { assistant: trouve(NOTICE, imageFictive({ largeur: 400, hauteur: 1200 })) })
+    await ouvrirAchat()
+    await saisirIsbn(ISBN)
+    expect(panneau().getByText('Couverture trouvée sur Open Library.')).toBeInTheDocument()
+  })
+
   it('sans couverture trouvée, le dit et note l’achat sans image', async () => {
     const assistant = assistantFictif({ isbn: reponseIsbnFictive({ notice: NOTICE, couverture: null }) })
     const { depot } = await ouvrirFiche('etr', { assistant })
