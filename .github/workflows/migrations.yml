@@ -1,5 +1,6 @@
 # Vérifie les migrations de la base sur une base jetable, puis, sur main seulement,
-# les applique au vrai projet Supabase (sans effet s'il n'y a rien de nouveau).
+# les applique au vrai projet Supabase (sans effet s'il n'y a rien de nouveau) et met
+# en ligne la fonction serveur « assistant ».
 # L'Action tourne à chaque envoi, sur toutes les branches : le dernier commit d'une
 # pull request porte ainsi toujours le résultat des tests de sécurité.
 # Rappel : les journaux sont publics. Les tests n'utilisent que des données fictives,
@@ -79,3 +80,51 @@ jobs:
 
       - name: Appliquer les migrations
         run: supabase db push --yes --remote
+
+  # La fonction serveur « assistant » (supabase/functions/assistant), après les migrations :
+  # sa table de limite d'appels existe donc toujours avant elle. Ses clés (ANTHROPIC_API_KEY,
+  # GOOGLE_BOOKS_API_KEY) ne passent jamais par ici : elles sont dans les secrets du projet Supabase.
+  # Le jeton SUPABASE_ACCESS_TOKEN doit avoir le droit « Edge Functions » en lecture-écriture.
+  # Si le déploiement est refusé, ce travail échoue avec un message clair et rien d'autre ne casse :
+  # les migrations sont appliquées, le site se publie de son côté, et l'appli fonctionne sans la fonction.
+  fonction:
+    name: Mettre en ligne la fonction assistant
+    needs: appliquer
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: fonction-production
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Vérifier que les accès sont renseignés
+        run: |
+          manque=0
+          for nom in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID; do
+            if [ -z "${!nom}" ]; then
+              echo "::error title=Réglage manquant::$nom n'est pas renseigné dans Settings → Secrets and variables → Actions."
+              manque=1
+            fi
+          done
+          exit "$manque"
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Mettre en ligne la fonction
+        run: |
+          set -o pipefail
+          if supabase functions deploy assistant --project-ref "$SUPABASE_PROJECT_ID" 2>&1 | tee journal-fonction.txt; then
+            exit 0
+          fi
+          if grep -qiE '401|403|unauthorized|forbidden|permission|privilege|not allowed|access denied' journal-fonction.txt; then
+            echo "::error title=Déploiement de la fonction refusé::Le jeton SUPABASE_ACCESS_TOKEN n'a pas le droit de mettre une fonction en ligne. Dans Supabase (Account → Access Tokens), créer un jeton qui a, en plus des droits actuels, « Edge Functions » en lecture-écriture, puis remplacer le secret GitHub SUPABASE_ACCESS_TOKEN et relancer cette Action. Rien d'autre n'est cassé : les migrations sont appliquées et l'appli fonctionne sans la fonction."
+          else
+            echo "::error title=Déploiement de la fonction en échec::La fonction « assistant » n'a pas été mise en ligne (la version précédente, s'il y en a une, reste en service). Rien d'autre n'est cassé : les migrations sont appliquées et l'appli fonctionne sans la fonction."
+          fi
+          exit 1

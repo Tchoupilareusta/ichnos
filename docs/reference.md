@@ -7,6 +7,7 @@
 *Mise à jour du 19 novembre 2026 : bulles-menus Statut et Possession, grille à colonnes fixes, recherche (§3, §5).*
 *Mise à jour du 19 novembre 2026 : animations des interactions, à faire à l'étape 9 (§4.3, §11).*
 *Mise à jour du 19 novembre 2026 : suivi de lecture (étape 5) : relectures, date de fin approximative, progression des séries tirée des tomes, ressenti proposé quand je termine un livre, « Le mettre en pause » (§5, §6, §10.2, §11).*
+*Mise à jour du 19 novembre 2026 : ajout automatique (étape 6) : ordre des sources, couvertures, deux manières d'ajouter, fiche proposée par l'IA, fonction serveur « assistant » et sa sécurité (§3, §5, §6.1, §8, §10.2, §10.4, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -52,7 +53,10 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Langue de lecture | Français ou anglais. Le catalogue n'ajoute pas d'édition anglaise d'office. Quand j'ajoute un livre par son ISBN, l'édition est celle de mon exemplaire. Pour une œuvre écrite en anglais, « Découvrir ailleurs » indique si la version originale vaut le coup (ex. 1984 et son vocabulaire inventé). Si mon édition est en anglais, le titre original s'affiche en premier. Les fiches (synopsis, étiquettes) restent toujours en français. |
 | Anime | Média associé à l'œuvre (saisons, épisodes), jamais compté comme des livres. |
 | Hors connexion | Consultation possible. Les modifications demandent une connexion. |
-| Couvertures | Recherche automatique, copie dans le stockage Supabase, couverture typographique générée en dernier recours. |
+| Couvertures | Recherche automatique par ISBN (Google Books, puis Open Library), copie dans le stockage Supabase, couverture typographique générée en dernier recours. Une série montre le tome où j'en suis, sinon le tome 1 ; chaque tome montre la sienne dans son panneau ; la grille des tomes garde ses cercles (§8). |
+| Couvertures de manga | Par l'ISBN du tome français, aux mêmes sources. MangaDex est exclu définitivement : c'est un site de traductions de fans, sans droits sur les images (décidé le 19 novembre 2026). |
+| Ajouter une œuvre | Deux manières : remplir automatiquement (ISBN à 13 chiffres de mon exemplaire, ou titre seul) ou tout saisir moi-même. Pas de scan du code-barres : un champ à clavier numérique qui accepte chiffres, tirets et espaces (Safari sur iPhone n'a pas de lecteur de code-barres natif, et aucune bibliothèque n'est ajoutée pour cela). |
+| Source de chaque champ | Affichée sous le champ pendant l'ajout (« D'après la BnF »), jamais enregistrée : une fois validée, la fiche est la mienne. |
 | Citation du jour sur l'accueil | Retirée. |
 | Avertissements de contenu | Aucun, pour aucune œuvre (choix du propriétaire, remplace la demande du cahier des charges). |
 | Découverte d'œuvres extérieures | Mode « Découvrir ailleurs », séparé de « Mon envie du moment », appuyé sur l'API Claude (§7.6). (Remplace, le 17 novembre 2026, le report à une version ultérieure.) |
@@ -127,8 +131,9 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 | Bibliothèque | Grille de couvertures (2 colonnes sur iPhone, 4 sur iPad en portrait, 6 en paysage, quelle que soit la taille du texte), recherche (« Rechercher » ; VoiceOver : « Rechercher un titre ou un auteur »), bulles-menus Statut et Possession, panneau « Filtres » avec les six filtres. |
 | Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre (seulement « En cours » ou « En pause » ; unité et total choisis ici), synopsis sans spoiler, genre, longueur et atmosphère en une ligne, « Mon ressenti » (avec « Retirer »), « Mon parcours » en quelques mots, mon édition en une ligne (traduction et ISBN dans « Détails »), tomes (toucher un tome règle sa lecture et sa possession), notes et citations, média associé (épisodes vus avec − et +, statut). La fiche se termine sur l'œuvre, jamais sur la suppression. |
 | Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6). |
-| Ajouter / modifier | Saisie manuelle ou recherche par ISBN, couverture automatique, synopsis et étiquettes proposés en suggestion (§8.4), correction de chaque champ. La suppression d'une œuvre se fait au bas de « Modifier », après confirmation. |
-| Réglages | Thème, export des données, compte, gestion des genres, thèmes et atmosphères. |
+| Ajouter | Deux choix : « Remplir automatiquement », mis en avant (ISBN à 13 chiffres : l'édition exacte de mon exemplaire ; titre, et auteur si je veux : une liste d'œuvres où je choisis, puis la fiche commune à toutes les éditions, sans ISBN, éditeur ni pagination), et « Tout saisir moi-même » (le formulaire complet). Si l'ISBN est déjà dans ma bibliothèque, ou si une œuvre au titre très proche y est, l'appli me prévient avant d'aller plus loin et propose d'ouvrir sa fiche ou d'y ajouter l'édition. Le formulaire prérempli montre la source de chaque champ, la couverture trouvée (que je peux ne pas garder) et la proposition de l'IA (§8.4). Rien n'est enregistré sans ma validation. Hors connexion, la recherche est grisée. |
+| Modifier | Le même formulaire, rempli avec la fiche. Au bas : retirer la couverture, puis supprimer l'œuvre, après confirmation. |
+| Réglages | Thème, « Chercher les couvertures manquantes » (une demande à la fois, sans IA, avec la liste de ce qui a été trouvé ou non, œuvre par œuvre), export des données, compte, gestion des genres, thèmes et atmosphères. |
 
 Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + (enregistrés une seconde après le dernier appui) et saisie directe. Quand j'atteins le total, la fiche propose doucement « J'ai terminé ce livre ? », sans jamais le faire à ma place.
 
@@ -188,6 +193,13 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 
 **`recommendation_log`** — propositions faites.
 - `mode`, `work_id`, `reason`, `response` (choisie, ignorée, aucune), `shown_at`
+
+**`ai_calls`** — journal des appels à l'IA (ajouté à l'étape 6).
+- `action`, `occurred_at`. Une ligne par appel, sans aucun contenu (ni titre, ni ISBN, ni texte).
+- Il ne sert qu'à plafonner les appels payants (§10.2) : ce n'est pas une statistique, et rien n'en est affiché.
+- Une ligne ne s'ajoute qu'à l'heure présente ; personne ne modifie ni ne supprime une ligne, même avec ma session.
+
+Chemins de couverture (`cover_path` des œuvres, éditions et tomes) : toujours `<mon identifiant>/<empreinte de l'image>.<jpg, png ou webp>`, dans mon dossier du stockage privé. La base refuse tout autre chemin.
 
 ### 6.2 Possession et statut
 
@@ -277,14 +289,25 @@ Un mode séparé de « Mon envie du moment », pour trouver des œuvres qui ne s
 
 ### 8.1 Recherche automatique
 
-Une fonction serveur (Supabase Edge Function) cherche dans cet ordre :
-1. Google Books, par ISBN puis par titre et auteur.
-2. Open Library, par ISBN.
-3. Pour les mangas, une base spécialisée (couverture par tome quand elle existe, parfois dans l'édition japonaise).
+Une fonction serveur (Supabase Edge Function « assistant », §10.2) interroge trois catalogues publics. (Ordre validé le 19 novembre 2026 : il remplace « Google Books d'abord ».)
 
-L'image trouvée est copiée dans un bucket privé de Supabase Storage, servie par URL signée et mise en cache pour la consultation hors ligne.
+Métadonnées, champ par champ, dans cet ordre de confiance :
+1. **La BnF** (catalogue général, sans clé) : la plus sûre pour une édition française (titre, auteur tel qu'il est imprimé sur le livre, traducteur, éditeur, pagination, langue d'origine, numéro de tome).
+2. **Google Books** (avec une clé) : complète ce qui manque, et donne une présentation et une couverture.
+3. **Open Library** (sans clé) : complète encore, surtout pour les éditions étrangères, et donne une couverture.
 
-La même recherche préremplit titre, auteur, éditeur et nombre de pages lors de l'ajout par ISBN. Chaque champ reste modifiable.
+Règles :
+- Chaque champ rempli garde sa source, affichée pendant l'ajout. Ce qu'aucune source ne donne reste vide ; une pagination ambiguë (deux volumes, « non paginé ») reste vide.
+- L'année de première parution ne vient que d'Open Library, et seulement quand elle se rapporte clairement à l'œuvre originale (fiche au titre original, ou œuvre que rien ne signale comme traduite). Jamais pour une série : Open Library date ses tomes. Elle s'affiche avec la mention « à vérifier ».
+- Par ISBN (13 chiffres, chiffre de contrôle vérifié) : l'édition exacte. L'ISBN d'un tome prépare la série, et l'ISBN va sur ce tome.
+- Par titre (et auteur) : une liste d'au plus huit œuvres, les éditions d'une même œuvre regroupées ; je choisis. La fiche est commune à toutes les éditions : ni ISBN, ni éditeur, ni pagination.
+
+Couvertures :
+- Par ISBN : Google Books, puis Open Library. Pour un manga, par l'ISBN du tome français ; aucune base de traductions de fans (§3).
+- La fonction construit elle-même l'adresse de l'image, vers ces deux sites seulement, vérifie que c'est une vraie image (ni vignette, ni image « indisponible »), et la rend à l'appli.
+- L'appli ne la range que lorsque je valide la fiche : dans un bucket privé de Supabase Storage, dans mon dossier, sous un nom tiré de son contenu. Elle est servie par URL signée et gardée sur l'appareil pour la consultation hors ligne ; à la déconnexion, cette copie est effacée.
+- Une couverture trouvée par le seul titre m'est montrée avant d'être gardée, comme les autres : je peux toujours ne pas la garder, ou la retirer plus tard depuis « Modifier ».
+- Pour ce qui est déjà dans ma bibliothèque : « Chercher les couvertures manquantes », dans les Réglages (§5). Sans ISBN, rien n'est cherché, pour ne pas risquer une mauvaise couverture.
 
 ### 8.2 Dernier recours
 
@@ -297,6 +320,16 @@ Les couvertures ne sont jamais enregistrées dans le dépôt GitHub public.
 ### 8.4 Fiche automatique
 
 À l'ajout d'un livre, les métadonnées publiques sont d'abord récupérées (§8.1). L'API Claude propose ensuite un synopsis et des étiquettes, en suggestion modifiable : rien n'est enregistré tant que la fiche n'est pas validée. Sans l'IA, l'ajout fonctionne de la même façon, avec ces champs à remplir à la main. La fiche est toujours en français, même pour une édition en anglais.
+
+Précisions de l'étape 6 (validées le 19 novembre 2026) :
+- **Ce que l'IA reçoit** : le titre, l'auteur, l'année et la langue d'origine trouvés, les présentations des catalogues, et mon vocabulaire d'étiquettes. Jamais mes notes, mon statut, mon ressenti, ni rien de ce que j'ai écrit. La fonction refuse toute demande qui porte un champ en trop.
+- **Ce qu'elle propose** : un synopsis sans spoiler, des genres, thèmes et atmosphères pris dans mon vocabulaire, la tonalité, l'exigence et la longueur. Elle peut s'appuyer sur ce qu'elle sait d'une œuvre connue, pour cela seulement.
+- **Ce qu'elle ne fournit jamais** : aucune donnée bibliographique (année, traducteur, éditeur, ISBN, nombre de pages, nombre de tomes). Ces champs viennent des sources ou restent vides. Le schéma de sa réponse ne les contient pas, et la fonction reconstruit la réponse champ par champ : ils ne peuvent pas en sortir.
+- Si elle ne connaît pas l'œuvre et qu'aucune source ne la décrit, le synopsis reste vide.
+- Une notion importante absente de mon vocabulaire peut être proposée comme thème nouveau (deux au plus), affiché à part, marqué « Nouveau », ajouté seulement si je le choisis.
+- La proposition ne remplit que les champs encore vides : ce que j'ai écrit pendant qu'elle se préparait reste.
+- Les textes venus des catalogues sont traités comme des données, jamais comme des consignes (protection contre une consigne cachée dans une description).
+- Si l'IA ne répond pas, refuse, ou si la limite du jour est atteinte : une phrase calme, et la fiche se remplit à la main.
 
 ## 9. Catalogue initial
 
@@ -347,15 +380,20 @@ Import (validé le 18 novembre 2026) :
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
-- Cinq fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes), et, depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien. Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
+- Six fonctions de la base sont appelables par le compte connecté, et par lui seul : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes, et garde les couvertures de ce qu'elle ne supprime pas), depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien, et, depuis l'étape 6, `reserver_appel_ia` (compte mes appels à l'IA des dernières 24 heures et en réserve un si la limite n'est pas atteinte). Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
-- API Claude (§7.6, §8.4) :
-  - une seule Edge Function porte tous les appels à l'API Claude ;
-  - elle n'est appelable que par le compte connecté ;
-  - la clé API est dans les secrets Supabase, jamais dans le frontend ni dans le dépôt ;
-  - ses journaux ne contiennent aucun contenu personnel ;
-  - une limite de dépense est fixée dans la console Anthropic.
-- Politiques de stockage restreintes à l'utilisateur.
+- Fonction serveur « assistant » (§7.6, §8) : une seule Edge Function porte tout ce qui a besoin d'une clé (Google Books, API Claude). L'étape 7b y ajoutera son action.
+  - Elle n'est appelable que par le compte connecté : elle vérifie elle-même le jeton de session auprès de Supabase, à chaque appel. Sans compte, rien ne passe ; dans le doute (service de connexion muet), rien ne passe non plus.
+  - Elle n'accepte que les appels venus du site publié (GitHub Pages) et de l'aperçu local. Cette barrière arrête un autre site dans un navigateur ; la vraie protection reste le jeton.
+  - Les clés `ANTHROPIC_API_KEY` et `GOOGLE_BOOKS_API_KEY` sont dans les secrets du projet Supabase (Edge Functions → Secrets), jamais dans l'appli, le dépôt, les réponses ou les journaux. La clé Google voyage dans un en-tête, jamais dans une adresse ; la clé Google est restreinte à « Books API ».
+  - Elle n'utilise aucune clé de service de Supabase : ce qu'elle lit et écrit dans la base (mon vocabulaire, la réservation d'un appel), elle le fait avec mon propre jeton, donc sous RLS.
+  - Entrées relues champ par champ (ISBN à 13 chiffres valide, longueurs maximales), tout champ inconnu fait refuser la demande.
+  - Elle ne télécharge une image que depuis Google Books et Open Library, à une adresse qu'elle construit elle-même ; une redirection n'est suivie que vers ces sites.
+  - Une réponse d'erreur ne porte qu'un code. Rien de ce qu'un service extérieur répond n'est recopié.
+  - Ses journaux : une ligne par appel (action, résultat, durée, état des sources), aucun contenu, aucun identifiant.
+  - Au plus 30 appels à l'IA par 24 heures, réservés dans `ai_calls` avant chaque appel ; si la réservation ne peut pas être vérifiée, l'IA n'est pas appelée. En plus, une limite de dépense mensuelle est fixée dans la console Anthropic, sur un espace de travail dédié.
+  - Tout cela est vérifié par des tests (`supabase/functions/assistant/*.test.ts`), lancés avec ceux de l'appli.
+- Politiques de stockage restreintes à l'utilisateur : chaque compte ne lit et n'écrit que son dossier du bucket privé `couvertures` (tests avec un second compte).
 - Les journaux des GitHub Actions d'un dépôt public sont publics : aucune donnée ni clé ne doit y être affichée.
 
 ### 10.3 Sauvegarde et veille
@@ -368,7 +406,7 @@ Import (validé le 18 novembre 2026) :
 ### 10.4 Déploiement
 
 - GitHub Actions construit et publie sur GitHub Pages à chaque fusion dans `main`.
-- Une autre Action applique les migrations Supabase.
+- Une autre Action applique les migrations Supabase, puis met en ligne la fonction « assistant ». Le jeton `SUPABASE_ACCESS_TOKEN` doit pour cela avoir, en plus de ses droits de l'étape 2, « Edge Functions » en lecture-écriture. Si ce déploiement est refusé, l'Action le dit clairement et rien d'autre ne casse : l'appli fonctionne sans la fonction.
 
 ## 11. Plan de développement
 
@@ -393,6 +431,8 @@ Points reportés :
 
 - **Étape 5, accueil.** Les lectures « En cours » apparaissent sur l'accueil, chacune avec le bouton « Où j'en suis » (§5).
 - **Étape 6, deux manières d'ajouter une œuvre.** Automatique avec l'ISBN à 13 chiffres (l'édition de mon exemplaire) ; ou avec le seul titre quand je n'ai pas encore d'édition précise : la fiche commune à toutes les éditions est remplie (synopsis, étiquettes, auteur), sans ISBN ni pagination. La saisie manuelle de l'étape 4 reste disponible comme deuxième option.
+- **Étape 6, à constater après la mise en ligne.** La fonction a été testée contre la vraie BnF et le vrai Open Library, mais Google Books et l'API Claude n'ont pu être essayés qu'avec de fausses réponses (aucune clé sur le poste de développement, c'est voulu). Leur premier essai réel se fait sur mes appareils, après la fusion : prévoir un tour de corrections. Constat du 19 novembre 2026 : Open Library a une couverture pour 16 de mes 31 éditions, et pour 3 tomes de manga sur 20 essayés ; la part de Google Books reste à mesurer.
+- **Étape 7b, « Découvrir ailleurs ».** Elle ajoute une action à la fonction « assistant » (même sécurité, même limite d'appels) et réutilise la recherche par titre pour vérifier chaque proposition.
 - **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
 - **Étape 9, deux détails relevés par l'audit de l'étape 5.** Sur la fiche, VoiceOver annonce le chiffre de la progression à chaque appui sur − ou + : regrouper l'annonce au moment de l'enregistrement (une seconde après le dernier appui). La barre de défilement du carrousel « En ce moment » est visible sur ordinateur (invisible sur iPhone et iPad) : la rendre discrète sans gêner le défilement au clavier.
 - **Étape 10, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 10, sans forcer.

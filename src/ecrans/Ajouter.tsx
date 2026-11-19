@@ -190,14 +190,9 @@ function AjoutAutomatique() {
           <p className="m-0 max-w-[60ch] text-[1.0625rem] leading-relaxed">
             {etape.tome ? `Cet ISBN est celui du tome ${etape.tome} de « ${nom} »` : `Cet ISBN est celui de « ${nom} »`}, déjà dans ma bibliothèque.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <a href={LIENS.oeuvre(etape.oeuvre)} aria-label={`Ouvrir la fiche de ${nom}`} className={LIEN_PLEIN}>
-              Ouvrir sa fiche
-            </a>
-            <Bouton variante="secondaire" onClick={retourAuChoix}>
-              Chercher autre chose
-            </Bouton>
-          </div>
+          <a href={LIENS.oeuvre(etape.oeuvre)} aria-label={`Ouvrir la fiche de ${nom}`} className={`${LIEN_PLEIN} self-start`}>
+            Ouvrir sa fiche
+          </a>
         </Avertissement>
       </Page>
     )
