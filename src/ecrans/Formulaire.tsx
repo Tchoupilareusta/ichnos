@@ -7,6 +7,7 @@ import { LANGUES, nomLangue } from '../catalogue/langues'
 import { couverturesDeLaFiche, type EchecEcriture, type OeuvreDetaillee, type Vocabulaire } from '../bibliotheque/depot'
 import { couvertureAffichee, type CibleCouverture } from '../couvertures/choix'
 import { ApercuCouverture } from '../couvertures/ApercuCouverture'
+import { AutresCouvertures } from '../couvertures/AutresCouvertures'
 import { ChoisirImage } from '../couvertures/ChoisirImage'
 import { Couverture } from '../couvertures/Couverture'
 import {
@@ -586,6 +587,8 @@ const ECHECS_COUVERTURE: Record<string, string> = {
  */
 function CouvertureRangee({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: boolean }) {
   const retrait = useRetirerCouverture(oeuvre.id)
+  // Une image choisie ou gardée vient d'être rangée : la section le dit (VoiceOver l'annonce).
+  const [rangee, setRangee] = useState(false)
   const chemin = couvertureAffichee(couverturesDeLaFiche(oeuvre))
   // Tous les endroits de cette fiche où ce chemin est rangé.
   const cibles: CibleCouverture[] = chemin
@@ -604,33 +607,44 @@ function CouvertureRangee({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLign
       ? 'Pour une série, cette image s’affiche tant qu’aucun tome n’a sa couverture. Chaque tome se règle dans son panneau, sur la fiche.'
       : chemin
         ? 'Si je la retire, celle d’Ichnos reprendra sa place.'
-        : 'Une photo de mon exemplaire, ou une image de mes fichiers.'
+        : 'Une photo de mon exemplaire, ou la couverture d’une autre édition.'
   return (
     <section aria-labelledby="couverture-rangee" className="flex max-w-3xl flex-col gap-4 border-t border-bordure pt-8">
       <h2 id="couverture-rangee" className="m-0 font-titre text-2xl">
         Couverture
       </h2>
-      <div className="flex flex-wrap items-start gap-5">
+      <div className="flex items-center gap-5">
         <Couverture titre={oeuvre.titreFr} graine={oeuvre.id} chemin={chemin} className="w-24 shrink-0" />
-        <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-2">
-          <ChoisirImage oeuvre={oeuvre.id} cible={cible} enLigne={enLigne} />
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+          <p role="status" data-etat={rangee ? 'ouvert' : 'ferme'} className="m-0 text-[0.9375rem] font-semibold empty:hidden">
+            {rangee ? 'La nouvelle couverture est en place.' : ''}
+          </p>
+          <p className="m-0 max-w-[48ch] text-sm text-discret">{phrase}</p>
           {chemin && (
             <button
               type="button"
               aria-disabled={!enLigne || retrait.isPending || undefined}
-              onClick={() => enLigne && !retrait.isPending && retrait.mutate(cibles)}
+              onClick={() => {
+                if (!enLigne || retrait.isPending) return
+                setRangee(false)
+                retrait.mutate(cibles)
+              }}
               className={LIEN}
             >
               Retirer cette couverture
             </button>
           )}
-          <p className="m-0 max-w-[48ch] text-sm text-discret">{phrase}</p>
           {retrait.error && (
             <p role="alert" className="m-0 text-sm font-semibold text-accent-texte">
               {ECHECS_COUVERTURE[retrait.error.echec]}
             </p>
           )}
         </div>
+      </div>
+      {/* Sous la couverture : sur iPhone, les deux boutons ne tiennent pas à côté d'elle sans se couper. */}
+      <div className="flex flex-wrap items-start gap-2.5">
+        <ChoisirImage oeuvre={oeuvre.id} cible={cible} enLigne={enLigne} surRangee={() => setRangee(true)} />
+        <AutresCouvertures oeuvre={oeuvre} cible={cible} enLigne={enLigne} surRangee={() => setRangee(true)} />
       </div>
     </section>
   )

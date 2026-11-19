@@ -90,6 +90,25 @@ describe('assistant (fonction serveur)', () => {
     expect(appels[0].corps).toEqual({ action: 'couverture', ref: { source: 'google_books', id: 'zyTCAlFPjgYC' } })
   })
 
+  it('demande d’autres couvertures, et rend les propositions sans image', async () => {
+    const propositions = [
+      { ref: { source: 'google_books', id: 'zyTCAlFPjgYC' }, editeur: 'Gallimard', collection: 'Folio', annee: 2013, langue: 'fr', source: 'google_books' },
+      { ref: { source: 'open_library', numero: 15166217 }, editeur: null, collection: null, annee: null, langue: null, source: 'open_library' },
+    ]
+    const { client, appels } = fauxClient({ data: { propositions, sources: SOURCES } })
+    const demande = { titre: 'L’Étranger', auteur: 'Albert Camus', langue: 'fr' as const, isbn: '9782070360024', editeur: 'Gallimard' }
+    expect(await creerAssistantSupabase(client).autresCouvertures(demande)).toEqual({ ok: true, valeur: propositions })
+    expect(appels[0].corps).toEqual({ action: 'autres_couvertures', ...demande })
+  })
+
+  it('écarte une proposition mal formée, et ne croit pas une réponse sans liste', async () => {
+    const bonne = { ref: { source: 'open_library', numero: 7 }, editeur: null, collection: null, annee: null, langue: null, source: 'open_library' }
+    const melange = fauxClient({ data: { propositions: [bonne, { ref: 'https://exemple.test/x.jpg' }, null, { ref: { source: 'ailleurs', id: 'x' } }] } })
+    expect(await creerAssistantSupabase(melange.client).autresCouvertures({ titre: 'Momo', langue: 'fr' })).toEqual({ ok: true, valeur: [bonne] })
+    const bancale = fauxClient({ data: { propositions: 'aucune' } })
+    expect(await creerAssistantSupabase(bancale.client).autresCouvertures({ titre: 'Momo', langue: 'fr' })).toEqual({ ok: false, echec: 'indisponible' })
+  })
+
   it('demande une fiche en n’envoyant que l’œuvre', async () => {
     const fiche = { synopsis: null, genres: [], themes: [], atmospheres: [], themesNouveaux: [], tonalite: null, exigence: null, longueur: null }
     const { client, appels } = fauxClient({ data: fiche })

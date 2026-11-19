@@ -11,7 +11,7 @@ const ECHECS_PHOTO: Record<EchecPhoto, string> = {
   illisible: 'Cette image n’a pas pu être lue. J’en essaie une autre.',
 }
 
-const ECHECS_RANGEMENT: Record<string, string> = {
+export const ECHECS_RANGEMENT: Record<string, string> = {
   reseau: 'Pas de connexion à internet : la couverture n’a pas été rangée.',
   introuvable: 'Cette œuvre n’est plus dans ma bibliothèque : la couverture n’a pas été rangée.',
   invalide: 'La couverture n’a pas pu être rangée.',
@@ -31,7 +31,18 @@ function positionDe(coin: Coin, cadre: Cadre, image: ImageLue) {
  * glisser ses quatre coins, ou la garder telle quelle (le chemin accessible au clavier). L'image
  * gardée est réduite, rangée dans mon stockage privé, puis posée sur `cible`. Action immédiate.
  */
-export function ChoisirImage({ oeuvre, cible, enLigne }: { oeuvre: string; cible: CibleCouverture; enLigne: boolean }) {
+export function ChoisirImage({
+  oeuvre,
+  cible,
+  enLigne,
+  surRangee,
+}: {
+  oeuvre: string
+  cible: CibleCouverture
+  enLigne: boolean
+  /** L'image est rangée. Donné, c'est l'appelant qui le dit à l'écran ; sinon, le composant le dit lui-même. */
+  surRangee?: () => void
+}) {
   const rangement = useRangerCouverture(oeuvre)
   const refChamp = useRef<HTMLInputElement>(null)
   const refZone = useRef<HTMLDivElement>(null)
@@ -79,7 +90,8 @@ export function ChoisirImage({ oeuvre, cible, enLigne }: { oeuvre: string; cible
       { image: recadree, cible },
       {
         onSuccess: () => {
-          setFait(true)
+          if (surRangee) surRangee()
+          else setFait(true)
           fermer()
         },
         onError: (echec) => setErreurPanneau(ECHECS_RANGEMENT[echec.echec] ?? ECHECS_RANGEMENT.inconnu),
@@ -127,9 +139,11 @@ export function ChoisirImage({ oeuvre, cible, enLigne }: { oeuvre: string; cible
       <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
         {erreur ?? ''}
       </p>
-      <p role="status" data-etat={fait ? 'ouvert' : 'ferme'} className="m-0 text-sm text-discret empty:hidden">
-        {fait ? 'La nouvelle couverture est en place.' : ''}
-      </p>
+      {!surRangee && (
+        <p role="status" data-etat={fait ? 'ouvert' : 'ferme'} className="m-0 text-sm text-discret empty:hidden">
+          {fait ? 'La nouvelle couverture est en place.' : ''}
+        </p>
+      )}
 
       <Feuille ouvert={image !== null} titre="Recadrer l’image" fermer={fermer}>
         {image && (

@@ -1,4 +1,17 @@
-import type { Assistant, FicheProposee, ImageTrouvee, Notice, OeuvrePourFiche, RefCouverture, Reponse, ReponseIsbn, ReponseTitre, Resultat } from './assistant'
+import type {
+  Assistant,
+  DemandeAutresCouvertures,
+  FicheProposee,
+  ImageTrouvee,
+  Notice,
+  OeuvrePourFiche,
+  PropositionCouverture,
+  RefCouverture,
+  Reponse,
+  ReponseIsbn,
+  ReponseTitre,
+  Resultat,
+} from './assistant'
 
 const INDISPONIBLE = { ok: false as const, echec: 'indisponible' as const }
 const SOURCES = { bnf: 'ok', google_books: 'ok', open_library: 'ok' } as const
@@ -64,6 +77,7 @@ export function assistantFictif(
     isbn?: Reponse<ReponseIsbn> | ((isbn: string) => Reponse<ReponseIsbn>)
     titre?: Reponse<ReponseTitre>
     couverture?: Reponse<ImageTrouvee | null> | ((demande: DemandeCouverture) => Reponse<ImageTrouvee | null>)
+    autres?: Reponse<PropositionCouverture[]>
     fiche?: Reponse<FicheProposee>
   } = {},
 ) {
@@ -71,6 +85,7 @@ export function assistantFictif(
     chercherIsbn: [] as string[],
     chercherTitre: [] as { titre: string; auteur?: string }[],
     couverture: [] as DemandeCouverture[],
+    autresCouvertures: [] as DemandeAutresCouvertures[],
     proposerFiche: [] as OeuvrePourFiche[],
   }
   // Permet à un test de garder la proposition de l'IA « en cours » jusqu'à ce qu'il la libère.
@@ -91,6 +106,10 @@ export function assistantFictif(
       appels.couverture.push(demande)
       const reponse = reponses.couverture ?? INDISPONIBLE
       return typeof reponse === 'function' ? reponse(demande) : reponse
+    },
+    async autresCouvertures(demande) {
+      appels.autresCouvertures.push(demande)
+      return reponses.autres ?? INDISPONIBLE
     },
     async proposerFiche(oeuvre) {
       appels.proposerFiche.push(oeuvre)

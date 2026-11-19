@@ -6,6 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
   FicheProposee,
   OeuvrePourFiche,
+  PropositionCouverture,
   RefCouverture,
   ReponseIsbn,
   ReponseTitre,
@@ -20,6 +21,7 @@ export type {
   FicheProposee,
   Notice,
   OeuvrePourFiche,
+  PropositionCouverture,
   RefCouverture,
   ReponseIsbn,
   ReponseTitre,
@@ -43,12 +45,17 @@ export type ImageTrouvee = { image: Blob; source: Source; largeur: number | null
 const pixels = (valeur: unknown): number | null =>
   typeof valeur === 'number' && Number.isInteger(valeur) && valeur > 0 && valeur < 100_000 ? valeur : null
 
+/** Ce que « Chercher d'autres couvertures » envoie : le titre, et ce qu'on sait de mon édition, pour le tri. */
+export type DemandeAutresCouvertures = { titre: string; auteur?: string; langue: 'fr' | 'en'; isbn?: string; editeur?: string }
+
 /** Ce que l'appli attend de l'assistant (la fonction serveur en vrai, un faux dans les tests). */
 export interface Assistant {
   chercherIsbn(isbn: string): Promise<Reponse<ReponseIsbn>>
   chercherTitre(titre: string, auteur?: string): Promise<Reponse<ReponseTitre>>
   /** L'image d'une couverture, ou null si aucune source n'en a de convenable. */
   couverture(demande: { isbn: string } | { ref: RefCouverture }): Promise<Reponse<ImageTrouvee | null>>
+  /** D'autres éditions de l'œuvre qui ont une image : des références, jamais d'image. Sans IA. */
+  autresCouvertures(demande: DemandeAutresCouvertures): Promise<Reponse<PropositionCouverture[]>>
   /** Synopsis et étiquettes proposés par l'IA, à partir de données bibliographiques publiques seulement. */
   proposerFiche(oeuvre: OeuvrePourFiche): Promise<Reponse<FicheProposee>>
 }
@@ -60,6 +67,7 @@ export const ASSISTANT_ABSENT: Assistant = {
   chercherIsbn: absent,
   chercherTitre: absent,
   couverture: absent,
+  autresCouvertures: absent,
   proposerFiche: absent,
 }
 
@@ -87,6 +95,24 @@ function imageDepuisBase64(base64: string, type: string): Blob {
   const octets = new Uint8Array(binaire.length)
   for (let rang = 0; rang < binaire.length; rang++) octets[rang] = binaire.charCodeAt(rang)
   return new Blob([octets], { type })
+}
+
+/** Une proposition bien formée : une référence vers Google Books ou Open Library, jamais une adresse. */
+function propositionLue(valeur: unknown): PropositionCouverture | null {
+  if (!estObjet(valeur) || !estObjet(valeur.ref)) return null
+  const ref = valeur.ref
+  const google = ref.source === 'google_books' && typeof ref.id === 'string'
+  const openLibrary = ref.source === 'open_library' && (typeof ref.numero === 'number' || typeof ref.isbn === 'string')
+  if (!google && !openLibrary) return null
+  const texte = (champ: unknown) => (typeof champ === 'string' && champ.trim() ? champ.trim() : null)
+  return {
+    ref: ref as unknown as RefCouverture,
+    editeur: texte(valeur.editeur),
+    collection: texte(valeur.collection),
+    annee: typeof valeur.annee === 'number' && Number.isInteger(valeur.annee) ? valeur.annee : null,
+    langue: texte(valeur.langue),
+    source: google ? 'google_books' : 'open_library',
+  }
 }
 
 export function creerAssistantSupabase(client: ClientFonctions): Assistant {
@@ -130,6 +156,11 @@ export function creerAssistantSupabase(client: ClientFonctions): Assistant {
           return undefined
         }
       }),
+
+    autresCouvertures: (demande) =>
+      appeler({ action: 'autres_couvertures', ...demande }, (d) =>
+        Array.isArray(d.propositions) ? d.propositions.map(propositionLue).filter((p): p is PropositionCouverture => p !== null) : undefined,
+      ),
 
     proposerFiche: (oeuvre) =>
       appeler({ action: 'fiche', oeuvre }, (d) =>

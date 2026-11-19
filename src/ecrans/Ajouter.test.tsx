@@ -88,7 +88,7 @@ describe('écran « Ajouter »', () => {
     await enregistrer()
     expect(depot.appels.enregistrerOeuvre).toHaveLength(1)
     // Aucun appel à l'assistant : l'appli fonctionne entièrement sans lui.
-    expect(assistant.appels).toEqual({ chercherIsbn: [], chercherTitre: [], couverture: [], proposerFiche: [] })
+    expect(assistant.appels).toEqual({ chercherIsbn: [], chercherTitre: [], couverture: [], autresCouvertures: [], proposerFiche: [] })
   })
 })
 
