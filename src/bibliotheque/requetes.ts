@@ -11,6 +11,7 @@ import type {
   OeuvreListee,
   Vocabulaire,
 } from './depot'
+import type { CibleCouverture } from '../couvertures/choix'
 import type { Possession, Statut } from './modele'
 import { historiqueAvecFin, type Appreciation, type LectureTome, type PrecisionDate, type StatutMedia, type Unite } from './suivi'
 
@@ -28,6 +29,7 @@ export const CLES = {
   oeuvre: (id: string) => ['oeuvre', id] as const,
   enCours: ['en-cours'] as const,
   vocabulaire: ['vocabulaire'] as const,
+  couverture: (chemin: string) => ['couverture', chemin] as const,
 }
 
 /**
@@ -85,6 +87,22 @@ export function useOeuvre(id: string) {
       return lecture.oeuvre
     },
   })
+}
+
+/**
+ * L'adresse affichable d'une couverture rangée, ou null (pas de couverture, pas encore chargée,
+ * ou jamais vue et hors connexion). Une image trouvée est gardée ; un échec est retenté plus tard.
+ */
+export function useAdresseCouverture(chemin: string | null | undefined): string | null {
+  const { couvertures } = useSession()
+  const requete = useQuery<string | null>({
+    queryKey: CLES.couverture(chemin ?? ''),
+    queryFn: () => couvertures.adresse(chemin as string),
+    enabled: !!chemin,
+    staleTime: (q) => (q.state.data ? Infinity : 0),
+    gcTime: Infinity,
+  })
+  return chemin ? (requete.data ?? null) : null
 }
 
 export function useVocabulaire() {
@@ -295,22 +313,45 @@ export function useModifierOeuvre(id: string) {
   }
 }
 
-/** Enregistrement du formulaire : tout ou rien, puis la fiche, la bibliothèque et le vocabulaire se relisent. */
+/**
+ * Enregistrement du formulaire : tout ou rien, puis la fiche, la bibliothèque et le vocabulaire se relisent.
+ * `apres` s'exécute une fois la fiche enregistrée et avant la relecture (ranger la couverture trouvée) :
+ * son échec ne défait pas l'enregistrement.
+ */
 export function useEnregistrerOeuvre() {
   const { depot } = useSession()
   const client = useQueryClient()
-  return useMutation<string, EchecDepot, FicheEnvoi>({
-    mutationFn: async (fiche) => {
+  return useMutation<string, EchecDepot, { fiche: FicheEnvoi; apres?: (id: string) => Promise<void> }>({
+    mutationFn: async ({ fiche, apres }) => {
       const resultat = await depot.enregistrerOeuvre(fiche)
       if (!resultat.ok) throw new EchecDepot(resultat.echec)
+      await apres?.(resultat.id).catch(() => {})
       return resultat.id
     },
     onSuccess: async (id) => {
       await Promise.all([
         client.invalidateQueries({ queryKey: CLES.oeuvre(id) }),
         client.invalidateQueries({ queryKey: CLES.oeuvres }),
+        client.invalidateQueries({ queryKey: CLES.enCours }),
         client.invalidateQueries({ queryKey: CLES.vocabulaire }),
       ])
     },
+  })
+}
+
+/** Retire une couverture (de l'œuvre, d'une édition ou d'un tome), puis relit la fiche et les listes. */
+export function useRetirerCouverture(id: string) {
+  const { depot } = useSession()
+  const client = useQueryClient()
+  return useMutation<void, EchecDepot, CibleCouverture[]>({
+    mutationFn: async (cibles) => {
+      for (const cible of cibles) verifier(await depot.definirCouverture(id, cible, null))
+    },
+    onSettled: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: CLES.oeuvre(id) }),
+        client.invalidateQueries({ queryKey: CLES.oeuvres }),
+        client.invalidateQueries({ queryKey: CLES.enCours }),
+      ]),
   })
 }

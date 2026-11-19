@@ -1,0 +1,6 @@
+{
+  "lock": false,
+  "imports": {
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@1.10.0"
+  }
+}

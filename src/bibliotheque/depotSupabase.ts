@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { titresAffiches } from '../catalogue/titres'
-import type { ChoixTomes, Depot, EchecEcriture, EnCours, Etiquette, OeuvreDetaillee, OeuvreListee } from './depot'
+import { cibleCouverture, couvertureAffichee } from '../couvertures/choix'
+import type { ChoixTomes, Depot, EchecEcriture, EnCours, Etiquette, ManqueCouverture, OeuvreDetaillee, OeuvreListee } from './depot'
 import { preparerEnvoi, type FichierCatalogue } from './envoiCatalogue'
 import {
   comparerTitres,
@@ -75,18 +76,24 @@ type LigneOeuvre = {
   title_original: string | null
   original_language: string | null
   is_series?: boolean
+  cover_path?: string | null
   work_authors: UnOuPlusieurs<LienAuteur>
   work_tags?: UnOuPlusieurs<LienEtiquette>
-  volumes?: UnOuPlusieurs<{ ownership: Possession }>
+  volumes?: UnOuPlusieurs<{ number?: number; ownership: Possession; reading_status?: LectureTome; cover_path?: string | null }>
   library_entries: UnOuPlusieurs<{
     reading_status?: Statut
     ownership?: Possession
-    editions: UnOuPlusieurs<{ language: string | null }>
+    editions: UnOuPlusieurs<{ language: string | null; cover_path?: string | null }>
   }>
 }
 
+// Les couvertures voyagent avec la liste : aucune requête de plus pour la grille.
 const COLONNES =
-  'id, title_fr, title_original, original_language, is_series, work_authors(role, authors(name)), work_tags(tags(kind, name)), volumes(ownership), library_entries(reading_status, ownership, editions(language))'
+  'id, title_fr, title_original, original_language, is_series, cover_path, work_authors(role, authors(name)), work_tags(tags(kind, name)), volumes(number, ownership, reading_status, cover_path), library_entries(reading_status, ownership, editions(language, cover_path))'
+
+type TomeIllustre = { number?: number; reading_status?: LectureTome; cover_path?: string | null }
+const tomesIllustres = (tomes: UnOuPlusieurs<TomeIllustre>) =>
+  tous(tomes).map((t) => ({ numero: t.number ?? 0, lecture: t.reading_status ?? ('a_lire' as const), couverture: t.cover_path ?? null }))
 
 export function versOeuvreListee(ligne: LigneOeuvre): OeuvreListee {
   const entree = premier(ligne.library_entries)
@@ -106,6 +113,12 @@ export function versOeuvreListee(ligne: LigneOeuvre): OeuvreListee {
     statut: entree?.reading_status ?? 'a_decouvrir',
     possession: possessionAffichee(possession, estSerie, tomes),
     possessionsFiltrables: possessionsFiltrables(possession, estSerie, tomes),
+    couverture: couvertureAffichee({
+      estSerie,
+      oeuvre: ligne.cover_path ?? null,
+      monEdition: premier(entree?.editions)?.cover_path ?? null,
+      tomes: tomesIllustres(ligne.volumes),
+    }),
   }
 }
 
@@ -125,6 +138,7 @@ type LigneFiche = {
   density: number | null
   length: Longueur | null
   is_series: boolean
+  cover_path?: string | null
   work_authors: UnOuPlusieurs<LienAuteur>
   work_tags: UnOuPlusieurs<LienEtiquette>
 }
@@ -136,8 +150,16 @@ type LigneEdition = {
   format: string | null
   translator: string | null
   page_count: number | null
+  cover_path?: string | null
 }
-type LigneTome = { number: number; title: string | null; isbn: string | null; ownership: Possession; reading_status: LectureTome }
+type LigneTome = {
+  number: number
+  title: string | null
+  isbn: string | null
+  ownership: Possession
+  reading_status: LectureTome
+  cover_path?: string | null
+}
 type LigneMedia = {
   id: string
   kind: TypeMedia
@@ -179,20 +201,21 @@ type LigneEnCours = {
   progress_unit: Unite | null
   progress_current: number | null
   progress_total: number | null
-  editions: UnOuPlusieurs<{ page_count: number | null; language: string | null }>
+  editions: UnOuPlusieurs<{ page_count: number | null; language: string | null; cover_path?: string | null }>
   works: UnOuPlusieurs<{
     id: string
     title_fr: string
     title_original: string | null
     original_language: string | null
     is_series: boolean
+    cover_path?: string | null
     work_authors: UnOuPlusieurs<LienAuteur>
-    volumes: UnOuPlusieurs<{ number: number; reading_status: LectureTome }>
+    volumes: UnOuPlusieurs<{ number: number; reading_status: LectureTome; cover_path?: string | null }>
   }>
 }
 
 const COLONNES_EN_COURS =
-  'appreciation, progress_unit, progress_current, progress_total, updated_at, editions(page_count, language), works(id, title_fr, title_original, original_language, is_series, work_authors(role, authors(name)), volumes(number, reading_status))'
+  'appreciation, progress_unit, progress_current, progress_total, updated_at, editions(page_count, language, cover_path), works(id, title_fr, title_original, original_language, is_series, cover_path, work_authors(role, authors(name)), volumes(number, reading_status, cover_path))'
 
 export function versEnCours(ligne: LigneEnCours): EnCours | null {
   const oeuvre = premier(ligne.works)
@@ -211,11 +234,17 @@ export function versEnCours(ligne: LigneEnCours): EnCours | null {
       .map((v) => ({ numero: v.number, lecture: v.reading_status }))
       .sort((a, b) => a.numero - b.numero),
     appreciation: ligne.appreciation ?? null,
+    couverture: couvertureAffichee({
+      estSerie: oeuvre.is_series,
+      oeuvre: oeuvre.cover_path ?? null,
+      monEdition: edition?.cover_path ?? null,
+      tomes: tomesIllustres(oeuvre.volumes),
+    }),
   }
 }
 
 const COLONNES_FICHE =
-  'id, title_fr, title_original, original_language, first_published_year, form, synopsis, tone, density, length, is_series, work_authors(role, authors(name)), work_tags(tags(kind, name, is_interest))'
+  'id, title_fr, title_original, original_language, first_published_year, form, synopsis, tone, density, length, is_series, cover_path, work_authors(role, authors(name)), work_tags(tags(kind, name, is_interest))'
 
 const ORDRE_ROLES: Record<string, number> = { auteur: 0, illustrateur: 1, traducteur: 2 }
 
@@ -238,6 +267,7 @@ export function versOeuvreDetaillee(
     exigence: oeuvre.density,
     longueur: oeuvre.length,
     estSerie: oeuvre.is_series,
+    couverture: oeuvre.cover_path ?? null,
     auteurs: tous(oeuvre.work_authors)
       .map((lien) => ({ nom: premier(lien.authors)?.name ?? '', role: lien.role as Role }))
       .filter((auteur) => auteur.nom)
@@ -251,10 +281,18 @@ export function versOeuvreDetaillee(
       format: e.format,
       translator: e.translator,
       pageCount: e.page_count,
+      couverture: e.cover_path ?? null,
     })),
     tomes: [...tomes]
       .sort((a, b) => a.number - b.number)
-      .map((t) => ({ numero: t.number, titre: t.title, isbn: t.isbn, possession: t.ownership, lecture: t.reading_status })),
+      .map((t) => ({
+        numero: t.number,
+        titre: t.title,
+        isbn: t.isbn,
+        possession: t.ownership,
+        lecture: t.reading_status,
+        couverture: t.cover_path ?? null,
+      })),
     medias: medias.map((m) => ({
       id: m.id,
       type: m.kind,
@@ -330,8 +368,8 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
       // Cinq lectures en parallèle, chacune limitée à cette œuvre (et, par la RLS, à mes lignes).
       const [oeuvre, editions, tomes, medias, entree] = await Promise.all([
         client.from('works').select(COLONNES_FICHE).eq('id', id).maybeSingle(),
-        client.from('editions').select('id, isbn, publisher, language, format, translator, page_count, created_at').eq('work_id', id).order('created_at'),
-        client.from('volumes').select('number, title, isbn, ownership, reading_status').eq('work_id', id).order('number'),
+        client.from('editions').select('id, isbn, publisher, language, format, translator, page_count, cover_path, created_at').eq('work_id', id).order('created_at'),
+        client.from('volumes').select('number, title, isbn, ownership, reading_status, cover_path').eq('work_id', id).order('number'),
         client.from('media').select('id, kind, title, seasons, episodes_total, episodes_watched, status, created_at').eq('work_id', id).order('created_at'),
         client.from('library_entries').select(COLONNES_ENTREE).eq('work_id', id).maybeSingle(),
       ])
@@ -414,6 +452,78 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
       if (error) return { ok: false, echec: echecEcriture(error) }
       if (!data || data.length === 0) return { ok: false, echec: 'introuvable' }
       return { ok: true }
+    },
+
+    async definirCouverture(id, cible, chemin) {
+      const valeurs = { cover_path: chemin }
+      // Chaque écriture vise une ligne de cette œuvre ; la RLS la limite à mes lignes.
+      const requete =
+        cible.type === 'oeuvre'
+          ? client.from('works').update(valeurs).eq('id', id).select('id')
+          : cible.type === 'edition'
+            ? client.from('editions').update(valeurs).eq('id', cible.edition).eq('work_id', id).select('id')
+            : client.from('volumes').update(valeurs).eq('work_id', id).eq('number', cible.numero).select('number')
+      const { data, error } = await requete
+      if (error) return { ok: false, echec: echecEcriture(error) }
+      if (!data || data.length === 0) return { ok: false, echec: 'introuvable' }
+      return { ok: true }
+    },
+
+    async trouverParIsbn(isbn) {
+      const [editions, tomes] = await Promise.all([
+        client.from('editions').select('work_id').eq('isbn', isbn),
+        client.from('volumes').select('work_id, number').eq('isbn', isbn),
+      ])
+      const erreur = editions.error ?? tomes.error
+      if (erreur) return { ok: false, echec: echecLecture(erreur) }
+      const edition = ((editions.data ?? []) as { work_id: string }[])[0]
+      if (edition) return { ok: true, trouve: { id: edition.work_id, tome: null } }
+      const tome = ((tomes.data ?? []) as { work_id: string; number: number }[])[0]
+      return { ok: true, trouve: tome ? { id: tome.work_id, tome: tome.number } : null }
+    },
+
+    async listerSansCouverture() {
+      // Quatre lectures simples, assemblées ici : mes œuvres, mes éditions, mes tomes, et mon édition de chacune.
+      const [oeuvres, entrees, editions, tomes] = await Promise.all([
+        client.from('works').select('id, title_fr, is_series, cover_path'),
+        client.from('library_entries').select('work_id, edition_id'),
+        client.from('editions').select('id, work_id, isbn, cover_path, created_at').order('created_at'),
+        client.from('volumes').select('work_id, number, isbn, cover_path').order('number'),
+      ])
+      const erreur = oeuvres.error ?? entrees.error ?? editions.error ?? tomes.error
+      if (erreur) return { ok: false, echec: echecLecture(erreur) }
+
+      type Oeuvre = { id: string; title_fr: string; is_series: boolean; cover_path: string | null }
+      type EditionLue = { id: string; work_id: string; isbn: string | null; cover_path: string | null }
+      type TomeLu = { work_id: string; number: number; isbn: string | null; cover_path: string | null }
+      const monEditionDe = new Map(((entrees.data ?? []) as { work_id: string; edition_id: string | null }[]).map((e) => [e.work_id, e.edition_id]))
+      const lesEditions = (editions.data ?? []) as EditionLue[]
+      const lesTomes = (tomes.data ?? []) as TomeLu[]
+
+      const manques: ManqueCouverture[] = []
+      const parTitre = [...((oeuvres.data ?? []) as Oeuvre[])].sort((a, b) => comparerTitres(a.title_fr, b.title_fr))
+      for (const oeuvre of parTitre) {
+        if (oeuvre.is_series) {
+          for (const tome of lesTomes.filter((t) => t.work_id === oeuvre.id && !t.cover_path).sort((a, b) => a.number - b.number)) {
+            manques.push({ oeuvre: oeuvre.id, titre: oeuvre.title_fr, tome: tome.number, isbn: tome.isbn, cible: { type: 'tome', numero: tome.number } })
+          }
+          continue
+        }
+        const siennes = lesEditions.filter((e) => e.work_id === oeuvre.id)
+        const monEdition = monEditionDe.get(oeuvre.id) ?? null
+        const mienne = siennes.find((e) => e.id === monEdition)
+        if (oeuvre.cover_path || mienne?.cover_path) continue
+        // L'ISBN de mon édition d'abord ; à défaut, celui d'une autre édition de l'œuvre.
+        const avecIsbn = mienne?.isbn ? mienne : siennes.find((e) => e.isbn)
+        manques.push({
+          oeuvre: oeuvre.id,
+          titre: oeuvre.title_fr,
+          tome: null,
+          isbn: avecIsbn?.isbn ?? null,
+          cible: cibleCouverture({ edition: avecIsbn?.id ?? null, monEdition }),
+        })
+      }
+      return { ok: true, manques }
     },
 
     async installerCatalogue() {

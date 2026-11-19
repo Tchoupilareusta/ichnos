@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(118);
+select plan(125);
 
 -- ---------------------------------------------------------------------------
 -- 1. Règles générales
@@ -18,7 +18,7 @@ select tables_are(
   'public',
   array[
     'works', 'authors', 'work_authors', 'tags', 'work_tags', 'editions', 'volumes',
-    'media', 'library_entries', 'reading_events', 'notes', 'recommendation_log'
+    'media', 'library_entries', 'reading_events', 'notes', 'recommendation_log', 'ai_calls'
   ],
   'Le schéma public contient exactement les tables prévues'
 );
@@ -161,9 +161,9 @@ select is_empty(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and has_function_privilege('authenticated', p.oid, 'execute')
-      and p.proname not in ('importer_catalogue', 'enregistrer_oeuvre', 'changer_statut', 'noter_progression', 'dater_fin')
+      and p.proname not in ('importer_catalogue', 'enregistrer_oeuvre', 'changer_statut', 'noter_progression', 'dater_fin', 'reserver_appel_ia')
   $$,
-  'Le compte connecté ne peut appeler que l’import du catalogue, l’enregistrement d’une œuvre et le suivi de lecture'
+  'Le compte connecté ne peut appeler que l’import du catalogue, l’enregistrement d’une œuvre, le suivi de lecture et la réservation d’un appel à l’IA'
 );
 
 select is_empty(
@@ -235,6 +235,10 @@ select lives_ok(
 select lives_ok(
   $$ insert into public.recommendation_log (mode, work_id) values ('surprise', 'a0000000-0000-4000-8000-000000000001') $$,
   'A reçoit une proposition'
+);
+select lives_ok(
+  $$ insert into public.ai_calls (action) values ('fiche') $$,
+  'A laisse une trace d’appel à l’IA'
 );
 
 reset role;

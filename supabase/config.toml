@@ -1,3 +1,10 @@
 # Réglages de la CLI Supabase pour la base jetable montée par GitHub Actions.
 # Rien de secret ici : les accès au vrai projet sont dans les secrets GitHub.
 project_id = "ichnos"
+
+# La fonction « assistant » vérifie elle-même le jeton de session auprès de Supabase, à chaque
+# appel (supabase/functions/assistant/gestionnaire.ts, testé par gestionnaire.test.ts).
+# Le contrôle de la plateforme est coupé : d'après la documentation de Supabase, il ne
+# comprend que les anciennes clés d'API, alors que ce projet utilise les nouvelles.
+[functions.assistant]
+verify_jwt = false

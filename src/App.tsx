@@ -8,13 +8,18 @@ import { AllerAuContenu } from './composants/AllerAuContenu'
 import { Accueil } from './ecrans/Accueil'
 import { Bibliotheque } from './ecrans/Bibliotheque'
 import { Decouvrir } from './ecrans/Decouvrir'
-import { Ajouter, Modifier } from './ecrans/Formulaire'
+import { Ajouter } from './ecrans/Ajouter'
+import { Modifier } from './ecrans/Formulaire'
 import { Fiche } from './ecrans/Fiche'
 import { Reglages } from './ecrans/Reglages'
 import { Introuvable } from './ecrans/Introuvable'
 import { Connexion, NonConfigure } from './ecrans/Connexion'
+import { ASSISTANT_ABSENT, type Assistant } from './ajout/assistant'
+import { assistantParDefaut } from './ajout/assistantParDefaut'
 import { DEPOT_ABSENT, type Depot } from './bibliotheque/depot'
 import { depotParDefaut } from './bibliotheque/depotParDefaut'
+import { couverturesParDefaut } from './couvertures/couverturesParDefaut'
+import { COUVERTURES_ABSENTES, type Couvertures } from './couvertures/stockage'
 import type { Auth } from './session/auth'
 import { authParDefaut } from './session/authParDefaut'
 import { FournisseurSession, useEtatSession } from './session/Session'
@@ -44,7 +49,17 @@ const TITRES: Record<Ecran, string | null> = {
 }
 
 /** L'appli entière est réservée au compte connecté : sans session, seul l'écran de connexion s'affiche. */
-export function App({ auth = authParDefaut, depot = depotParDefaut }: { auth?: Auth | null; depot?: Depot | null }) {
+export function App({
+  auth = authParDefaut,
+  depot = depotParDefaut,
+  assistant = assistantParDefaut,
+  couvertures = couverturesParDefaut,
+}: {
+  auth?: Auth | null
+  depot?: Depot | null
+  assistant?: Assistant | null
+  couvertures?: Couvertures | null
+}) {
   if (!auth) {
     return (
       <>
@@ -53,10 +68,17 @@ export function App({ auth = authParDefaut, depot = depotParDefaut }: { auth?: A
       </>
     )
   }
-  return <AppReservee auth={auth} depot={depot ?? DEPOT_ABSENT} />
+  return (
+    <AppReservee
+      auth={auth}
+      depot={depot ?? DEPOT_ABSENT}
+      assistant={assistant ?? ASSISTANT_ABSENT}
+      couvertures={couvertures ?? COUVERTURES_ABSENTES}
+    />
+  )
 }
 
-function AppReservee({ auth, depot }: { auth: Auth; depot: Depot }) {
+function AppReservee({ auth, depot, assistant, couvertures }: { auth: Auth; depot: Depot; assistant: Assistant; couvertures: Couvertures }) {
   const session = useEtatSession(auth)
   const route = useRouteCourante()
   const ecran = route.ecran
@@ -88,7 +110,7 @@ function AppReservee({ auth, depot }: { auth: Auth; depot: Depot }) {
 
   return (
     <QueryClientProvider client={requetes}>
-      <FournisseurSession value={{ auth, compte: session.compte, depot }}>
+      <FournisseurSession value={{ auth, compte: session.compte, depot, assistant, couvertures }}>
         <FournisseurRoute value={route}>
           <AllerAuContenu />
           <HorsConnexion />

@@ -22,7 +22,7 @@ describe('ajout d’une œuvre', () => {
     const faux = depotFictif({
       oeuvres: [oeuvreFictive({ id: 'x', titreFr: 'Autre', etiquettes: [{ genre: 'theme', nom: 'Temps', coeur: true }] })],
     })
-    await ouvrir(faux, '#/ajouter')
+    await ouvrir(faux, '#/ajouter?mode=manuel')
     expect(screen.getByRole('heading', { level: 1, name: 'Ajouter une œuvre' })).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo' } })
@@ -56,7 +56,7 @@ describe('ajout d’une œuvre', () => {
 
   it('signale les champs à revoir et n’envoie rien', async () => {
     const faux = depotFictif()
-    await ouvrir(faux, '#/ajouter')
+    await ouvrir(faux, '#/ajouter?mode=manuel')
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter une édition' }))
     fireEvent.change(screen.getByLabelText('ISBN'), { target: { value: '978-2-07-036002-5' } })
     await enregistrer()
@@ -69,18 +69,18 @@ describe('ajout d’une œuvre', () => {
 
   it('garde la saisie et l’explique quand la base refuse', async () => {
     const faux = depotFictif({ ecriture: { ok: false, echec: 'reseau' } })
-    await ouvrir(faux, '#/ajouter')
+    await ouvrir(faux, '#/ajouter?mode=manuel')
     fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo' } })
     await enregistrer()
     expect(screen.getAllByRole('alert').some((a) => /rien n’a été enregistré/.test(a.textContent ?? ''))).toBe(true)
     expect(screen.getByLabelText('Titre en français')).toHaveValue('Momo')
-    expect(window.location.hash).toBe('#/ajouter')
+    expect(window.location.hash).toBe('#/ajouter?mode=manuel')
   })
 
   it('n’enregistre pas hors connexion', async () => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
     const faux = depotFictif()
-    await ouvrir(faux, '#/ajouter')
+    await ouvrir(faux, '#/ajouter?mode=manuel')
     fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo' } })
     await enregistrer()
     expect(faux.appels.enregistrerOeuvre).toHaveLength(0)
@@ -88,7 +88,7 @@ describe('ajout d’une œuvre', () => {
   })
 
   it('demande avant d’abandonner une saisie', async () => {
-    await ouvrir(depotFictif(), '#/ajouter')
+    await ouvrir(depotFictif(), '#/ajouter?mode=manuel')
     fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo' } })
     fireEvent.click(within(screen.getByRole('main')).getAllByRole('button', { name: 'Annuler' })[0])
     expect(screen.getByRole('dialog', { name: 'Abandonner mes modifications ?' })).toBeInTheDocument()
@@ -151,7 +151,7 @@ describe('modification d’une œuvre', () => {
   })
 
   it('ne propose pas de supprimer une œuvre qu’on est en train d’ajouter', async () => {
-    await ouvrir(depotFictif(), '#/ajouter')
+    await ouvrir(depotFictif(), '#/ajouter?mode=manuel')
     expect(screen.queryByRole('button', { name: /Supprimer/ })).not.toBeInTheDocument()
   })
 
@@ -178,5 +178,45 @@ describe('modification d’une œuvre', () => {
     await ouvrir(faux, '#/oeuvre/vin/modifier')
     fireEvent.change(screen.getByLabelText('Nombre de tomes'), { target: { value: '1' } })
     expect(screen.getByText('Les tomes 2 à 3 seront retirés, avec ce que j’avais noté sur leur possession.')).toBeInTheDocument()
+  })
+})
+
+describe('couverture rangée', () => {
+  const CHEMIN = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/0123456789abcdef0123456789abcdef.jpg'
+  const illustree = () =>
+    depotFictif({
+      oeuvres: [
+        oeuvreFictive({
+          id: 'momo',
+          titreFr: 'Momo',
+          editions: [{ id: 'e1', isbn: null, publisher: 'Bayard', language: 'fr', format: null, translator: null, pageCount: null, couverture: CHEMIN }],
+          monEdition: 'e1',
+        }),
+      ],
+    })
+
+  it('dans « Modifier », permet de retirer la couverture : celle d’Ichnos reprend sa place', async () => {
+    const faux = illustree()
+    await ouvrir(faux, '#/oeuvre/momo/modifier')
+    const section = within(screen.getByRole('region', { name: 'Couverture' }))
+    await act(async () => fireEvent.click(section.getByRole('button', { name: 'Retirer cette couverture' })))
+    await act(async () => {})
+    expect(faux.appels.ecritures).toContainEqual({ action: 'couverture', id: 'momo', valeur: { cible: { type: 'edition', edition: 'e1' }, chemin: null } })
+    expect(faux.oeuvres()[0].editions[0].couverture).toBeNull()
+  })
+
+  it('ne propose rien à retirer quand l’œuvre n’a que la couverture d’Ichnos', async () => {
+    await ouvrir(depotFictif({ oeuvres: [oeuvreFictive({ id: 'momo', titreFr: 'Momo' })] }), '#/oeuvre/momo/modifier')
+    expect(screen.queryByRole('button', { name: 'Retirer cette couverture' })).not.toBeInTheDocument()
+  })
+
+  it('hors connexion, le retrait est grisé', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
+    const faux = illustree()
+    await ouvrir(faux, '#/oeuvre/momo/modifier')
+    const bouton = screen.getByRole('button', { name: 'Retirer cette couverture' })
+    expect(bouton).toHaveAttribute('aria-disabled', 'true')
+    await act(async () => fireEvent.click(bouton))
+    expect(faux.appels.ecritures).toHaveLength(0)
   })
 })

@@ -1,0 +1,76 @@
+{
+  "publishers": [
+    "Bayard Jeunesse"
+  ],
+  "source_records": [
+    "amazon:2747024695"
+  ],
+  "title": "Momo",
+  "identifiers": {
+    "amazon": [
+      "2747024695"
+    ]
+  },
+  "covers": [
+    8751329
+  ],
+  "physical_format": "Paperback",
+  "full_title": "Momo",
+  "publish_date": "May 25, 2009",
+  "key": "/books/OL27260343M",
+  "authors": [
+    {
+      "key": "/authors/OL296646A"
+    }
+  ],
+  "works": [
+    {
+      "key": "/works/OL2271626W"
+    }
+  ],
+  "type": {
+    "key": "/type/edition"
+  },
+  "isbn_10": [
+    "2747024695"
+  ],
+  "isbn_13": [
+    "9782747024693"
+  ],
+  "classifications": {},
+  "languages": [
+    {
+      "key": "/languages/fre"
+    }
+  ],
+  "contributors": [
+    {
+      "role": "Translator",
+      "name": "Corinna Gepner"
+    }
+  ],
+  "translation_of": "Momo",
+  "number_of_pages": 430,
+  "description": {
+    "type": "/type/text",
+    "value": "Corinna Gepner"
+  },
+  "translated_from": [
+    {
+      "key": "/languages/ger"
+    }
+  ],
+  "publish_places": [
+    "Montrouge, France"
+  ],
+  "latest_revision": 4,
+  "revision": 4,
+  "created": {
+    "type": "/type/datetime",
+    "value": "2019-08-07T21:42:12.557408"
+  },
+  "last_modified": {
+    "type": "/type/datetime",
+    "value": "2021-12-29T16:32:11.076521"
+  }
+}

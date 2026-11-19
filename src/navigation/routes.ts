@@ -24,6 +24,8 @@ export const LIENS = {
   bibliotheque: '#/bibliotheque',
   decouvrir: '#/decouvrir',
   ajouter: '#/ajouter',
+  /** Le formulaire complet, sans recherche automatique. */
+  ajouterManuel: '#/ajouter?mode=manuel',
   reglages: '#/reglages',
   oeuvre: (id: string) => `#/oeuvre/${encodeURIComponent(id)}`,
   modifier: (id: string) => `#/oeuvre/${encodeURIComponent(id)}/modifier`,

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { App } from '../App'
+import { couverturesFictives } from '../couvertures/stockage.fictif'
 import { depotFictif, oeuvreFictive } from '../bibliotheque/depot.fictif'
 import { authFictif } from '../session/auth.fictif'
 
@@ -254,5 +255,24 @@ describe('recherche et filtres', () => {
     await ouvrir(depotFictif({ oeuvres: COLLECTION }))
     await choisir(screen.getByRole('button', { name: 'Filtrer par statut, aucun filtre' }), 'En pause')
     expect(screen.getByText('Rien ne correspond à ces filtres.')).toBeInTheDocument()
+  })
+})
+
+describe('couvertures', () => {
+  it('montre l’image trouvée par-dessus la couverture d’Ichnos, qui reste pour les autres œuvres', async () => {
+    const CHEMIN = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/0123456789abcdef0123456789abcdef.jpg'
+    const faux = depotFictif({
+      oeuvres: [oeuvreFictive({ id: 'momo', titreFr: 'Momo', couverture: CHEMIN }), oeuvreFictive({ id: 'autre', titreFr: 'Sans image' })],
+    })
+    window.location.hash = '#/bibliotheque'
+    const { container } = render(<App auth={authFictif({ compte: { email: 'moi@exemple.test' } }).auth} depot={faux.depot} couvertures={couverturesFictives().couvertures} />)
+    await act(async () => {})
+    await act(async () => {})
+    const images = [...container.querySelectorAll('img')]
+    expect(images.map((image) => image.getAttribute('src'))).toEqual([`blob:fictive/${CHEMIN}`])
+    // Décorative : le titre est déjà dit à côté, VoiceOver ne lit pas l'image.
+    expect(images[0]).toHaveAttribute('alt', '')
+    expect(images[0].closest('[aria-hidden="true"]')).not.toBeNull()
+    expect(screen.getByRole('link', { name: /Sans image/ })).toBeInTheDocument()
   })
 })

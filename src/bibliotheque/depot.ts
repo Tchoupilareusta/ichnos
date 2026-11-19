@@ -19,6 +19,7 @@ import {
   type StatutMedia,
   type Unite,
 } from './suivi'
+import type { CibleCouverture } from '../couvertures/choix'
 
 /** Une œuvre telle que la grille de la bibliothèque a besoin de la connaître. */
 export type OeuvreListee = {
@@ -34,6 +35,8 @@ export type OeuvreListee = {
   possession: PossessionAffichee
   /** Les possessions sous lesquelles l'œuvre se retrouve dans les filtres (§6.2). */
   possessionsFiltrables: Possession[]
+  /** Chemin de la couverture à montrer (stockage privé), ou null : la couverture typographique s'affiche. */
+  couverture: string | null
 }
 
 export type Edition = {
@@ -44,6 +47,8 @@ export type Edition = {
   format: string | null
   translator: string | null
   pageCount: number | null
+  /** Chemin de la couverture de cette édition, s'il y en a une. */
+  couverture?: string | null
 }
 
 export type Tome = {
@@ -52,6 +57,8 @@ export type Tome = {
   isbn: string | null
   possession: Possession
   lecture: LectureTome
+  /** Chemin de la couverture de ce tome, s'il y en a une. */
+  couverture?: string | null
 }
 
 export type Media = {
@@ -80,6 +87,8 @@ export type OeuvreDetaillee = {
   exigence: number | null
   longueur: Longueur | null
   estSerie: boolean
+  /** Chemin de la couverture de l'œuvre elle-même, s'il y en a une. */
+  couverture?: string | null
   auteurs: { nom: string; role: Role }[]
   etiquettes: Etiquette[]
   editions: Edition[]
@@ -112,11 +121,23 @@ export type EnCours = {
   tomes: { numero: number; lecture: LectureTome }[]
   /** Mon ressenti déjà choisi (une relecture le garde). */
   appreciation: Appreciation | null
+  /** Chemin de la couverture à montrer, ou null. */
+  couverture: string | null
 }
 
 /** Où j'en suis : pour une série, tiré des tomes ; sinon dans l'unité choisie. */
 export function progressionDe(x: Pick<EnCours, 'estSerie' | 'unite' | 'position' | 'total' | 'pagesEdition' | 'tomes'>): Progression {
   return x.estSerie ? progressionSerie(x.tomes) : progressionLivre(x.unite, x.position, x.total, x.pagesEdition)
+}
+
+/** La couverture à montrer pour une fiche : mon édition ou l'œuvre ; pour une série, le tome où j'en suis. */
+export function couverturesDeLaFiche(oeuvre: OeuvreDetaillee) {
+  return {
+    estSerie: oeuvre.estSerie,
+    oeuvre: oeuvre.couverture ?? null,
+    monEdition: oeuvre.editions.find((e) => e.id === oeuvre.monEdition)?.couverture ?? null,
+    tomes: oeuvre.tomes.map((t) => ({ numero: t.numero, lecture: t.lecture, couverture: t.couverture ?? null })),
+  }
 }
 
 /** Les mêmes informations, lues sur la fiche. */
@@ -173,6 +194,12 @@ export type EchecEcriture = 'reseau' | 'introuvable' | 'invalide' | 'inconnu'
 /** « deja » : la bibliothèque contient déjà des œuvres, le catalogue n'est pas installé deux fois. */
 export type EchecInstallation = 'reseau' | 'deja' | 'inconnu'
 
+/** Une œuvre ou un tome sans couverture : l'ISBN qui permet de la chercher, et l'endroit où la ranger. */
+export type ManqueCouverture = { oeuvre: string; titre: string; tome: number | null; isbn: string | null; cible: CibleCouverture }
+export type LectureManques = { ok: true; manques: ManqueCouverture[] } | { ok: false; echec: EchecLecture }
+/** L'œuvre de ma bibliothèque qui porte déjà un ISBN (et le tome, si c'est celui d'un tome). */
+export type RechercheIsbn = { ok: true; trouve: { id: string; tome: number | null } | null } | { ok: false; echec: EchecLecture }
+
 export type Lecture = { ok: true; oeuvres: OeuvreListee[] } | { ok: false; echec: EchecLecture }
 export type LectureEnCours = { ok: true; lectures: EnCours[] } | { ok: false; echec: EchecLecture }
 export type LectureFiche = { ok: true; oeuvre: OeuvreDetaillee } | { ok: false; echec: EchecFiche }
@@ -210,6 +237,12 @@ export interface Depot {
   changerPossessionTomes(id: string, tomes: ChoixTomes, possession: Possession): Promise<Ecriture>
   changerMonEdition(id: string, edition: string | null): Promise<Ecriture>
   supprimerOeuvre(id: string): Promise<Ecriture>
+  /** Range le chemin d'une couverture sur l'œuvre, une de ses éditions ou un de ses tomes ; null la retire. */
+  definirCouverture(id: string, cible: CibleCouverture, chemin: string | null): Promise<Ecriture>
+  /** Cet ISBN est-il déjà dans ma bibliothèque (édition ou tome) ? */
+  trouverParIsbn(isbn: string): Promise<RechercheIsbn>
+  /** Tout ce qui n'a pas encore de couverture, par ordre de titre. */
+  listerSansCouverture(): Promise<LectureManques>
   /** Installe le catalogue de départ dans une bibliothèque vide. Tout ou rien. */
   installerCatalogue(): Promise<Installation>
 }
@@ -235,5 +268,8 @@ export const DEPOT_ABSENT: Depot = {
   changerPossessionTomes: absent,
   changerMonEdition: absent,
   supprimerOeuvre: absent,
+  definirCouverture: absent,
+  trouverParIsbn: absent,
+  listerSansCouverture: absent,
   installerCatalogue: absent,
 }
