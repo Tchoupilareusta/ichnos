@@ -1,0 +1,20 @@
+{
+  "numFound": 1,
+  "start": 0,
+  "numFoundExact": true,
+  "num_found": 1,
+  "documentation_url": "https://openlibrary.org/dev/docs/api/search",
+  "q": "",
+  "offset": null,
+  "docs": [
+    {
+      "author_name": [
+        "Michael Ende"
+      ],
+      "cover_i": 8574580,
+      "first_publish_year": 1973,
+      "key": "/works/OL2271626W",
+      "title": "Momo oder Die seltsame Geschichte von den Zeit-Dieben und von dem Kind, das den Menschen die gestohlene Zeit zurückbrachte"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns="http://catalogue.bnf.fr/namespaces/InterXMarc" xmlns:ixm="http://catalogue.bnf.fr/namespaces/InterXMarc" xmlns:mn="http://catalogue.bnf.fr/namespaces/motsnotices" xmlns:sd="http://www.loc.gov/zing/srw/diagnostic/">
+<srw:version>1.2</srw:version>
+<srw:echoedSearchRetrieveRequest>
+<srw:version>1.2</srw:version>
+<srw:query>bib.isbn any "9782747024693"</srw:query>
+</srw:echoedSearchRetrieveRequest>
+<srw:numberOfRecords>1</srw:numberOfRecords>
+<srw:records>
+<srw:record>
+<srw:recordSchema>marcxchange</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<mxc:record xmlns:mxc="info:lc/xmlns/marcxchange-v2" format="UNIMARC" id="ark:/12148/cb41482244m" type="Bibliographic">
+<mxc:leader>     cam  22        450 </mxc:leader>
+<mxc:datafield tag="010" ind1=" " ind2=" ">
+<mxc:subfield code="a">978-2-7470-2469-3</mxc:subfield>
+<mxc:subfield code="b">br.</mxc:subfield>
+<mxc:subfield code="d">13,90 EUR</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="101" ind1="1" ind2=" ">
+<mxc:subfield code="a">fre</mxc:subfield>
+<mxc:subfield code="c">ger</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="200" ind1="1" ind2=" ">
+<mxc:subfield code="a">Momo</mxc:subfield>
+<mxc:subfield code="b">Texte imprimé</mxc:subfield>
+<mxc:subfield code="f">Michael Ende</mxc:subfield>
+<mxc:subfield code="g">traduit de l'allemand par Corinna Gepner</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="210" ind1=" " ind2=" ">
+<mxc:subfield code="a">Montrouge</mxc:subfield>
+<mxc:subfield code="c">Bayard jeunesse</mxc:subfield>
+<mxc:subfield code="d">impr. 2009</mxc:subfield>
+<mxc:subfield code="e">72-La Flèche</mxc:subfield>
+<mxc:subfield code="g">Impr. Brodard &amp; Taupin</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="215" ind1=" " ind2=" ">
+<mxc:subfield code="a">1 vol. (430 p.)</mxc:subfield>
+<mxc:subfield code="c">couv. ill. en coul.</mxc:subfield>
+<mxc:subfield code="d">19 cm</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="330" ind1=" " ind2=" ">
+<mxc:subfield code="a">Dans une ville du Sud, la petite Momo, une orpheline, s'installe dans un amphithéâtre en ruines. Avec ses amis, Beppo, le vieux balayeur de rues, et Gigi, un jeune homme à la langue bien pendue, elle va tenter de redonner aux gens le goût de la vie en luttant contre les hommes gris, des voleurs de temps qui trompent la population.</mxc:subfield>
+<mxc:subfield code="2">Electre</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="454" ind1=" " ind2="1">
+<mxc:subfield code="t">Momo</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="700" ind1=" " ind2="|">
+<mxc:subfield code="3">11901752</mxc:subfield>
+<mxc:subfield code="o">ISNI0000000081129551</mxc:subfield>
+<mxc:subfield code="a">Ende</mxc:subfield>
+<mxc:subfield code="b">Michael</mxc:subfield>
+<mxc:subfield code="f">1929-1995</mxc:subfield>
+<mxc:subfield code="4">070</mxc:subfield>
+</mxc:datafield>
+<mxc:datafield tag="702" ind1=" " ind2="|">
+<mxc:subfield code="3">12504613</mxc:subfield>
+<mxc:subfield code="o">ISNI0000000108581119</mxc:subfield>
+<mxc:subfield code="a">Gepner</mxc:subfield>
+<mxc:subfield code="b">Corinna</mxc:subfield>
+<mxc:subfield code="4">730</mxc:subfield>
+</mxc:datafield>
+</mxc:record>      </srw:recordData>
+<srw:recordIdentifier>ark:/12148/cb41482244m</srw:recordIdentifier>
+<srw:recordPosition>1</srw:recordPosition>
+</srw:record>
+</srw:records>
+</srw:searchRetrieveResponse>
