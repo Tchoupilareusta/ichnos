@@ -5,6 +5,7 @@
 *Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11) ; points reportés aux étapes 9 et 10 (§11).*
 *Mise à jour du 18 novembre 2026 : corrections après essai sur iPhone : cinq statuts, libellés de possession, ordre des filtres, allègement de la bibliothèque et de la fiche, icônes ; ajout d'une œuvre à l'étape 6 (§2, §3, §5, §6, §11).*
 *Mise à jour du 19 novembre 2026 : bulles-menus Statut et Possession, grille à colonnes fixes, recherche (§3, §5).*
+*Mise à jour du 19 novembre 2026 : animations des interactions, à faire à l'étape 9 (§4.3, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -94,6 +95,10 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 - Rayons généreux : environ 24 px pour les cartes, boutons en forme de pilule, couvertures arrondies à 12–14 px.
 - Ombres très douces et chaudes, jamais grises et dures.
 - Animations courtes et amorties (ressorts légers). Respect de `prefers-reduced-motion`.
+- Interactions animées, discrètes et rapides (décidé le 19 novembre 2026, réalisé à l'étape 9) : ouverture du panneau des filtres, déroulement des menus Statut et Possession, changements de statut.
+- Passer à « Je l'ai » déclenche une petite animation joyeuse : l'icône qui rebondit, une lueur douce. Jamais de confettis ni de message de félicitations.
+- Quand l'iPhone demande de réduire les animations, des fondus courts remplacent les mouvements.
+- D'ici l'étape 9, chaque nouveau composant (étapes 5 à 8) est construit pour pouvoir être animé sans être réécrit : un élément qui apparaît ou disparaît (panneau, menu, feuille, message) reste un élément distinct qu'on peut cibler, son état ouvert ou fermé est porté par un attribut (`data-etat`, `aria-expanded`, `open`), et les changements d'état passent par un seul endroit du code. Les couleurs et les durées viennent des jetons de design, pas de valeurs écrites en dur.
 
 ### 4.4 Typographie
 
@@ -371,7 +376,7 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil | Fable 5.2, élevé |
 | 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
 | 8 | Accueil final, notes, export, sauvegarde et veille | Opus 5.5, moyen |
-| 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, mouvements réduits (voir plus bas), audit design (Impeccable) | Opus 5.5, moyen |
+| 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, animations des interactions (§4.3), mouvements réduits (voir plus bas), audit design (Impeccable) | Opus 5.5, moyen |
 | 10 | Revue de sécurité finale, dont les alertes `npm audit` (voir plus bas) | Fable 5.2, élevé |
 
 Points reportés :
