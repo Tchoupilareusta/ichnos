@@ -6,6 +6,7 @@ import { appliquerProposition, libelleSource, pourFiche, type ChampPropose, type
 import { LANGUES, nomLangue } from '../catalogue/langues'
 import { couverturesDeLaFiche, type EchecEcriture, type OeuvreDetaillee, type Vocabulaire } from '../bibliotheque/depot'
 import { couvertureAffichee, type CibleCouverture } from '../couvertures/choix'
+import { ApercuCouverture } from '../couvertures/ApercuCouverture'
 import { Couverture } from '../couvertures/Couverture'
 import {
   ajusterTomes,
@@ -536,56 +537,6 @@ function Suppression({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: bo
           Ce geste ne se défait pas.
         </p>
       </Dialogue>
-    </section>
-  )
-}
-
-/**
- * La couverture trouvée par la recherche, avant validation : je la vois, et je peux ne pas la garder.
- * Rien n'est rangé tant que la fiche n'est pas enregistrée.
- */
-function ApercuCouverture({
-  titre,
-  cherche,
-  trouvee,
-  adresse,
-  garder,
-  setGarder,
-}: {
-  titre: string
-  cherche: boolean
-  trouvee: ImageTrouvee | null
-  adresse: string | null
-  garder: boolean
-  setGarder: (garder: boolean) => void
-}) {
-  const visible = trouvee !== null && garder
-  return (
-    <section aria-label="Couverture" data-etat={visible ? 'image' : 'typographique'} className="flex flex-wrap items-center gap-5">
-      <Couverture titre={titre || 'Sans titre'} graine="apercu" apercu={visible ? adresse : null} className="w-24 shrink-0" />
-      <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-2">
-        {cherche ? (
-          <p role="status" className="m-0 text-[0.9375rem] text-discret">
-            Je cherche la couverture…
-          </p>
-        ) : trouvee === null ? (
-          <p className="m-0 text-[0.9375rem] text-discret">Pas de couverture trouvée : celle d’Ichnos s’affichera.</p>
-        ) : garder ? (
-          <>
-            <p className="m-0 text-[0.9375rem]">Couverture trouvée sur {libelleSource(trouvee.source)}.</p>
-            <button type="button" onClick={() => setGarder(false)} className={LIEN}>
-              Ne pas garder cette couverture
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="m-0 text-[0.9375rem] text-discret">Cette couverture ne sera pas gardée : celle d’Ichnos s’affichera.</p>
-            <button type="button" onClick={() => setGarder(true)} className={LIEN}>
-              La garder finalement
-            </button>
-          </>
-        )}
-      </div>
     </section>
   )
 }

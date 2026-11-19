@@ -150,7 +150,7 @@ export function appliquerProposition(etat: EtatFormulaire, fiche: FicheProposee)
 // ---------------------------------------------------------------------------
 
 /** Un titre comparable : sans accents, casse, ponctuation ni article de tête. */
-function cleTitre(titre: string): string {
+export function cleTitre(titre: string): string {
   return normaliser(titre)
     .replace(/^(l'|le |la |les |un |une |des |the |a |an )/, '')
     .replace(/[^a-z0-9]+/g, ' ')
@@ -171,7 +171,7 @@ function distance(a: string, b: string): number {
 }
 
 /** Même titre, ou une ou deux lettres d'écart quand le titre est assez long pour que ce soit une faute de frappe. */
-function titresProches(a: string, b: string): boolean {
+export function titresProches(a: string, b: string): boolean {
   if (!a || !b) return false
   if (a === b) return true
   return Math.min(a.length, b.length) >= 8 && Math.abs(a.length - b.length) <= 2 && distance(a, b) <= 2
