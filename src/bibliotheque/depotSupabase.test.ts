@@ -118,6 +118,7 @@ describe('lecture de la bibliothèque', () => {
           statut: 'a_decouvrir',
           possession: 'non_possede',
           possessionsFiltrables: ['non_possede'],
+          couverture: null,
         },
         {
           id: '2',
@@ -130,6 +131,7 @@ describe('lecture de la bibliothèque', () => {
           statut: 'envie_de_lire',
           possession: 'possede',
           possessionsFiltrables: ['possede'],
+          couverture: null,
         },
       ],
     })
@@ -309,6 +311,7 @@ describe('fiche d’une œuvre', () => {
           pagesEdition: 980,
           tomes: [],
           appreciation: null,
+          couverture: null,
         },
       ],
     })
@@ -513,5 +516,209 @@ describe('installation du catalogue', () => {
     expect(await creerDepotSupabase(refus.client, charger).installerCatalogue()).toEqual({ ok: false, echec: 'inconnu' })
     const coupure = fauxClient({}, { error: SANS_RESEAU })
     expect(await creerDepotSupabase(coupure.client, charger).installerCatalogue()).toEqual({ ok: false, echec: 'reseau' })
+  })
+})
+
+describe('couvertures', () => {
+  const MOI = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const chemin = (nom: string) => `${MOI}/${nom.padEnd(32, '0')}.jpg`
+  const ligne = (champs: Record<string, unknown>) => ({
+    id: 'w1',
+    title_fr: 'Œuvre',
+    title_original: null,
+    original_language: 'fr',
+    is_series: false,
+    cover_path: null,
+    work_authors: [],
+    work_tags: [],
+    volumes: [],
+    library_entries: [{ reading_status: 'a_decouvrir' as const, ownership: 'non_possede' as const, editions: { language: 'fr', cover_path: null } }],
+    ...champs,
+  })
+
+  it('dans la bibliothèque, montre la couverture de mon édition, sinon celle de l’œuvre, sinon aucune', () => {
+    const avecEdition = ligne({
+      cover_path: chemin('a'),
+      library_entries: [{ reading_status: 'a_decouvrir', ownership: 'non_possede', editions: { language: 'fr', cover_path: chemin('b') } }],
+    })
+    expect(versOeuvreListee(avecEdition).couverture).toBe(chemin('b'))
+    expect(versOeuvreListee(ligne({ cover_path: chemin('a') })).couverture).toBe(chemin('a'))
+    expect(versOeuvreListee(ligne({})).couverture).toBeNull()
+  })
+
+  it('pour une série, montre le tome où j’en suis', () => {
+    const serie = ligne({
+      is_series: true,
+      volumes: [
+        { number: 1, ownership: 'possede', reading_status: 'lu', cover_path: chemin('1') },
+        { number: 2, ownership: 'possede', reading_status: 'en_cours', cover_path: chemin('2') },
+        { number: 3, ownership: 'a_acheter', reading_status: 'a_lire', cover_path: null },
+      ],
+    })
+    expect(versOeuvreListee(serie).couverture).toBe(chemin('2'))
+  })
+
+  it('demande les couvertures avec la liste, sans requête de plus', async () => {
+    const { client, requetes } = fauxClient({ 'works.select': { data: [] } })
+    await creerDepotSupabase(client, charger).listerOeuvres()
+    expect(requetes).toHaveLength(1)
+    const colonnes = String(requetes[0].etapes[0][1])
+    expect(colonnes).toContain('cover_path')
+    expect(colonnes).toContain('volumes(number, ownership, reading_status, cover_path)')
+    expect(colonnes).toContain('editions(language, cover_path)')
+  })
+
+  it('sur l’accueil, donne la couverture de chaque lecture en cours', async () => {
+    const { client } = fauxClient({
+      'library_entries.select': {
+        data: [
+          {
+            progress_unit: null,
+            progress_current: null,
+            progress_total: null,
+            editions: { page_count: 430, language: 'fr', cover_path: chemin('e') },
+            works: { id: 'w2', title_fr: 'Momo', title_original: null, original_language: 'de', is_series: false, cover_path: null, work_authors: [], volumes: [] },
+          },
+        ],
+      },
+    })
+    const lecture = await creerDepotSupabase(client, charger).listerEnCours()
+    expect(lecture.ok && lecture.lectures[0].couverture).toBe(chemin('e'))
+  })
+
+  it('sur la fiche, donne la couverture de l’œuvre, de chaque édition et de chaque tome', async () => {
+    const { client } = fauxClient({
+      'works.select': {
+        data: {
+          id: 'w1',
+          title_fr: 'Série',
+          title_original: null,
+          original_language: null,
+          first_published_year: null,
+          form: 'manga',
+          synopsis: null,
+          tone: null,
+          density: null,
+          length: null,
+          is_series: true,
+          cover_path: chemin('o'),
+          work_authors: [],
+          work_tags: [],
+        },
+      },
+      'editions.select': {
+        data: [{ id: 'e1', isbn: null, publisher: null, language: null, format: null, translator: null, page_count: null, cover_path: chemin('e') }],
+      },
+      'volumes.select': { data: [{ number: 1, title: null, isbn: null, ownership: 'possede', reading_status: 'lu', cover_path: chemin('t') }] },
+      'media.select': { data: [] },
+      'library_entries.select': { data: null },
+    })
+    const lecture = await creerDepotSupabase(client, charger).lireOeuvre('w1')
+    expect(lecture.ok && lecture.oeuvre.couverture).toBe(chemin('o'))
+    expect(lecture.ok && lecture.oeuvre.editions[0].couverture).toBe(chemin('e'))
+    expect(lecture.ok && lecture.oeuvre.tomes[0].couverture).toBe(chemin('t'))
+  })
+
+  it('range une couverture sur l’œuvre, sur une de ses éditions ou sur un de ses tomes', async () => {
+    const reussi = { data: [{ id: 'x' }] }
+    const { client, requetes } = fauxClient({ 'works.update': reussi, 'editions.update': reussi, 'volumes.update': reussi })
+    const depot = creerDepotSupabase(client, charger)
+
+    expect(await depot.definirCouverture('w1', { type: 'oeuvre' }, chemin('a'))).toEqual({ ok: true })
+    expect(requetes[0].table).toBe('works')
+    expect(requetes[0].etapes).toContainEqual(['update', { cover_path: chemin('a') }])
+    expect(requetes[0].etapes).toContainEqual(['eq', 'id', 'w1'])
+
+    expect(await depot.definirCouverture('w1', { type: 'edition', edition: 'e1' }, chemin('b'))).toEqual({ ok: true })
+    expect(requetes[1].table).toBe('editions')
+    expect(requetes[1].etapes).toContainEqual(['eq', 'id', 'e1'])
+    expect(requetes[1].etapes).toContainEqual(['eq', 'work_id', 'w1'])
+
+    expect(await depot.definirCouverture('w1', { type: 'tome', numero: 4 }, null)).toEqual({ ok: true })
+    expect(requetes[2].table).toBe('volumes')
+    expect(requetes[2].etapes).toContainEqual(['update', { cover_path: null }])
+    expect(requetes[2].etapes).toContainEqual(['eq', 'work_id', 'w1'])
+    expect(requetes[2].etapes).toContainEqual(['eq', 'number', 4])
+  })
+
+  it('rend « introuvable » si la ligne visée n’est pas à moi, et « invalide » si la base refuse le chemin', async () => {
+    const cachee = fauxClient({ 'works.update': { data: [] } })
+    expect(await creerDepotSupabase(cachee.client, charger).definirCouverture('w1', { type: 'oeuvre' }, chemin('a'))).toEqual({
+      ok: false,
+      echec: 'introuvable',
+    })
+    const refusee = fauxClient({ 'works.update': { error: { code: '23514', message: 'works_cover_path_check' } } })
+    expect(await creerDepotSupabase(refusee.client, charger).definirCouverture('w1', { type: 'oeuvre' }, 'ailleurs/x.jpg')).toEqual({
+      ok: false,
+      echec: 'invalide',
+    })
+  })
+
+  it('retrouve l’œuvre qui porte un ISBN, parmi les éditions puis parmi les tomes', async () => {
+    const parEdition = fauxClient({ 'editions.select': { data: [{ work_id: 'w1' }] }, 'volumes.select': { data: [] } })
+    expect(await creerDepotSupabase(parEdition.client, charger).trouverParIsbn('9782747024693')).toEqual({
+      ok: true,
+      trouve: { id: 'w1', tome: null },
+    })
+    expect(parEdition.requetes[0].etapes).toContainEqual(['eq', 'isbn', '9782747024693'])
+
+    const parTome = fauxClient({ 'editions.select': { data: [] }, 'volumes.select': { data: [{ work_id: 'w3', number: 7 }] } })
+    expect(await creerDepotSupabase(parTome.client, charger).trouverParIsbn('9782351423554')).toEqual({
+      ok: true,
+      trouve: { id: 'w3', tome: 7 },
+    })
+
+    const aucun = fauxClient({ 'editions.select': { data: [] }, 'volumes.select': { data: [] } })
+    expect(await creerDepotSupabase(aucun.client, charger).trouverParIsbn('9782747024693')).toEqual({ ok: true, trouve: null })
+
+    const coupe = fauxClient({ 'editions.select': { error: SANS_RESEAU } })
+    expect(await creerDepotSupabase(coupe.client, charger).trouverParIsbn('9782747024693')).toEqual({ ok: false, echec: 'reseau' })
+  })
+
+  it('liste ce qui n’a pas encore de couverture, avec l’ISBN à chercher et l’endroit où la ranger', async () => {
+    const { client } = fauxClient({
+      'works.select': {
+        data: [
+          { id: 'w1', title_fr: 'Momo', is_series: false, cover_path: null },
+          { id: 'w2', title_fr: 'Déjà illustré', is_series: false, cover_path: chemin('a') },
+          { id: 'w3', title_fr: 'Vinland Saga', is_series: true, cover_path: null },
+          { id: 'w4', title_fr: 'Sans ISBN', is_series: false, cover_path: null },
+          { id: 'w5', title_fr: 'Autre édition', is_series: false, cover_path: null },
+          { id: 'w6', title_fr: 'Mon édition illustrée', is_series: false, cover_path: null },
+        ],
+      },
+      'library_entries.select': {
+        data: [
+          { work_id: 'w1', edition_id: 'e1' },
+          { work_id: 'w5', edition_id: null },
+          { work_id: 'w6', edition_id: 'e6' },
+        ],
+      },
+      'editions.select': {
+        data: [
+          { id: 'e1', work_id: 'w1', isbn: '9782747024693', cover_path: null },
+          { id: 'e4', work_id: 'w4', isbn: null, cover_path: null },
+          { id: 'e5', work_id: 'w5', isbn: '9782070368228', cover_path: null },
+          { id: 'e6', work_id: 'w6', isbn: '9782072878497', cover_path: chemin('b') },
+        ],
+      },
+      'volumes.select': {
+        data: [
+          { work_id: 'w3', number: 1, isbn: '9782351423554', cover_path: chemin('c') },
+          { work_id: 'w3', number: 2, isbn: '9782351423561', cover_path: null },
+          { work_id: 'w3', number: 3, isbn: null, cover_path: null },
+        ],
+      },
+    })
+    expect(await creerDepotSupabase(client, charger).listerSansCouverture()).toEqual({
+      ok: true,
+      manques: [
+        { oeuvre: 'w5', titre: 'Autre édition', tome: null, isbn: '9782070368228', cible: { type: 'oeuvre' } },
+        { oeuvre: 'w1', titre: 'Momo', tome: null, isbn: '9782747024693', cible: { type: 'edition', edition: 'e1' } },
+        { oeuvre: 'w4', titre: 'Sans ISBN', tome: null, isbn: null, cible: { type: 'oeuvre' } },
+        { oeuvre: 'w3', titre: 'Vinland Saga', tome: 2, isbn: '9782351423561', cible: { type: 'tome', numero: 2 } },
+        { oeuvre: 'w3', titre: 'Vinland Saga', tome: 3, isbn: null, cible: { type: 'tome', numero: 3 } },
+      ],
+    })
   })
 })

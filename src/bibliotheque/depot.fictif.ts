@@ -5,16 +5,19 @@ import {
   type Evenement,
   type TypeEvenement,
 } from './suivi'
-import type {
-  Depot,
-  EnCours,
-  Ecriture,
-  Enregistrement,
-  FicheEnvoi,
-  Installation,
-  Lecture,
-  OeuvreDetaillee,
-  OeuvreListee,
+import { cibleCouverture, couvertureAffichee } from '../couvertures/choix'
+import {
+  couverturesDeLaFiche,
+  type Depot,
+  type EnCours,
+  type Ecriture,
+  type Enregistrement,
+  type FicheEnvoi,
+  type Installation,
+  type Lecture,
+  type ManqueCouverture,
+  type OeuvreDetaillee,
+  type OeuvreListee,
 } from './depot'
 import { comparerTitres, possessionAffichee, possessionsFiltrables } from './modele'
 
@@ -66,6 +69,7 @@ export function versListee(oeuvre: OeuvreDetaillee): OeuvreListee {
     statut: oeuvre.statut,
     possession: possessionAffichee(oeuvre.possession, oeuvre.estSerie, tomes),
     possessionsFiltrables: possessionsFiltrables(oeuvre.possession, oeuvre.estSerie, tomes),
+    couverture: couvertureAffichee(couverturesDeLaFiche(oeuvre)),
   }
 }
 
@@ -79,6 +83,8 @@ function appliquerFiche(fiche: FicheEnvoi, avant: OeuvreDetaillee | undefined, i
     format: e.format,
     translator: e.translator,
     pageCount: e.page_count,
+    // Comme dans la base : une édition gardée conserve sa couverture.
+    couverture: avant?.editions.find((x) => x.id === e.id)?.couverture ?? null,
   }))
   const mienne = fiche.editions.findIndex((e) => e.mienne)
   return {
@@ -93,6 +99,7 @@ function appliquerFiche(fiche: FicheEnvoi, avant: OeuvreDetaillee | undefined, i
     exigence: fiche.density,
     longueur: fiche.length,
     estSerie: fiche.is_series,
+    couverture: avant?.couverture ?? null,
     auteurs: fiche.authors.map((a) => ({ nom: a.name, role: a.role })),
     etiquettes: fiche.tags.map((t) => ({ genre: t.kind, nom: t.name, coeur: false })),
     editions,
@@ -102,6 +109,7 @@ function appliquerFiche(fiche: FicheEnvoi, avant: OeuvreDetaillee | undefined, i
       isbn: v.isbn,
       possession: avant?.tomes.find((t) => t.numero === v.number)?.possession ?? 'non_possede',
       lecture: avant?.tomes.find((t) => t.numero === v.number)?.lecture ?? 'a_lire',
+      couverture: avant?.tomes.find((t) => t.numero === v.number)?.couverture ?? null,
     })),
     medias: fiche.media.map((m, rang) => ({
       id: m.id ?? `${id}-media-${rang}`,
@@ -184,6 +192,7 @@ function versEnCours(o: OeuvreDetaillee): EnCours {
     pagesEdition: o.editions.find((e) => e.id === o.monEdition)?.pageCount ?? null,
     tomes: o.tomes.map((t) => ({ numero: t.numero, lecture: t.lecture })),
     appreciation: o.appreciation,
+    couverture: couvertureAffichee(couverturesDeLaFiche(o)),
   }
 }
 
@@ -305,6 +314,47 @@ export function depotFictif(
       const resultat = modifier(id, 'suppression', undefined, (o) => o)
       if (resultat.ok) oeuvres = oeuvres.filter((o) => o.id !== id)
       return resultat
+    },
+    async definirCouverture(id, cible, chemin) {
+      return modifier(id, 'couverture', { cible, chemin }, (o) =>
+        cible.type === 'oeuvre'
+          ? { ...o, couverture: chemin }
+          : cible.type === 'edition'
+            ? { ...o, editions: o.editions.map((e) => (e.id === cible.edition ? { ...e, couverture: chemin } : e)) }
+            : { ...o, tomes: o.tomes.map((t) => (t.numero === cible.numero ? { ...t, couverture: chemin } : t)) },
+      )
+    },
+    async trouverParIsbn(isbn) {
+      if (depart.lecture && !depart.lecture.ok) return depart.lecture
+      for (const o of oeuvres) {
+        if (o.editions.some((e) => e.isbn === isbn)) return { ok: true, trouve: { id: o.id, tome: null } }
+        const tome = o.tomes.find((t) => t.isbn === isbn)
+        if (tome) return { ok: true, trouve: { id: o.id, tome: tome.numero } }
+      }
+      return { ok: true, trouve: null }
+    },
+    async listerSansCouverture() {
+      if (depart.lecture && !depart.lecture.ok) return depart.lecture
+      const manques: ManqueCouverture[] = []
+      for (const o of [...oeuvres].sort((a, b) => comparerTitres(a.titreFr, b.titreFr))) {
+        if (o.estSerie) {
+          for (const t of o.tomes.filter((x) => !x.couverture)) {
+            manques.push({ oeuvre: o.id, titre: o.titreFr, tome: t.numero, isbn: t.isbn, cible: { type: 'tome', numero: t.numero } })
+          }
+          continue
+        }
+        const mienne = o.editions.find((e) => e.id === o.monEdition)
+        if (o.couverture || mienne?.couverture) continue
+        const avecIsbn = mienne?.isbn ? mienne : o.editions.find((e) => e.isbn)
+        manques.push({
+          oeuvre: o.id,
+          titre: o.titreFr,
+          tome: null,
+          isbn: avecIsbn?.isbn ?? null,
+          cible: cibleCouverture({ edition: avecIsbn?.id ?? null, monEdition: o.monEdition }),
+        })
+      }
+      return { ok: true, manques }
     },
     async installerCatalogue() {
       appels.installerCatalogue += 1
