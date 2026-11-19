@@ -38,6 +38,7 @@ import { LIEN_ACTION, Section } from '../composants/Section'
 import { MonParcours } from '../suivi/Parcours'
 import { ProgressionFiche } from '../suivi/ProgressionFiche'
 import { MonRessenti, ProposerRessenti } from '../suivi/Ressenti'
+import { ChoisirImage } from '../couvertures/ChoisirImage'
 import { couvertureAffichee } from '../couvertures/choix'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
@@ -356,6 +357,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         )}
         {avecTomes && (
           <Tomes
+            oeuvre={oeuvre.id}
             titre={principal}
             tomes={oeuvre.tomes}
             enLigne={enLigne}
@@ -541,6 +543,7 @@ function MarqueLecture({ lecture, dansLaLegende = false }: { lecture: LectureTom
 }
 
 function Tomes({
+  oeuvre,
   titre,
   tomes,
   enLigne,
@@ -549,6 +552,8 @@ function Tomes({
   changerTous,
   acheter,
 }: {
+  /** Identifiant de la série : pour ranger la photo d'un tome. */
+  oeuvre: string
   titre: string
   tomes: Tome[]
   enLigne: boolean
@@ -668,6 +673,10 @@ function Tomes({
               onChange={(possession) => changer({ de: tomeOuvert.numero, a: tomeOuvert.numero }, possession)}
               desactive={!enLigne}
             />
+            {/* La photo de mon exemplaire : la voie sûre pour la couverture d'un tome. */}
+            <div className="flex flex-col items-start gap-2">
+              <ChoisirImage oeuvre={oeuvre} cible={{ type: 'tome', numero: tomeOuvert.numero }} enLigne={enLigne} />
+            </div>
             {tomeOuvert.possession !== 'possede' && (
               <Bouton
                 variante="secondaire"

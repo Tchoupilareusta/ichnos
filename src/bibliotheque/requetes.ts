@@ -339,6 +339,29 @@ export function useEnregistrerOeuvre() {
   })
 }
 
+/**
+ * Range une image que je viens de choisir (photo, autre couverture) : d'abord dans mon stockage
+ * privé, puis son chemin sur l'œuvre, l'édition ou le tome. La fiche et les listes se relisent.
+ */
+export function useRangerCouverture(id: string) {
+  const { depot, couvertures } = useSession()
+  const client = useQueryClient()
+  return useMutation<void, EchecDepot<EchecEcriture>, { image: Blob; cible: CibleCouverture }>({
+    mutationFn: async ({ image, cible }) => {
+      const deposee = await couvertures.deposer(image)
+      if (!deposee.ok) throw new EchecDepot(deposee.echec)
+      const rangee = await depot.definirCouverture(id, cible, deposee.chemin)
+      if (!rangee.ok) throw new EchecDepot(rangee.echec)
+    },
+    onSettled: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: CLES.oeuvre(id) }),
+        client.invalidateQueries({ queryKey: CLES.oeuvres }),
+        client.invalidateQueries({ queryKey: CLES.enCours }),
+      ]),
+  })
+}
+
 /** Retire une couverture (de l'œuvre, d'une édition ou d'un tome), puis relit la fiche et les listes. */
 export function useRetirerCouverture(id: string) {
   const { depot } = useSession()
