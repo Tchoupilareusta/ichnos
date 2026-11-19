@@ -1,8 +1,10 @@
 // « Chercher les couvertures manquantes » (Réglages) : pour chaque œuvre ou tome sans couverture,
 // une demande par ISBN à l'assistant, une à la fois, avec une pause entre deux demandes pour
 // respecter les quotas des catalogues. Jamais d'IA ici. (docs/reference.md §8)
+// « Remplacer les couvertures de petite taille » suit le même rythme, pour les couvertures
+// déjà rangées de moins de 450 px de large.
 
-import type { Assistant } from '../ajout/assistant'
+import { LARGEUR_PETITE, type Assistant } from '../ajout/assistant'
 import type { Depot } from '../bibliotheque/depot'
 import type { Couvertures } from './stockage'
 
@@ -14,6 +16,8 @@ export type ResultatOeuvre = {
   /** Couvertures cherchées (une pour un livre, une par tome pour une série). */
   cherchees: number
   trouvees: number
+  /** Parmi les trouvées, celles de moins de 450 px de large : rangées quand même, mais signalées. */
+  petites: number
   /** Sans ISBN connu : pas cherchées, pour ne pas risquer une mauvaise couverture. */
   sansIsbn: number
 }
@@ -55,7 +59,7 @@ export async function chercherCouverturesManquantes(outils: {
   for (const manque of lecture.manques) {
     let resultat = resultats.find((r) => r.oeuvre === manque.oeuvre)
     if (!resultat) {
-      resultat = { oeuvre: manque.oeuvre, titre: manque.titre, serie: manque.tome !== null, cherchees: 0, trouvees: 0, sansIsbn: 0 }
+      resultat = { oeuvre: manque.oeuvre, titre: manque.titre, serie: manque.tome !== null, cherchees: 0, trouvees: 0, petites: 0, sansIsbn: 0 }
       resultats.push(resultat)
     }
     if (!manque.isbn) {
@@ -72,8 +76,93 @@ export async function chercherCouverturesManquantes(outils: {
     resultat.cherchees += 1
     if (reponse.valeur) {
       const deposee = await couvertures.deposer(reponse.valeur.image)
-      if (deposee.ok && (await depot.definirCouverture(manque.oeuvre, manque.cible, deposee.chemin)).ok) resultat.trouvees += 1
+      if (deposee.ok && (await depot.definirCouverture(manque.oeuvre, manque.cible, deposee.chemin)).ok) {
+        resultat.trouvees += 1
+        const largeur = reponse.valeur.largeur
+        if (largeur !== null && largeur < LARGEUR_PETITE) resultat.petites += 1
+      }
     }
+    await attendre()
+  }
+  return dire({ termine: true })
+}
+
+// ---------------------------------------------------------------------------
+// Remplacer les couvertures de petite taille
+// ---------------------------------------------------------------------------
+
+/** Ce qui a été fait pour une petite couverture (largeurs en pixels). */
+export type Remplacement = { oeuvre: string; titre: string; tome: number | null } & (
+  | { issue: 'remplacee'; avant: number; apres: number }
+  /** La même édition n'a pas d'image plus large : la couverture reste. */
+  | { issue: 'pas_plus_grande'; avant: number }
+  /** Couverture sans ISBN (rangée sur l'œuvre, ou tome sans ISBN) : on ne saurait pas quelle édition chercher. */
+  | { issue: 'sans_isbn'; avant: number }
+)
+
+export type AvancementRemplacement = {
+  enCours: string | null
+  lignes: Remplacement[]
+  termine: boolean
+  arret: null | 'arrete' | 'reseau' | 'indisponible'
+}
+
+/**
+ * Mesure chaque couverture rangée, sur l'appareil. Pour celles de moins de 450 px de large dont
+ * l'ISBN est connu, redemande la couverture de cette même édition, et ne la remplace que si
+ * l'image trouvée est plus large. Rien d'autre ne change dans la base.
+ */
+export async function remplacerPetitesCouvertures(outils: {
+  depot: Depot
+  assistant: Assistant
+  couvertures: Couvertures
+  /** La largeur d'une image : une adresse affichable, ou une image pas encore rangée. Null si elle ne se lit pas. */
+  mesurer: (source: string | Blob) => Promise<number | null>
+  attendre: () => Promise<void>
+  continuer: () => boolean
+  surAvancement: (avancement: AvancementRemplacement) => void
+}): Promise<AvancementRemplacement> {
+  const { depot, assistant, couvertures, mesurer, attendre, continuer, surAvancement } = outils
+  const lignes: Remplacement[] = []
+  const dire = (suite: Partial<AvancementRemplacement>): AvancementRemplacement => {
+    const avancement: AvancementRemplacement = { enCours: null, lignes: lignes.map((l) => ({ ...l })), termine: false, arret: null, ...suite }
+    surAvancement(avancement)
+    return avancement
+  }
+
+  const lecture = await depot.listerCouvertures()
+  if (!lecture.ok) return dire({ arret: lecture.echec === 'reseau' ? 'reseau' : 'indisponible' })
+
+  // Une même image peut être rangée à deux endroits : elle n'est mesurée qu'une fois.
+  const largeurs = new Map<string, number | null>()
+  for (const rangee of lecture.couvertures) {
+    if (!continuer()) return dire({ arret: 'arrete' })
+    if (!largeurs.has(rangee.chemin)) {
+      const adresse = await couvertures.adresse(rangee.chemin)
+      largeurs.set(rangee.chemin, adresse ? await mesurer(adresse) : null)
+    }
+    const avant = largeurs.get(rangee.chemin) ?? null
+    // Illisible (hors connexion, image disparue) : on n'y touche pas. Assez grande : rien à faire.
+    if (avant === null || avant >= LARGEUR_PETITE) continue
+
+    const commun = { oeuvre: rangee.oeuvre, titre: rangee.titre, tome: rangee.tome }
+    if (!rangee.isbn) {
+      lignes.push({ ...commun, issue: 'sans_isbn', avant })
+      continue
+    }
+
+    dire({ enCours: rangee.tome === null ? rangee.titre : `${rangee.titre}, tome ${rangee.tome}` })
+    const reponse = await assistant.couverture({ isbn: rangee.isbn })
+    if (!reponse.ok) return dire({ arret: reponse.echec === 'reseau' ? 'reseau' : 'indisponible' })
+
+    const trouvee = reponse.valeur
+    const apres = trouvee ? (trouvee.largeur ?? (await mesurer(trouvee.image))) : null
+    let remplacee = false
+    if (trouvee && apres !== null && apres > avant) {
+      const deposee = await couvertures.deposer(trouvee.image)
+      remplacee = deposee.ok && (await depot.definirCouverture(rangee.oeuvre, rangee.cible, deposee.chemin)).ok
+    }
+    lignes.push(remplacee ? { ...commun, issue: 'remplacee', avant, apres: apres as number } : { ...commun, issue: 'pas_plus_grande', avant })
     await attendre()
   }
   return dire({ termine: true })

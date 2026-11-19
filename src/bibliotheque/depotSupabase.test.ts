@@ -721,4 +721,46 @@ describe('couvertures', () => {
       ],
     })
   })
+
+  it('liste les couvertures rangées, avec l’ISBN de l’édition ou du tome qui les porte', async () => {
+    const { client } = fauxClient({
+      'works.select': {
+        data: [
+          { id: 'w1', title_fr: 'Momo', cover_path: null },
+          { id: 'w2', title_fr: 'Illustrée sur l’œuvre', cover_path: chemin('a') },
+          { id: 'w3', title_fr: 'Vinland Saga', cover_path: null },
+          { id: 'w4', title_fr: 'Sans rien', cover_path: null },
+        ],
+      },
+      'editions.select': {
+        data: [
+          { id: 'e1', work_id: 'w1', isbn: '9782747024693', cover_path: chemin('b') },
+          { id: 'e2', work_id: 'w2', isbn: '9782070368228', cover_path: null },
+          { id: 'e4', work_id: 'w4', isbn: '9782072878497', cover_path: null },
+        ],
+      },
+      'volumes.select': {
+        data: [
+          { work_id: 'w3', number: 2, isbn: null, cover_path: chemin('d') },
+          { work_id: 'w3', number: 1, isbn: '9782351423554', cover_path: chemin('c') },
+          { work_id: 'w3', number: 3, isbn: '9782351423578', cover_path: null },
+        ],
+      },
+    })
+    expect(await creerDepotSupabase(client, charger).listerCouvertures()).toEqual({
+      ok: true,
+      couvertures: [
+        // Une couverture rangée sur l'œuvre : aucune édition ne la porte, donc pas d'ISBN (même si l'œuvre a une édition).
+        { oeuvre: 'w2', titre: 'Illustrée sur l’œuvre', tome: null, chemin: chemin('a'), isbn: null, cible: { type: 'oeuvre' } },
+        { oeuvre: 'w1', titre: 'Momo', tome: null, chemin: chemin('b'), isbn: '9782747024693', cible: { type: 'edition', edition: 'e1' } },
+        { oeuvre: 'w3', titre: 'Vinland Saga', tome: 1, chemin: chemin('c'), isbn: '9782351423554', cible: { type: 'tome', numero: 1 } },
+        { oeuvre: 'w3', titre: 'Vinland Saga', tome: 2, chemin: chemin('d'), isbn: null, cible: { type: 'tome', numero: 2 } },
+      ],
+    })
+  })
+
+  it('signale une liste de couvertures illisible', async () => {
+    const coupe = fauxClient({ 'editions.select': { error: SANS_RESEAU } })
+    expect(await creerDepotSupabase(coupe.client, charger).listerCouvertures()).toEqual({ ok: false, echec: 'reseau' })
+  })
 })

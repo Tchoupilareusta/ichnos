@@ -12,6 +12,8 @@ import type {
   Source,
 } from '../../supabase/functions/assistant/contrat.ts'
 
+export { LARGEUR_PETITE } from '../../supabase/functions/assistant/contrat.ts'
+
 export type {
   Champ,
   Description,

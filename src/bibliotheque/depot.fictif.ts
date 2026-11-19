@@ -8,6 +8,7 @@ import {
 import { cibleCouverture, couvertureAffichee } from '../couvertures/choix'
 import {
   couverturesDeLaFiche,
+  type CouvertureRangee,
   type Depot,
   type EnCours,
   type Ecriture,
@@ -355,6 +356,21 @@ export function depotFictif(
         })
       }
       return { ok: true, manques }
+    },
+    async listerCouvertures() {
+      if (depart.lecture && !depart.lecture.ok) return depart.lecture
+      const couvertures: CouvertureRangee[] = []
+      for (const o of [...oeuvres].sort((a, b) => comparerTitres(a.titreFr, b.titreFr))) {
+        const commun = { oeuvre: o.id, titre: o.titreFr }
+        if (o.couverture) couvertures.push({ ...commun, tome: null, chemin: o.couverture, isbn: null, cible: { type: 'oeuvre' } })
+        for (const e of o.editions) {
+          if (e.couverture) couvertures.push({ ...commun, tome: null, chemin: e.couverture, isbn: e.isbn, cible: { type: 'edition', edition: e.id } })
+        }
+        for (const t of [...o.tomes].sort((a, b) => a.numero - b.numero)) {
+          if (t.couverture) couvertures.push({ ...commun, tome: t.numero, chemin: t.couverture, isbn: t.isbn, cible: { type: 'tome', numero: t.numero } })
+        }
+      }
+      return { ok: true, couvertures }
     },
     async installerCatalogue() {
       appels.installerCatalogue += 1

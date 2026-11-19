@@ -197,6 +197,12 @@ export type EchecInstallation = 'reseau' | 'deja' | 'inconnu'
 /** Une œuvre ou un tome sans couverture : l'ISBN qui permet de la chercher, et l'endroit où la ranger. */
 export type ManqueCouverture = { oeuvre: string; titre: string; tome: number | null; isbn: string | null; cible: CibleCouverture }
 export type LectureManques = { ok: true; manques: ManqueCouverture[] } | { ok: false; echec: EchecLecture }
+/**
+ * Une couverture rangée : son chemin, l'endroit où elle est rangée, et l'ISBN de l'édition ou du
+ * tome qui la porte (null pour une couverture rangée sur l'œuvre : aucune édition précise).
+ */
+export type CouvertureRangee = { oeuvre: string; titre: string; tome: number | null; chemin: string; isbn: string | null; cible: CibleCouverture }
+export type LectureCouvertures = { ok: true; couvertures: CouvertureRangee[] } | { ok: false; echec: EchecLecture }
 /** L'œuvre de ma bibliothèque qui porte déjà un ISBN (et le tome, si c'est celui d'un tome). */
 export type RechercheIsbn = { ok: true; trouve: { id: string; tome: number | null } | null } | { ok: false; echec: EchecLecture }
 
@@ -243,6 +249,8 @@ export interface Depot {
   trouverParIsbn(isbn: string): Promise<RechercheIsbn>
   /** Tout ce qui n'a pas encore de couverture, par ordre de titre. */
   listerSansCouverture(): Promise<LectureManques>
+  /** Toutes les couvertures rangées (œuvres, éditions, tomes), par ordre de titre. */
+  listerCouvertures(): Promise<LectureCouvertures>
   /** Installe le catalogue de départ dans une bibliothèque vide. Tout ou rien. */
   installerCatalogue(): Promise<Installation>
 }
@@ -271,5 +279,6 @@ export const DEPOT_ABSENT: Depot = {
   definirCouverture: absent,
   trouverParIsbn: absent,
   listerSansCouverture: absent,
+  listerCouvertures: absent,
   installerCatalogue: absent,
 }

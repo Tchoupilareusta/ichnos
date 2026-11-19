@@ -5,6 +5,12 @@ import { depotFictif, oeuvreFictive } from '../bibliotheque/depot.fictif'
 import { couverturesFictives } from '../couvertures/stockage.fictif'
 import { authFictif } from '../session/auth.fictif'
 
+// jsdom ne sait pas décoder une image : la mesure des couvertures rangées est simulée.
+// La fausse adresse porte le chemin de l'image, et le chemin sa largeur (« …/0300….jpg » : 300 px).
+vi.mock('../couvertures/mesure', () => ({
+  largeurImage: async (source: string | Blob) => (typeof source === 'string' ? Number(/\/(\d{4})/.exec(source)?.[1] ?? NaN) || null : null),
+}))
+
 const IMAGE = imageFictive()
 const edition = (id: string, isbn: string | null) => ({ id, isbn, publisher: null, language: null, format: null, translator: null, pageCount: null })
 const tome = (numero: number, isbn: string | null) => ({ numero, titre: null, isbn, possession: 'non_possede' as const, lecture: 'a_lire' as const })
@@ -73,6 +79,25 @@ describe('Réglages : couvertures manquantes', () => {
     expect(assistant.appels.proposerFiche).toHaveLength(0)
   })
 
+  it('dit quand une couverture trouvée est de petite taille', async () => {
+    const assistant = assistantFictif({
+      couverture: (demande) =>
+        'isbn' in demande && ['9782747024693', '9782351423554'].includes(demande.isbn) ? imageFictive({ largeur: 300, hauteur: 450 }) : IMAGE,
+    })
+    await ouvrir({ assistant })
+    await lancer()
+    await laisserPasser(10_000)
+    const lignes = within(section().getByRole('list', { name: 'Ce que la recherche a donné' }))
+      .getAllByRole('listitem')
+      .map((ligne) => ligne.textContent)
+    expect(lignes).toEqual([
+      'Momo : couverture trouvée, mais de petite taille',
+      'Le Prophète : couverture trouvée',
+      'Sans ISBN : pas d’ISBN connu, pas cherchée',
+      'Vinland Saga : 2 couvertures de tome trouvées sur 2 cherchées, dont 1 de petite taille · 1 tome sans ISBN',
+    ])
+  })
+
   it('ne lance pas deux demandes de suite : une pause les sépare', async () => {
     const { assistant } = await ouvrir()
     await lancer()
@@ -120,6 +145,80 @@ describe('Réglages : couvertures manquantes', () => {
     expect(section().getByRole('button', { name: 'Chercher les couvertures manquantes' })).toHaveAttribute('aria-disabled', 'true')
     expect(section().getByText(/Hors connexion : la recherche attendra le retour du réseau/)).toBeInTheDocument()
     await lancer()
+    await laisserPasser(2000)
+    expect(assistant.appels.couverture).toHaveLength(0)
+  })
+})
+
+describe('Réglages : remplacer les couvertures de petite taille', () => {
+  const MOI = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  /** Un chemin de couverture dont le nom commence par la largeur de l'image (voir la fausse mesure, en haut). */
+  const chemin = (largeur: number, nom: string) => `${MOI}/${String(largeur).padStart(4, '0')}${nom}`.padEnd(MOI.length + 33, '0') + '.jpg'
+  const ILLUSTREE = () =>
+    depotFictif({
+      oeuvres: [
+        oeuvreFictive({ id: 'momo', titreFr: 'Momo', editions: [{ ...edition('e1', '9782747024693'), couverture: chemin(300, 'a') }], monEdition: 'e1' }),
+        oeuvreFictive({ id: 'prophete', titreFr: 'Le Prophète', editions: [{ ...edition('e2', '9782070368228'), couverture: chemin(320, 'b') }], monEdition: 'e2' }),
+        oeuvreFictive({ id: 'grande', titreFr: 'Grande', editions: [{ ...edition('e3', '9782072878497'), couverture: chemin(800, 'c') }], monEdition: 'e3' }),
+        oeuvreFictive({ id: 'oeuvre', titreFr: 'Sur l’œuvre', couverture: chemin(200, 'd') }),
+        oeuvreFictive({ id: 'vinland', titreFr: 'Vinland Saga', estSerie: true, tomes: [{ ...tome(1, '9782351423554'), couverture: chemin(348, 'e') }] }),
+      ],
+    })
+  const remplacer = () => act(async () => fireEvent.click(section().getByRole('button', { name: 'Remplacer les couvertures de petite taille' })))
+
+  it('remplace ce qui peut l’être et montre, œuvre par œuvre, ce qui a été fait', async () => {
+    const assistant = assistantFictif({
+      couverture: (demande) =>
+        'isbn' in demande && demande.isbn === '9782070368228' ? { ok: true, valeur: null } : imageFictive({ largeur: 800, hauteur: 1237 }),
+    })
+    const { depot, couvertures } = await ouvrir({ depot: ILLUSTREE(), assistant })
+    await remplacer()
+    await laisserPasser(10_000)
+
+    const lignes = within(section().getByRole('list', { name: 'Ce que le remplacement a donné' }))
+      .getAllByRole('listitem')
+      .map((ligne) => ligne.textContent)
+    expect(lignes).toEqual([
+      'Momo : remplacée (300 → 800\u00a0px)',
+      'Le Prophète : pas de plus grande image',
+      'Sur l’œuvre : sans ISBN, laissée telle quelle',
+      'Vinland Saga, tome 1 : remplacée (348 → 800\u00a0px)',
+    ])
+    expect(section().getByRole('status')).toHaveTextContent('Remplacement terminé.')
+    expect(couvertures.deposees).toHaveLength(2)
+    expect(depot.appels.ecritures.filter((e) => e.action === 'couverture')).toHaveLength(2)
+    expect(assistant.appels.proposerFiche).toHaveLength(0)
+  })
+
+  it('dit simplement qu’aucune couverture n’est de petite taille', async () => {
+    const depot = depotFictif({ oeuvres: [oeuvreFictive({ id: 'grande', titreFr: 'Grande', couverture: chemin(800, 'c') })] })
+    const { assistant } = await ouvrir({ depot })
+    await remplacer()
+    await laisserPasser(2000)
+    expect(section().getByRole('status')).toHaveTextContent('Aucune couverture de petite taille.')
+    expect(assistant.appels.couverture).toHaveLength(0)
+  })
+
+  it('va au même rythme que la recherche, et s’arrête quand je le demande', async () => {
+    const { assistant, couvertures } = await ouvrir({ depot: ILLUSTREE(), assistant: assistantFictif({ couverture: imageFictive({ largeur: 800, hauteur: 1237 }) }) })
+    await remplacer()
+    await laisserPasser(500)
+    expect(assistant.appels.couverture).toHaveLength(1)
+    expect(section().getByText(/Je cherche plus grand : Momo/)).toBeInTheDocument()
+    // Une seule recherche à la fois : l'autre bouton attend.
+    expect(section().queryByRole('button', { name: 'Chercher les couvertures manquantes' })).toHaveAttribute('aria-disabled', 'true')
+    await act(async () => fireEvent.click(section().getByRole('button', { name: 'Arrêter' })))
+    await laisserPasser(10_000)
+    expect(assistant.appels.couverture).toHaveLength(1)
+    expect(couvertures.deposees).toHaveLength(1)
+    expect(section().getByText(/Remplacement arrêté/)).toBeInTheDocument()
+  })
+
+  it('hors connexion, grise le bouton', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
+    const { assistant } = await ouvrir({ depot: ILLUSTREE() })
+    expect(section().getByRole('button', { name: 'Remplacer les couvertures de petite taille' })).toHaveAttribute('aria-disabled', 'true')
+    await remplacer()
     await laisserPasser(2000)
     expect(assistant.appels.couverture).toHaveLength(0)
   })
