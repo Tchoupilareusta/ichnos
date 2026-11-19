@@ -2,12 +2,13 @@
 
 *Version 1 — 17 novembre 2026*
 *Mise à jour du 17 novembre 2026 : l'IA comme aide à la suggestion (§2, §7.6, §8.4, §10.2, §11).*
-*Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11) ; points reportés aux étapes 9 et 10 (§11).*
+*Mise à jour du 18 novembre 2026 : décisions de l'étape 4, bibliothèque et fiches (§3, §6.2, §10.2, §11) ; points reportés aux étapes 9 et 10 (§11 ; depuis le 19 novembre 2026, les alertes `npm audit` relèvent de l'étape 11).*
 *Mise à jour du 18 novembre 2026 : corrections après essai sur iPhone : cinq statuts, libellés de possession, ordre des filtres, allègement de la bibliothèque et de la fiche, icônes ; ajout d'une œuvre à l'étape 6 (§2, §3, §5, §6, §11).*
 *Mise à jour du 19 novembre 2026 : bulles-menus Statut et Possession, grille à colonnes fixes, recherche (§3, §5).*
 *Mise à jour du 19 novembre 2026 : animations des interactions, à faire à l'étape 9 (§4.3, §11).*
 *Mise à jour du 19 novembre 2026 : suivi de lecture (étape 5) : relectures, date de fin approximative, progression des séries tirée des tomes, ressenti proposé quand je termine un livre, « Le mettre en pause » (§5, §6, §10.2, §11).*
 *Mise à jour du 19 novembre 2026 : ajout automatique (étape 6) : ordre des sources, couvertures, deux manières d'ajouter, fiche proposée par l'IA, fonction serveur « assistant » et sa sécurité (§3, §5, §6.1, §8, §10.2, §10.4, §11).*
+*Mise à jour du 19 novembre 2026 : nouvelle étape 10 « Nettoyage et optimisation » ; la revue de sécurité finale devient l'étape 11 et porte sur le code nettoyé (§11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
 
@@ -425,7 +426,8 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
 | 8 | Accueil final, notes, export, sauvegarde et veille | Opus 5.5, moyen |
 | 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, animations des interactions (§4.3), mouvements réduits (voir plus bas), audit design (Impeccable) | Opus 5.5, moyen |
-| 10 | Revue de sécurité finale, dont les alertes `npm audit` (voir plus bas) | Fable 5.2, élevé |
+| 10 | Nettoyage et optimisation : fichiers temporaires et code obsolète, dépendances inutilisées, poids de l'appli et vitesse sur iPhone, images de couverture qui ne servent plus à aucune œuvre dans le stockage (voir plus bas) | Opus 5.5, élevé |
+| 11 | Revue de sécurité finale, sur le code nettoyé, dont les alertes `npm audit` (voir plus bas) | Fable 5.2, élevé |
 
 Points reportés :
 
@@ -436,8 +438,8 @@ Points reportés :
 - **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
 - **Étape 9, deux détails relevés par l'audit de l'étape 5.** Sur la fiche, VoiceOver annonce le chiffre de la progression à chaque appui sur − ou + : regrouper l'annonce au moment de l'enregistrement (une seconde après le dernier appui). La barre de défilement du carrousel « En ce moment » est visible sur ordinateur (invisible sur iPhone et iPad) : la rendre discrète sans gêner le défilement au clavier.
 - **Étape 9, relevés par l'audit de l'étape 6.** Chargement progressif des couvertures de la grille : aujourd'hui, toutes les couvertures de la bibliothèque sont demandées dès l'ouverture de l'écran ; ne charger que celles qui approchent de l'écran. Langue des titres originaux étrangers : la donner à VoiceOver par l'attribut `lang` (d'après la langue d'origine de l'œuvre), sur la fiche, dans les résultats de recherche et dans le formulaire, pour qu'un titre anglais ou allemand ne soit pas lu à la française.
-- **Étape 10, images qui ne servent plus.** Une couverture retirée, ou celle d'une œuvre supprimée, reste dans mon dossier du stockage privé : elle n'est jamais effacée sur le moment, car une même image (nommée d'après son contenu) peut servir à deux œuvres. Prévoir un nettoyage des images qui ne sont plus rattachées à aucune œuvre, édition ni tome.
-- **Étape 10, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 10, sans forcer.
+- **Étape 10, nettoyage des images qui ne servent plus.** Une couverture retirée, ou celle d'une œuvre supprimée, reste dans mon dossier du stockage privé : elle n'est jamais effacée sur le moment, car une même image (nommée d'après son contenu) peut servir à deux œuvres. Prévoir un nettoyage des images qui ne sont plus rattachées à aucune œuvre, édition ni tome.
+- **Étape 11, alertes `npm audit`.** Au 18 novembre 2026 : 14 alertes (12 élevées, 2 modérées), toutes dans les outils de développement et de compilation : picomatch, glob et minimatch, par vite-plugin-pwa et workbox-build, mais aussi par Vite et Vitest. `npm audit --omit=dev` n'en trouve aucune : rien ne concerne le code livré dans l'appli. Ces failles (lenteurs provoquées par des motifs de fichiers piégés) ne jouent qu'au moment de compiler, sur les fichiers du dépôt. La correction proposée (`npm audit fix --force`) change vite-plugin-pwa et Vitest de version majeure : à examiner à l'étape 11, sans forcer. (Le tri des dépendances inutilisées, lui, se fait à l'étape 10.)
 
 Signal pour monter l'effort : un fichier oublié, des tests non lancés, une modification abandonnée en cours de route.
 
