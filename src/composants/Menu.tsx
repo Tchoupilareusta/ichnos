@@ -16,6 +16,7 @@ export function Menu<T extends string>({
   onChoisir,
   desactive = false,
   nomListe,
+  actions = false,
 }: {
   /** Ce que VoiceOver annonce : « Statut de lecture : En cours. Changer ». */
   nom: string
@@ -27,6 +28,8 @@ export function Menu<T extends string>({
   valeur: T | null
   onChoisir: (valeur: T) => void
   desactive?: boolean
+  /** Menu d'actions (« Changer la couverture ») : rien n'est coché, chaque ligne agit. */
+  actions?: boolean
 }) {
   const [ouvert, setOuvert] = useState(false)
   const [decalage, setDecalage] = useState(0)
@@ -124,13 +127,13 @@ export function Menu<T extends string>({
           className={`absolute ${versLeHaut ? 'bottom-[calc(100%+0.5rem)]' : 'top-[calc(100%+0.5rem)]'} left-0 z-40 m-0 flex max-h-[min(24rem,60dvh)] min-w-[14rem] list-none flex-col overflow-y-auto rounded-carte border border-bordure bg-surface p-1.5 text-left shadow-forte`}
         >
           {options.map((option) => {
-            const choisi = option.valeur === valeur
+            const choisi = !actions && option.valeur === valeur
             return (
               <li key={option.valeur} role="none">
                 <button
                   type="button"
-                  role="menuitemradio"
-                  aria-checked={choisi}
+                  role={actions ? 'menuitem' : 'menuitemradio'}
+                  aria-checked={actions ? undefined : choisi}
                   onClick={() => {
                     fermer()
                     if (!choisi) onChoisir(option.valeur)

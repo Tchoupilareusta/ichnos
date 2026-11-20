@@ -60,7 +60,7 @@ async function chercherTitre(titre: string, auteur = '') {
 }
 
 const enregistrer = async () => {
-  await act(async () => fireEvent.click(principal().getAllByRole('button', { name: 'Enregistrer' })[1]))
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' })))
   await attendre()
 }
 
@@ -84,7 +84,7 @@ describe('écran « Ajouter »', () => {
 
   it('garde le formulaire complet à portée, pour tout saisir moi-même', async () => {
     const { depot, assistant } = await ouvrir({}, '#/ajouter?mode=manuel')
-    fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo' } })
+    fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Momo' } })
     await enregistrer()
     expect(depot.appels.enregistrerOeuvre).toHaveLength(1)
     // Aucun appel à l'assistant : l'appli fonctionne entièrement sans lui.
@@ -100,18 +100,19 @@ describe('ajout par ISBN', () => {
     await chercherIsbn('978-2-7470-2469-3')
     expect(assistant.appels.chercherIsbn).toEqual([ISBN])
 
-    expect(screen.getByLabelText('Titre en français')).toHaveValue('Momo')
-    expect(screen.getByLabelText('Titre en français')).toHaveAccessibleDescription('D’après la BnF.')
+    expect(screen.getByLabelText('Titre')).toHaveValue('Momo')
+    expect(screen.getByLabelText('Titre')).toHaveAccessibleDescription('D’après la BnF.')
     expect(screen.getByLabelText('Langue d’origine')).toHaveValue('de')
-    expect(screen.getByLabelText('Première parution')).toHaveValue('1973')
-    expect(screen.getByLabelText('Première parution')).toHaveAccessibleDescription(/D’après Open Library, à vérifier/)
-    expect(screen.getByLabelText('Nom')).toHaveValue('Michael Ende')
+    expect(screen.getByLabelText('Parution')).toHaveValue('1973')
+    expect(screen.getByLabelText('Parution')).toHaveAccessibleDescription(/D’après Open Library, à vérifier/)
+    expect(screen.getByLabelText('Auteur')).toHaveValue('Michael Ende')
     expect(screen.getByLabelText('Éditeur')).toHaveValue('Bayard jeunesse')
     expect(screen.getByLabelText('Traduction')).toHaveValue('Corinna Gepner')
     expect(screen.getByLabelText('ISBN')).toHaveValue(ISBN)
-    expect(screen.getByLabelText('Nombre de pages')).toHaveValue('430')
-    expect(screen.getByLabelText('Nombre de pages')).toHaveAccessibleDescription(/D’après Google Books/)
-    expect(screen.getByRole('checkbox', { name: 'C’est mon édition' })).toBeChecked()
+    expect(screen.getByLabelText('Pages')).toHaveValue('430')
+    expect(screen.getByLabelText('Pages')).toHaveAccessibleDescription(/D’après Google Books/)
+    // L'édition trouvée est la mienne : elle est en haut, sous « Mon édition ».
+    expect(screen.getByLabelText('ISBN').closest('section')).toHaveAccessibleName('Mon édition')
   })
 
   it('n’enregistre rien tant que je n’ai pas validé', async () => {
@@ -146,7 +147,7 @@ describe('ajout par ISBN', () => {
   it('ne range pas la couverture si je choisis de ne pas la garder', async () => {
     const { depot, couvertures } = await ouvrir({ assistant: trouve() })
     await chercherIsbn(ISBN)
-    fireEvent.click(screen.getByRole('button', { name: 'Ne pas garder cette couverture' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ne pas la garder' }))
     await enregistrer()
     expect(depot.appels.enregistrerOeuvre).toHaveLength(1)
     expect(couvertures.deposees).toHaveLength(0)
@@ -236,7 +237,7 @@ describe('œuvre déjà dans ma bibliothèque', () => {
     await chercherIsbn('9782070368228')
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'C’est une autre œuvre, continuer' })))
     await attendre()
-    expect(screen.getByLabelText('Titre en français')).toHaveValue('Momo')
+    expect(screen.getByLabelText('Titre')).toHaveValue('Momo')
   })
 })
 
@@ -260,9 +261,9 @@ describe('ajout par titre', () => {
     await chercherTitre('Momo')
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Momo, de Michael Ende : choisir cette œuvre' })))
     await attendre()
-    expect(screen.getByLabelText('Titre en français')).toHaveValue('Momo')
-    expect(screen.getByLabelText('Première parution')).toHaveValue('1973')
-    expect(screen.getByText('Aucune édition notée pour l’instant.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Titre')).toHaveValue('Momo')
+    expect(screen.getByLabelText('Parution')).toHaveValue('1973')
+    expect(screen.getByText('Je n’ai pas encore noté mon édition.')).toBeInTheDocument()
     await enregistrer()
     expect(depot.appels.enregistrerOeuvre[0]).toMatchObject({ title_fr: 'Momo', editions: [], volumes: [] })
     // Sans édition, la couverture est celle de l'œuvre.
@@ -357,7 +358,7 @@ describe('fiche proposée par l’IA', () => {
     assistant.attente.active = true
     await ouvrir({ assistant })
     await chercherIsbn(ISBN)
-    expect(principal().getByRole('status')).toHaveTextContent('Une proposition de résumé et d’étiquettes se prépare')
+    expect(principal().getAllByRole('status').some((s) => /Une proposition de résumé et d’étiquettes se prépare/.test(s.textContent ?? ''))).toBe(true)
     fireEvent.change(screen.getByLabelText('Résumé'), { target: { value: 'Mon résumé à moi.' } })
     await act(async () => assistant.attente.liberer())
     await attendre()
@@ -386,7 +387,7 @@ describe('fiche proposée par l’IA', () => {
   it('n’appelle l’IA qu’une fois par ajout', async () => {
     const { assistant } = await ouvrir({ assistant: avecFiche() })
     await chercherIsbn(ISBN)
-    fireEvent.change(screen.getByLabelText('Titre en français'), { target: { value: 'Momo, corrigé' } })
+    fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Momo, corrigé' } })
     await attendre()
     expect(assistant.appels.proposerFiche).toHaveLength(1)
   })

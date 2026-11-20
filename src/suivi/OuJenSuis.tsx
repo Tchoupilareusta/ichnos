@@ -18,7 +18,7 @@ const MESSAGES: Record<string, string> = {
 const BOUTON_ROND =
   'flex size-14 shrink-0 cursor-pointer items-center justify-center rounded-pilule border border-bordure bg-fond p-0 text-encre transition-transform duration-200 active:scale-95 aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:scale-100'
 const BOUTON_DOUX =
-  'flex min-h-11 cursor-pointer items-center rounded-pilule border border-bordure bg-transparent px-4 text-[0.9375rem] font-semibold text-encre aria-disabled:cursor-default aria-disabled:opacity-60'
+  'flex min-h-12 cursor-pointer items-center justify-center rounded-pilule border border-bordure bg-transparent px-4 text-[0.9375rem] font-semibold text-encre aria-disabled:cursor-default aria-disabled:opacity-60'
 
 /**
  * Le panneau « Où j'en suis » de l'accueil (maquette MiseAJour) : saisie directe, − et +, Enregistrer,
@@ -185,7 +185,7 @@ export function OuJenSuis({
           Enregistrer
         </Bouton>
 
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-col gap-3">
           <button
             type="button"
             aria-disabled={!enLigne || occupe || undefined}

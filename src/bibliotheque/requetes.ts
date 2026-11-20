@@ -361,20 +361,3 @@ export function useRangerCouverture(id: string) {
       ]),
   })
 }
-
-/** Retire une couverture (de l'œuvre, d'une édition ou d'un tome), puis relit la fiche et les listes. */
-export function useRetirerCouverture(id: string) {
-  const { depot } = useSession()
-  const client = useQueryClient()
-  return useMutation<void, EchecDepot, CibleCouverture[]>({
-    mutationFn: async (cibles) => {
-      for (const cible of cibles) verifier(await depot.definirCouverture(id, cible, null))
-    },
-    onSettled: () =>
-      Promise.all([
-        client.invalidateQueries({ queryKey: CLES.oeuvre(id) }),
-        client.invalidateQueries({ queryKey: CLES.oeuvres }),
-        client.invalidateQueries({ queryKey: CLES.enCours }),
-      ]),
-  })
-}

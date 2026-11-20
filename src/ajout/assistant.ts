@@ -3,6 +3,7 @@
 // et c'est la fonction qui interroge les catalogues et l'IA.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { estPresqueUniforme } from '../couvertures/uniformite'
 import type {
   FicheProposee,
   OeuvrePourFiche,
@@ -115,7 +116,12 @@ function propositionLue(valeur: unknown): PropositionCouverture | null {
   }
 }
 
-export function creerAssistantSupabase(client: ClientFonctions): Assistant {
+/**
+ * `ecarter` : reconnaît sur l'appareil une image qui n'est pas une couverture (page blanche, toile
+ * unie : estPresqueUniforme). Elle est alors traitée comme « pas de couverture », pour toutes les
+ * recherches (ajout, achat, autres couvertures, couvertures manquantes ou de petite taille).
+ */
+export function creerAssistantSupabase(client: ClientFonctions, ecarter: (image: Blob) => Promise<boolean> = estPresqueUniforme): Assistant {
   /** Un appel à la fonction. `lire` vérifie la forme de la réponse : null si elle est inattendue. */
   async function appeler<T>(corps: Record<string, unknown>, lire: (donnees: Record<string, unknown>) => T | undefined): Promise<Reponse<T>> {
     try {
@@ -140,8 +146,8 @@ export function creerAssistantSupabase(client: ClientFonctions): Assistant {
         Array.isArray(d.resultats) ? (d as unknown as ReponseTitre) : undefined,
       ),
 
-    couverture: (demande) =>
-      appeler<ImageTrouvee | null>({ action: 'couverture', ...demande }, (d) => {
+    couverture: async (demande) => {
+      const reponse = await appeler<ImageTrouvee | null>({ action: 'couverture', ...demande }, (d) => {
         if (d.trouve === false) return null
         const image = d.image
         if (d.trouve !== true || !estObjet(image) || typeof image.base64 !== 'string' || typeof image.type !== 'string') return undefined
@@ -155,7 +161,11 @@ export function creerAssistantSupabase(client: ClientFonctions): Assistant {
         } catch {
           return undefined
         }
-      }),
+      })
+      // Une page blanche ou une toile unie : « pas de couverture », comme les images grises de Google.
+      if (reponse.ok && reponse.valeur && (await ecarter(reponse.valeur.image))) return { ok: true, valeur: null }
+      return reponse
+    },
 
     autresCouvertures: (demande) =>
       appeler({ action: 'autres_couvertures', ...demande }, (d) =>

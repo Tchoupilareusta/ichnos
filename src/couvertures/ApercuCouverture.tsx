@@ -1,6 +1,6 @@
 import type { ImageTrouvee } from '../ajout/assistant'
 import { libelleSource } from '../ajout/preremplir'
-import { LIEN_ACTION } from '../composants/Section'
+import { Bouton } from '../composants/Bouton'
 import { Couverture } from './Couverture'
 import { estPetite } from './reduction'
 
@@ -42,16 +42,16 @@ export function ApercuCouverture({
               Couverture trouvée sur {libelleSource(trouvee.source)}
               {petite ? ', de petite taille' : ''}.
             </p>
-            <button type="button" onClick={() => setGarder(false)} className={`${LIEN_ACTION} text-left`}>
-              Ne pas garder cette couverture
-            </button>
+            <Bouton variante="secondaire" onClick={() => setGarder(false)} className="min-h-11 px-5">
+              Ne pas la garder
+            </Bouton>
           </>
         ) : (
           <>
             <p className="m-0 text-[0.9375rem] text-discret">Cette couverture ne sera pas gardée : celle d’Ichnos s’affichera.</p>
-            <button type="button" onClick={() => setGarder(true)} className={`${LIEN_ACTION} text-left`}>
+            <Bouton variante="secondaire" onClick={() => setGarder(true)} className="min-h-11 px-5">
               La garder finalement
-            </button>
+            </Bouton>
           </>
         )}
       </div>

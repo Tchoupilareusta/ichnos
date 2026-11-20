@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { BarreDuBas, BarreLaterale } from './navigation/Navigation'
 import { FournisseurRoute, useRouteCourante } from './navigation/useRoute'
+import { FournisseurSaisie } from './navigation/saisie'
 import { ongletDe, type Ecran } from './navigation/routes'
 import { HorsConnexion } from './composants/HorsConnexion'
 import { AllerAuContenu } from './composants/AllerAuContenu'
@@ -115,13 +116,15 @@ function AppReservee({ auth, depot, assistant, couvertures }: { auth: Auth; depo
     <QueryClientProvider client={requetes}>
       <FournisseurSession value={{ auth, compte: session.compte, depot, assistant, couvertures }}>
         <FournisseurRoute value={route}>
-          <AllerAuContenu />
-          <BandeauHaut />
-          <HorsConnexion />
-          <BarreLaterale ecran={ongletDe(ecran)} />
-          {/* Une adresse, un écran neuf : la bibliothèque relit ses filtres, le formulaire repart de la fiche. */}
-          <Contenu key={`${ecran}/${route.id ?? ''}?${route.parametres}`} />
-          <BarreDuBas ecran={ongletDe(ecran)} />
+          <FournisseurSaisie>
+            <AllerAuContenu />
+            <BandeauHaut />
+            <HorsConnexion />
+            <BarreLaterale ecran={ongletDe(ecran)} />
+            {/* Une adresse, un écran neuf : la bibliothèque relit ses filtres, le formulaire repart de la fiche. */}
+            <Contenu key={`${ecran}/${route.id ?? ''}?${route.parametres}`} />
+            <BarreDuBas ecran={ongletDe(ecran)} />
+          </FournisseurSaisie>
         </FournisseurRoute>
       </FournisseurSession>
     </QueryClientProvider>

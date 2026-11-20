@@ -56,12 +56,13 @@ export function Dialogue({
               {children}
             </div>
           )}
-          <div className="mt-2 flex flex-col-reverse gap-3 min-[25rem]:flex-row min-[25rem]:justify-end">
-            <Bouton variante="secondaire" onClick={onAnnuler} occupe={occupe} autoFocus>
-              {annuler}
-            </Bouton>
+          {/* Comme dans les panneaux : empilés, pleine largeur, l'action principale en haut. */}
+          <div className="mt-2 flex flex-col gap-3">
             <Bouton onClick={onConfirmer} occupe={occupe}>
               {confirmer}
+            </Bouton>
+            <Bouton variante="secondaire" onClick={onAnnuler} occupe={occupe} autoFocus>
+              {annuler}
             </Bouton>
           </div>
         </div>
