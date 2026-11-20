@@ -296,6 +296,20 @@ describe('fiche d’une œuvre', () => {
       expect(barre()).toHaveTextContent('3 tomes sélectionnés')
     })
 
+    it('après un glissement fini sur un autre tome, le toucher suivant compte', async () => {
+      await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
+      const [t1, t2, t3] = within(grille()).getAllByRole('button')
+      appuyer(t1, 10, 10)
+      bouger(t1, 22, 12)
+      bouger(t2, 60, 12)
+      // Le doigt se lève sur le tome 2 : le clic part sur la grille, pas sur un bouton.
+      fireEvent(t2, new FauxPointeur('pointerup', { bubbles: true }))
+      fireEvent.click(grille())
+      appuyer(t3, 110, 10)
+      lever(t3)
+      expect([t1, t2, t3].map((t) => t.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
+    })
+
     it('un glissement d’abord vertical laisse la page défiler et ne sélectionne rien', async () => {
       await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
       const [t1, t2] = within(grille()).getAllByRole('button')

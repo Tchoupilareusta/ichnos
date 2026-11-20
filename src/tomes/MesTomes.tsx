@@ -168,7 +168,8 @@ export function MesTomes({
     >
       <div ref={refSection} className="flex flex-col gap-3">
         <Legende />
-        <p id="aide-tomes" className={selection.size > 0 ? 'sr-only' : 'm-0 text-sm text-discret'}>
+        {/* Toujours affichée : la faire disparaître à la première sélection ferait remonter la grille sous le doigt. */}
+        <p id="aide-tomes" className="m-0 text-sm text-discret">
           Toucher les tomes à changer, ou glisser le doigt dessus. Appui long : les détails d’un tome.
         </p>
         <ul
@@ -254,27 +255,28 @@ export function MesTomes({
 
 /** La légende, en deux lignes : la possession (le cercle), puis la lecture (la marque). */
 function Legende() {
+  const element = 'flex items-center gap-1.5 whitespace-nowrap'
   return (
-    <dl className="m-0 flex flex-col gap-1.5 text-sm text-discret">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <dt className="font-semibold text-encre">Possession</dt>
+    <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1.5 text-sm text-discret">
+      <dt className="font-semibold text-encre">Possession</dt>
+      <dd className="m-0 flex flex-wrap gap-x-3 gap-y-1">
         {POSSESSIONS.map((p) => (
-          <dd key={p.valeur} className="m-0 flex items-center gap-1.5">
-            <span aria-hidden="true" className={`inline-block size-4 rounded-full ${STYLE_TOME[p.valeur]}`} />
+          <span key={p.valeur} className={element}>
+            <span aria-hidden="true" className={`inline-block size-3.5 shrink-0 rounded-full ${STYLE_TOME[p.valeur]}`} />
             {p.libelle}
-          </dd>
+          </span>
         ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <dt className="font-semibold text-encre">Lecture</dt>
+      </dd>
+      <dt className="font-semibold text-encre">Lecture</dt>
+      <dd className="m-0 flex flex-wrap gap-x-3 gap-y-1">
         {(['lu', 'en_cours'] as const).map((lecture) => (
-          <dd key={lecture} className="m-0 flex items-center gap-1.5">
+          <span key={lecture} className={element}>
             <MarqueLecture lecture={lecture} dansLaLegende />
             {libelleLectureTome(lecture)}
-          </dd>
+          </span>
         ))}
-        <dd className="m-0">À lire : sans marque</dd>
-      </div>
+        <span className={element}>À lire : rien</span>
+      </dd>
     </dl>
   )
 }
@@ -313,7 +315,10 @@ function useGestesGrille({
     long: boolean
   } | null>(null)
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const ignorer = useRef(false)
+  // Le clic qui suit un glissement ou un appui long ne doit rien changer. Il n'atteint pas toujours
+  // le bouton (fin du glissement sur un autre tome) : une courte fenêtre de temps, plutôt qu'un drapeau
+  // qui resterait levé et ferait perdre le toucher suivant.
+  const ignorerJusqua = useRef(0)
   const [appui, setAppui] = useState<number | null>(null)
 
   const arreterMinuterie = () => {
@@ -352,7 +357,8 @@ function useGestesGrille({
     if (souris && e.button !== 0) return
     const numero = numeroDe(e.target)
     if (numero === null) return
-    ignorer.current = false
+    // Un nouveau toucher : le clic d'un geste précédent ne peut plus arriver.
+    ignorerJusqua.current = 0
     geste.current = { id: e.pointerId, x: e.clientX, y: e.clientY, depart: numero, avant: new Set(selection), souris, mode: 'indecis', long: false }
     if (souris) return
     setAppui(numero)
@@ -361,7 +367,6 @@ function useGestesGrille({
       const g = geste.current
       if (!g || g.mode !== 'indecis') return
       g.long = true
-      ignorer.current = true
       setAppui(null)
       ouvrirDetails(numero)
     }, DUREE_APPUI_LONG)
@@ -378,9 +383,14 @@ function useGestesGrille({
       setAppui(null)
       if (g.souris || Math.abs(dx) >= Math.abs(dy)) {
         g.mode = 'selection'
-        ignorer.current = true
         // À la souris, la grille garde le pointeur même s'il en sort un instant.
-        if (g.souris) e.currentTarget.setPointerCapture?.(e.pointerId)
+        if (g.souris) {
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId)
+          } catch {
+            // Pointeur déjà relâché : rien à garder.
+          }
+        }
       } else {
         g.mode = 'defilement'
         return
@@ -398,6 +408,7 @@ function useGestesGrille({
     arreterMinuterie()
     setAppui(null)
     if (g.mode === 'selection') poserAncre(g.depart)
+    if (g.mode === 'selection' || g.long) ignorerJusqua.current = performance.now() + 600
     // Le clic qui suit le geste est ignoré ; le geste lui-même est oublié juste après.
     setTimeout(() => {
       if (geste.current === g) geste.current = null
@@ -409,7 +420,6 @@ function useGestesGrille({
     e.preventDefault()
     const numero = numeroDe(e.target)
     if (numero === null || geste.current?.long) return
-    ignorer.current = true
     ouvrirDetails(numero)
   }
 
@@ -422,8 +432,8 @@ function useGestesGrille({
     surMenuContextuel,
     /** Vrai si le clic vient d'un glissement ou d'un appui long : il ne change rien. */
     clicAIgnorer: () => {
-      const oui = ignorer.current
-      ignorer.current = false
+      const oui = performance.now() < ignorerJusqua.current
+      ignorerJusqua.current = 0
       return oui
     },
   }
@@ -484,11 +494,16 @@ function BarreTomes({
   }, [ouverte])
 
   const bulle =
-    'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-pilule border border-bordure bg-fond px-3.5 text-[0.9375rem] font-semibold text-encre transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:scale-100'
+    'flex min-h-11 cursor-pointer items-center gap-1 rounded-pilule border border-bordure bg-fond px-3 text-[0.875rem] font-semibold text-encre transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:scale-100'
   const titreGroupe = 'm-0 text-[0.8125rem] font-bold tracking-wide text-discret'
 
   return (
-    <div className="fixed z-30 flex flex-col items-stretch gap-2.5 left-[calc(env(safe-area-inset-left)+1rem)] right-[calc(env(safe-area-inset-right)+1rem)] bottom-[max(env(safe-area-inset-bottom),1rem)] tablette:right-[max(2.5rem,env(safe-area-inset-right))] tablette:left-[calc(env(safe-area-inset-left)+18.5rem)]">
+    // Sans sélection, la barre du bas de l'iPhone est revenue : le message se pose juste au-dessus d'elle.
+    <div
+      className={`fixed z-30 flex flex-col items-stretch gap-2.5 left-[calc(env(safe-area-inset-left)+1rem)] right-[calc(env(safe-area-inset-right)+1rem)] tablette:right-[max(2.5rem,env(safe-area-inset-right))] tablette:left-[calc(env(safe-area-inset-left)+18.5rem)] tablette:bottom-[max(env(safe-area-inset-bottom),1rem)] ${
+        ouverte ? 'bottom-[max(env(safe-area-inset-bottom),1rem)]' : 'bottom-[calc(max(env(safe-area-inset-bottom),1rem)+min(4.5rem,80px)+0.625rem)]'
+      }`}
+    >
       <div className="flex flex-col items-stretch gap-2.5 tablette:mx-auto tablette:w-full tablette:max-w-[28rem]">
         <MessageTemporaire message={message} effacer={effacerMessage} />
         <p role="status" className="sr-only">
@@ -500,7 +515,7 @@ function BarreTomes({
           aria-label="Actions sur les tomes sélectionnés"
           data-etat={ouverte ? 'ouvert' : 'ferme'}
           hidden={!ouverte}
-          className="flex flex-col gap-3 rounded-panneau border border-bordure bg-surface p-4 shadow-forte [&[hidden]]:hidden"
+          className="flex flex-col gap-3 rounded-panneau border border-bordure bg-surface p-3.5 shadow-forte [&[hidden]]:hidden"
         >
           {ouverte && (
             <>
@@ -519,7 +534,7 @@ function BarreTomes({
                 <p id="groupe-possession" className={titreGroupe}>
                   Possession
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {BULLES_POSSESSION.map((p) => (
                     <button
                       key={p.valeur}
@@ -539,7 +554,7 @@ function BarreTomes({
                 <p id="groupe-lecture" className={titreGroupe}>
                   Lecture
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {BULLES_LECTURE.map((l) => (
                     <button
                       key={l.valeur}
@@ -562,11 +577,11 @@ function BarreTomes({
 
               <div className="flex flex-wrap gap-2">
                 {selection.size === 1 && (
-                  <Bouton variante="secondaire" aria-haspopup="dialog" onClick={ouvrirDetails} className="min-w-[10rem] flex-1 px-4">
+                  <Bouton variante="secondaire" aria-haspopup="dialog" onClick={ouvrirDetails} className="flex-1 basis-auto px-4 whitespace-nowrap">
                     Détails du tome
                   </Bouton>
                 )}
-                <Bouton variante="secondaire" onClick={vider} className="min-w-[10rem] flex-1 px-4">
+                <Bouton variante="secondaire" onClick={vider} className="flex-1 basis-auto px-4 whitespace-nowrap">
                   Annuler la sélection
                 </Bouton>
               </div>
