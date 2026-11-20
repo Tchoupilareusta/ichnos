@@ -3,6 +3,14 @@ import { Bouton } from './Bouton'
 import { IconeFermer } from './Icones'
 
 /**
+ * Les boutons d'un panneau, toujours de la même façon dans toute l'appli : empilés, pleine largeur,
+ * l'action principale en haut, l'action secondaire en dessous.
+ */
+export function ActionsFeuille({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col gap-3">{children}</div>
+}
+
+/**
  * Feuille qui monte du bas de l'écran sur iPhone (à portée du pouce), fenêtre centrée sur iPad.
  * Élément <dialog> natif : le focus y reste, Échap et un appui à côté la referment.
  * Son état est porté par data-etat (« ouvert » / « ferme ») pour les animations de l'étape 9.

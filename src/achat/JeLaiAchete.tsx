@@ -8,7 +8,7 @@ import { CLES } from '../bibliotheque/requetes'
 import { nomLangue } from '../catalogue/langues'
 import { Bouton } from '../composants/Bouton'
 import { ChampTexte } from '../composants/Champs'
-import { Feuille } from '../composants/Feuille'
+import { ActionsFeuille, Feuille } from '../composants/Feuille'
 import { ApercuCouverture } from '../couvertures/ApercuCouverture'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
@@ -234,7 +234,7 @@ export function JeLaiAchete({
               value={saisie}
               onChange={(e) => setSaisie(e.target.value)}
             />
-            <Bouton type="submit" occupe={recherche || !enLigne} className="self-start">
+            <Bouton type="submit" occupe={recherche || !enLigne}>
               {recherche ? 'Je cherche…' : 'Chercher ce livre'}
             </Bouton>
             <p role="status" className="m-0 text-sm text-discret empty:hidden">
@@ -283,21 +283,21 @@ export function JeLaiAchete({
               <p className="m-0 text-[1.0625rem] leading-relaxed">{SANS_CATALOGUE[etape.catalogues]}</p>
             )}
             <p className="m-0 text-sm text-discret tabular-nums">ISBN {etape.isbn}</p>
-            <div className="flex flex-wrap gap-3">
+            <ActionsFeuille>
               <Bouton occupe={envoi || !enLigne || image.etat === 'recherche'} onClick={valider}>
                 {envoi ? 'J’enregistre…' : etape.catalogues === 'connu' ? 'C’est mon exemplaire' : 'Noter cet ISBN quand même'}
               </Bouton>
               <Bouton variante="secondaire" onClick={changerIsbn}>
                 Changer d’ISBN
               </Bouton>
-            </div>
+            </ActionsFeuille>
           </>
         )}
 
         {etape.nom === 'ailleurs' && (
           <>
             <p className="m-0 text-[1.0625rem] leading-relaxed">{etape.texte}</p>
-            <div className="flex flex-wrap gap-3">
+            <ActionsFeuille>
               {etape.fiche && (
                 <a
                   href={LIENS.oeuvre(etape.fiche.id)}
@@ -310,7 +310,7 @@ export function JeLaiAchete({
               <Bouton variante="secondaire" onClick={changerIsbn}>
                 Changer d’ISBN
               </Bouton>
-            </div>
+            </ActionsFeuille>
           </>
         )}
 

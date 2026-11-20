@@ -674,7 +674,7 @@ function Tomes({
               desactive={!enLigne}
             />
             {/* Mon exemplaire : son ISBN quand je l'achète, et sa photo, la voie sûre pour la couverture d'un tome. */}
-            <div className="flex flex-col items-start gap-2.5">
+            <div className="flex flex-col gap-3">
               {tomeOuvert.possession !== 'possede' && (
                 <Bouton
                   variante="secondaire"
