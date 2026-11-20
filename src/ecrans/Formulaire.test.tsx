@@ -232,7 +232,7 @@ describe('modification d’une œuvre', () => {
   it('supprime l’œuvre depuis son bas de page, après confirmation, puis ouvre la bibliothèque', async () => {
     const faux = depotFictif({ oeuvres: [oeuvreFictive({ id: 'sid', titreFr: 'Siddhartha' })] })
     await ouvrir(faux, '#/oeuvre/sid/modifier')
-    const bouton = screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' })
+    const bouton = screen.getByRole('button', { name: 'Supprimer Siddhartha de ma bibliothèque' })
     fireEvent.click(bouton)
     const dialogue = screen.getByRole('dialog', { name: 'Supprimer « Siddhartha » ?' })
     expect(dialogue).toHaveTextContent('Ce geste ne se défait pas.')
@@ -257,7 +257,7 @@ describe('modification d’une œuvre', () => {
   it('grise la suppression hors connexion', async () => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
     await ouvrir(depotFictif({ oeuvres: [oeuvreFictive({ id: 'sid', titreFr: 'Siddhartha' })] }), '#/oeuvre/sid/modifier')
-    const bouton = screen.getByRole('button', { name: 'Supprimer cette œuvre de ma bibliothèque' })
+    const bouton = screen.getByRole('button', { name: 'Supprimer Siddhartha de ma bibliothèque' })
     expect(bouton).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(bouton)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

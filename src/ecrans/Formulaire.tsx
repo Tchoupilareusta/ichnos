@@ -642,19 +642,16 @@ function Suppression({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: bo
   return (
     <section aria-label="Supprimer l’œuvre" className="mt-6 flex flex-col items-center gap-2 border-t border-bordure pt-10">
       {/* Fond rouge doux : l'accent doux de la palette, avec le texte accentué (contraste AA en clair et en sombre). */}
+      {/* Court à l'écran pour tenir sur une ligne à 393 px ; VoiceOver entend le titre de l'œuvre. */}
       <button
         type="button"
+        aria-label={`Supprimer ${nom} de ma bibliothèque`}
         aria-disabled={!enLigne || undefined}
         onClick={() => enLigne && setOuvert(true)}
-        className="flex min-h-12 cursor-pointer items-center justify-center rounded-pilule border-0 bg-accent-doux px-5 py-2.5 text-center text-[0.9375rem] font-bold text-accent-texte transition-transform duration-200 active:scale-[0.98] aria-disabled:cursor-default aria-disabled:opacity-60"
+        className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-pilule border-0 bg-accent-doux px-6 text-[0.9375rem] font-bold whitespace-nowrap text-accent-texte transition-transform duration-200 active:scale-[0.98] aria-disabled:cursor-default aria-disabled:opacity-60"
       >
-        {/* L'icône suit le texte : sur un iPhone étroit, le libellé passe sur deux lignes sans laisser l'icône à l'écart. */}
-        <span className="text-balance">
-          <span className="mr-2 inline-block align-[-0.25em]">
-            <IconeSupprimer taille={19} />
-          </span>
-          Supprimer cette œuvre de ma bibliothèque
-        </span>
+        <IconeSupprimer taille={19} />
+        Supprimer de ma bibliothèque
       </button>
       <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
         {suppression.error ? ECHECS_SUPPRESSION[suppression.error.echec] : ''}
