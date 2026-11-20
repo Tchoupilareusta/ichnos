@@ -21,6 +21,7 @@ import {
   type OeuvreListee,
 } from './depot'
 import { comparerTitres, possessionAffichee, possessionsFiltrables } from './modele'
+import { appliquerChangements } from './tomes'
 
 /** Une œuvre de test : seuls les champs utiles au test sont à donner. */
 export function oeuvreFictive(champs: Partial<OeuvreDetaillee> & { id: string; titreFr: string }): OeuvreDetaillee {
@@ -283,12 +284,6 @@ export function depotFictif(
     async changerAppreciation(id, appreciation) {
       return modifier(id, 'appreciation', appreciation, (o) => ({ ...o, appreciation }))
     },
-    async changerLectureTomes(id, choix, lecture) {
-      return modifier(id, 'lectureTomes', { choix, lecture }, (o) => ({
-        ...o,
-        tomes: o.tomes.map((t) => (choix === 'tous' || (t.numero >= choix.de && t.numero <= choix.a) ? { ...t, lecture } : t)),
-      }))
-    },
     async changerMedia(id, media, valeurs) {
       return modifier(id, 'media', { media, ...valeurs }, (o) => ({
         ...o,
@@ -302,11 +297,12 @@ export function depotFictif(
     async changerPossession(id, possession) {
       return modifier(id, 'possession', possession, (o) => ({ ...o, possession }))
     },
-    async changerPossessionTomes(id, choix, possession) {
-      return modifier(id, 'possessionTomes', { choix, possession }, (o) => ({
-        ...o,
-        tomes: o.tomes.map((t) => (choix === 'tous' || (t.numero >= choix.de && t.numero <= choix.a) ? { ...t, possession } : t)),
-      }))
+    // Ce que ferait regler_tomes : tout ou rien, un tome inconnu fait tout refuser.
+    async reglerTomes(id, changements) {
+      const oeuvre = oeuvres.find((o) => o.id === id)
+      if (oeuvre && changements.some((c) => !oeuvre.tomes.some((t) => t.numero === c.numero)))
+        return { ok: false, echec: 'introuvable' }
+      return modifier(id, 'reglerTomes', changements, (o) => ({ ...o, tomes: appliquerChangements(o.tomes, changements) }))
     },
     async changerMonEdition(id, edition) {
       return modifier(id, 'monEdition', edition, (o) => ({ ...o, monEdition: edition }))

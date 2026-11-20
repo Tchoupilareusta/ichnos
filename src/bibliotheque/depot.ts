@@ -234,8 +234,8 @@ export type EchecAchat = EchecEcriture | 'isbn_ailleurs'
 /** L'édition devenue la mienne (null pour un tome). */
 export type NoteAchat = { ok: true; edition: string | null } | { ok: false; echec: EchecAchat }
 
-/** Les tomes visés par un changement de possession : tous, ou une plage (« les tomes 1 à 8 »). */
-export type ChoixTomes = 'tous' | { de: number; a: number }
+/** Ce qui change pour un tome sélectionné : sa possession, sa lecture, ou les deux (« Annuler » remet les deux). */
+export type ChangementTome = { numero: number; possession?: Possession; lecture?: LectureTome }
 
 /** Ce que l'appli attend de la base pour la bibliothèque (Supabase en vrai, un faux dans les tests). */
 export interface Depot {
@@ -256,11 +256,11 @@ export interface Depot {
   /** Date de fin de la dernière lecture, au jour, au mois ou à l'année près ; vide pour la retirer. */
   daterFin(id: string, date: string | null, precision: PrecisionDate): Promise<Ecriture>
   changerAppreciation(id: string, appreciation: Appreciation | null): Promise<Ecriture>
-  changerLectureTomes(id: string, tomes: ChoixTomes, lecture: LectureTome): Promise<Ecriture>
   changerMedia(id: string, media: string, valeurs: { vus?: number | null; statut?: StatutMedia }): Promise<Ecriture>
   /** Possession d'une œuvre qui n'est pas une série. */
   changerPossession(id: string, possession: Possession): Promise<Ecriture>
-  changerPossessionTomes(id: string, tomes: ChoixTomes, possession: Possession): Promise<Ecriture>
+  /** Plusieurs tomes d'une série, chacun avec ses valeurs, en tout ou rien (fonction regler_tomes). */
+  reglerTomes(id: string, changements: ChangementTome[]): Promise<Ecriture>
   changerMonEdition(id: string, edition: string | null): Promise<Ecriture>
   /** « Je l'ai acheté » : mon édition (ou le tome), son ISBN, sa couverture et la possession, en tout ou rien (fonction noter_achat). */
   noterAchat(id: string, achat: Achat): Promise<NoteAchat>
@@ -292,10 +292,9 @@ export const DEPOT_ABSENT: Depot = {
   changerTotal: absent,
   daterFin: absent,
   changerAppreciation: absent,
-  changerLectureTomes: absent,
   changerMedia: absent,
   changerPossession: absent,
-  changerPossessionTomes: absent,
+  reglerTomes: absent,
   changerMonEdition: absent,
   noterAchat: absent,
   supprimerOeuvre: absent,

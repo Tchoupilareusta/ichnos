@@ -56,7 +56,7 @@ export function Modifier() {
           <span role="alert">
             {requete.error.echec === 'introuvable'
               ? 'Cette œuvre n’est pas, ou plus, dans ma bibliothèque.'
-              : 'La fiche n’a pas pu s’ouvrir. Je réessaie au retour du réseau.'}
+              : 'La fiche n’a pas pu s’ouvrir. Réessayer au retour du réseau.'}
           </span>
         </EtatVide>
       )}
@@ -65,10 +65,10 @@ export function Modifier() {
 }
 
 const ECHECS: Record<EchecEcriture, string> = {
-  reseau: 'Pas de connexion à internet : rien n’a été enregistré. Ma saisie reste là, je réessaie au retour du réseau.',
-  invalide: 'La base a refusé une des valeurs : rien n’a été enregistré. Je vérifie les champs et je réessaie.',
+  reseau: 'Pas de connexion à internet : rien n’a été enregistré. Ma saisie reste là : réessayer au retour du réseau.',
+  invalide: 'La base a refusé une des valeurs : rien n’a été enregistré. Vérifier les champs, puis réessayer.',
   introuvable: 'Cette œuvre n’est plus dans ma bibliothèque : rien n’a été enregistré.',
-  inconnu: 'L’enregistrement n’a pas abouti, et rien n’a été enregistré. Je réessaie dans un instant.',
+  inconnu: 'L’enregistrement n’a pas abouti, et rien n’a été enregistré. Réessayer dans un instant.',
 }
 
 const TONALITES = [
@@ -98,7 +98,7 @@ const optionsLangues = (actuelle: string) => [
 ]
 
 const SANS_PROPOSITION: Record<EchecAssistant, string> = {
-  limite: 'L’IA a déjà préparé ses 30 fiches du jour : je remplis celle-ci moi-même, ou j’y reviens demain.',
+  limite: 'L’IA a déjà préparé ses 30 fiches du jour : remplir celle-ci à la main, ou y revenir demain.',
   reseau: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
   non_configure: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
   ia: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
@@ -252,7 +252,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
       : proposition.error
         ? SANS_PROPOSITION[proposition.error.echec]
         : proposition.data && !proposition.data.synopsis
-          ? 'L’IA ne connaît pas assez cette œuvre pour en proposer un résumé : je l’écris moi-même.'
+          ? 'L’IA ne connaît pas assez cette œuvre pour en proposer un résumé : il reste à écrire.'
           : null
   const propose = (champ: ChampPropose) => proposes.includes(champ)
   const [erreurs, setErreurs] = useState<Erreurs>({})
@@ -299,7 +299,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
     if (!mienne) return
     maj({ editions: etat.editions.map((e) => (e.cle === mienne.cle ? { ...e, ...trouvee.champs } : e)) })
     if (trouvee.image) changerCouverture({ etat: 'nouvelle', image: trouvee.image })
-    setNoteEdition(trouvee.image ? 'C’est reporté dans mon édition, avec sa couverture. J’enregistre pour le garder.' : 'C’est reporté dans mon édition. J’enregistre pour le garder.')
+    setNoteEdition(trouvee.image ? 'C’est reporté dans mon édition, avec sa couverture. « Enregistrer » pour le garder.' : 'C’est reporté dans mon édition. « Enregistrer » pour le garder.')
   }
 
   /**
@@ -371,7 +371,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
     enregistrement.mutate({ fiche: versEnvoi(etat, initial?.id), apres: rangerCouverture }, {
       onSuccess: (id) => {
         if (initial && couvertureRatee.current) {
-          setAnnonce('La fiche est enregistrée, mais pas la couverture. J’enregistre à nouveau pour réessayer.')
+          setAnnonce('La fiche est enregistrée, mais pas la couverture. « Enregistrer » à nouveau pour réessayer.')
           return resume.current?.focus()
         }
         // Nouvelle œuvre : sa fiche s'ouvre à la place du formulaire, pour y choisir statut et possession.
@@ -429,11 +429,11 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
         <div className="flex flex-col gap-3">
           <TitrePage>{titre}</TitrePage>
           {apport && (
-            <p className="m-0 max-w-[60ch] text-discret">Voici ce que les catalogues ont trouvé. Je relis, je corrige : rien n’est enregistré avant que je valide.</p>
+            <p className="m-0 max-w-[60ch] text-discret">Voici ce que les catalogues ont trouvé. À relire et corriger : rien n’est enregistré avant « Enregistrer ».</p>
           )}
           {!enLigne && (
             <p className="m-0 max-w-[60ch] rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte">
-              Hors connexion : je peux préparer la fiche, et l’enregistrer au retour du réseau.
+              Hors connexion : la fiche peut être préparée, puis enregistrée au retour du réseau.
             </p>
           )}
           <p
@@ -515,7 +515,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
                   value={etat.synopsis}
                   onChange={(e) => maj({ synopsis: e.target.value })}
                 />
-                {propose('etiquettes') && <p className="m-0 text-sm text-discret">Étiquettes proposées par l’IA dans mon vocabulaire : je retire ce qui ne convient pas.</p>}
+                {propose('etiquettes') && <p className="m-0 text-sm text-discret">Étiquettes proposées par l’IA dans mon vocabulaire : retirer ce qui ne convient pas.</p>}
                 {GENRES_ETIQUETTES.map((g) => (
                   <Etiquettes key={g.valeur} genre={g.valeur} libelle={g.pluriel} etat={etat} maj={maj} vocabulaire={vocabulaire} />
                 ))}
@@ -642,7 +642,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
           revenir(retour)
         }}
       >
-        <p className="m-0">{initial ? 'Rien de ce que j’ai changé ne sera enregistré, couverture comprise.' : 'Ce que j’ai saisi ici ne sera pas enregistré.'}</p>
+        <p className="m-0">{initial ? 'Aucun changement ne sera enregistré, couverture comprise.' : 'Rien de ce qui a été saisi ici ne sera enregistré.'}</p>
       </Dialogue>
     </Page>
   )
@@ -652,7 +652,7 @@ const ECHECS_SUPPRESSION: Record<string, string> = {
   reseau: 'Pas de connexion à internet : l’œuvre n’a pas été supprimée.',
   introuvable: 'Cette œuvre n’est déjà plus dans ma bibliothèque.',
   invalide: 'La suppression n’a pas été acceptée : rien n’a été retiré.',
-  inconnu: 'La suppression n’a pas abouti, et rien n’a été retiré. Je réessaie dans un instant.',
+  inconnu: 'La suppression n’a pas abouti, et rien n’a été retiré. Réessayer dans un instant.',
 }
 
 /**
@@ -971,7 +971,7 @@ function MonEdition({
     return (
       <>
         <p className="m-0 text-[0.9375rem] text-discret">
-          {etat.editions.length > 0 ? 'Aucune de mes éditions notées n’est marquée comme la mienne.' : 'Je n’ai pas encore noté mon édition.'}
+          {etat.editions.length > 0 ? 'Aucune de mes éditions notées n’est marquée comme la mienne.' : 'Mon édition n’est pas encore notée.'}
         </p>
         <BoutonAjouterLigne
           onClick={() => {
@@ -1130,7 +1130,7 @@ function Tomes({ etat, maj, erreurs, initial }: PropsBloc & { erreurs: Erreurs; 
       <ChampTexte
         id={idChamp.nombreTomes}
         libelle="Nombre de tomes"
-        aide="Pour une série en cours, je l’augmente à chaque nouveau tome."
+        aide="Pour une série en cours, l’augmenter à chaque nouveau tome."
         inputMode="numeric"
         value={nombre}
         onChange={(e) => {
@@ -1144,7 +1144,7 @@ function Tomes({ etat, maj, erreurs, initial }: PropsBloc & { erreurs: Erreurs; 
       {retires.length > 0 && (
         <p role="status" className="m-0 max-w-[60ch] rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte">
           {retires.length === 1 ? `Le tome ${retires[0].numero} sera retiré` : `Les tomes ${retires[0].numero} à ${retires[retires.length - 1].numero} seront retirés`}
-          {retiresPossedes > 0 ? ', avec ce que j’avais noté sur leur possession.' : '.'}
+          {retiresPossedes > 0 ? ', avec la possession notée pour eux.' : '.'}
         </p>
       )}
       {etat.tomes.length > 0 && (

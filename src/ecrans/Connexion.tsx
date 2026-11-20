@@ -4,9 +4,9 @@ import type { Auth, Echec } from '../session/auth'
 
 const MESSAGES: Record<Echec, string> = {
   identifiants: 'L’adresse ou le mot de passe ne correspond pas.',
-  trop: 'Trop d’essais d’affilée. Je patiente une minute avant de réessayer.',
-  reseau: 'Pas de connexion à internet. Je réessaie quand le réseau revient.',
-  inconnu: 'La connexion n’a pas abouti. Je réessaie dans un instant.',
+  trop: 'Trop d’essais d’affilée. Patienter une minute avant de réessayer.',
+  reseau: 'Pas de connexion à internet. Réessayer au retour du réseau.',
+  inconnu: 'La connexion n’a pas abouti. Réessayer dans un instant.',
 }
 
 type Refus = { message: string; champs: ('email' | 'motDePasse')[] }
@@ -63,12 +63,12 @@ export function Connexion({ auth }: { auth: Auth }) {
     const email = (champEmail.current?.value ?? '').trim()
     const motDePasse = champMotDePasse.current?.value ?? ''
     if (!email) {
-      setRefus({ message: 'J’indique d’abord mon adresse e-mail.', champs: ['email'] })
+      setRefus({ message: 'Indiquer d’abord mon adresse e-mail.', champs: ['email'] })
       champEmail.current?.focus()
       return
     }
     if (!motDePasse) {
-      setRefus({ message: 'J’indique aussi mon mot de passe.', champs: ['motDePasse'] })
+      setRefus({ message: 'Indiquer aussi mon mot de passe.', champs: ['motDePasse'] })
       champMotDePasse.current?.focus()
       return
     }

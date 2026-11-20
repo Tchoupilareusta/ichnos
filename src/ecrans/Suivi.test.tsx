@@ -99,9 +99,9 @@ describe('progression sur la fiche', () => {
   it('propose doucement « J’ai terminé ce livre ? » au total, sans le faire à ma place', async () => {
     const faux = depotFictif({ oeuvres: [siddhartha({ unite: 'page', total: 190, position: 190 })] })
     await ouvrir(faux, '#/oeuvre/sid')
-    expect(screen.getByText('J’ai atteint la fin. J’ai terminé ce livre ?')).toBeInTheDocument()
+    expect(screen.getByText('La fin est atteinte. Marquer ce livre comme terminé ?')).toBeInTheDocument()
     expect(faux.appels.ecritures).toHaveLength(0)
-    await cliquer(screen.getByRole('button', { name: 'Oui, je l’ai terminé' }))
+    await cliquer(screen.getByRole('button', { name: 'Oui, terminé' }))
     expect(ecritures(faux)).toEqual([{ action: 'statut', valeur: 'termine' }])
 
     // Puis mon ressenti, sans obligation.
@@ -175,7 +175,7 @@ describe('statut, parcours et ressenti sur la fiche', () => {
     const faux = depotFictif({ oeuvres: [siddhartha({ statut: 'termine', historique: [] })] })
     await ouvrir(faux, '#/oeuvre/sid')
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter la date de fin' }))
-    const panneau = screen.getByRole('dialog', { name: 'Quand l’ai-je terminé ?' })
+    const panneau = screen.getByRole('dialog', { name: 'Date de fin' })
     expect(within(panneau).getByRole('radio', { name: 'L’année' })).toBeChecked()
     fireEvent.change(within(panneau).getByLabelText('Année'), { target: { value: '2019' } })
     await cliquer(within(panneau).getByRole('button', { name: 'Enregistrer' }))
@@ -201,8 +201,8 @@ describe('série et média sur la fiche', () => {
     await cliquer(screen.getByRole('button', { name: 'Enregistrer' }))
     expect(ecritures(faux)).toEqual([{ action: 'progression', valeur: 6 }])
     const tomes = screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
-    expect(within(tomes).getByRole('button', { name: /^Tome 5 : lu/ })).toBeInTheDocument()
-    expect(within(tomes).getByRole('button', { name: /^Tome 6 : en cours/ })).toBeInTheDocument()
+    expect(within(tomes).getByRole('button', { name: /^Tome 5, lu/ })).toBeInTheDocument()
+    expect(within(tomes).getByRole('button', { name: /^Tome 6, en cours/ })).toBeInTheDocument()
   })
 
   it('compte les épisodes vus ; le premier fait passer l’anime « En cours »', async () => {
@@ -272,13 +272,13 @@ describe('accueil « En ce moment »', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Noter où j’en suis dans Siddhartha' }))
     await cliquer(within(screen.getByRole('dialog')).getByRole('button', { name: 'Le mettre en pause' }))
     expect(ecritures(faux)).toEqual([{ action: 'statut', valeur: 'en_pause' }])
-    expect(screen.getByText('Siddhartha est en pause. Je le retrouverai dans ma bibliothèque.')).toBeInTheDocument()
+    expect(screen.getByText('Siddhartha est en pause, toujours dans ma bibliothèque.')).toBeInTheDocument()
   })
 
   it('hors connexion, grise « Où j’en suis » avec un mot calme', async () => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
     await ouvrir(depotFictif({ oeuvres: [LUCILIUS] }), '#/')
     expect(screen.getByRole('button', { name: 'Noter où j’en suis dans Lettres à Lucilius' })).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByText('Je pourrai noter où j’en suis au retour du réseau.')).toBeInTheDocument()
+    expect(screen.getByText('La progression pourra être notée au retour du réseau.')).toBeInTheDocument()
   })
 })

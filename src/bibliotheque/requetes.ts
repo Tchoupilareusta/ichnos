@@ -1,7 +1,7 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../session/Session'
 import type {
-  ChoixTomes,
+  ChangementTome,
   EchecEcriture,
   EchecFiche,
   Ecriture,
@@ -13,6 +13,7 @@ import type {
 } from './depot'
 import type { CibleCouverture } from '../couvertures/choix'
 import type { Possession, Statut } from './modele'
+import { appliquerChangements } from './tomes'
 import { historiqueAvecFin, type Appreciation, type LectureTome, type PrecisionDate, type StatutMedia, type Unite } from './suivi'
 
 /** Échec d'une lecture ou d'une écriture, porté jusqu'à l'écran qui choisit ses mots. */
@@ -202,25 +203,6 @@ export function useModifierOeuvre(id: string) {
     onSettled: relire,
   })
 
-  const possessionTomes = useMutation<
-    void,
-    EchecDepot,
-    { tomes: ChoixTomes; possession: Possession },
-    { avant?: OeuvreDetaillee }
-  >({
-    mutationKey,
-    mutationFn: async ({ tomes, possession: valeur }) => verifier(await depot.changerPossessionTomes(id, tomes, valeur)),
-    onMutate: ({ tomes, possession: valeur }) =>
-      optimiste((o) => ({
-        ...o,
-        tomes: o.tomes.map((t) =>
-          tomes === 'tous' || (t.numero >= tomes.de && t.numero <= tomes.a) ? { ...t, possession: valeur } : t,
-        ),
-      }))(),
-    onError: retablir,
-    onSettled: relire,
-  })
-
   const monEdition = useMutation<void, EchecDepot, string | null, Contexte>({
     mutationKey,
     mutationFn: async (valeur) => verifier(await depot.changerMonEdition(id, valeur)),
@@ -275,13 +257,12 @@ export function useModifierOeuvre(id: string) {
     ),
   )
 
-  const lectureTomes = useMutation<void, EchecDepot, { tomes: ChoixTomes; lecture: LectureTome }, Contexte>(
+  /** Plusieurs tomes d'un coup (barre d'actions), ou leur état d'avant (« Annuler ») : une seule écriture. */
+  const tomes = useMutation<void, EchecDepot, ChangementTome[], Contexte>(
     ecriture(
-      ({ tomes, lecture }) => depot.changerLectureTomes(id, tomes, lecture),
-      (o, { tomes, lecture }) => ({
-        ...o,
-        tomes: o.tomes.map((t) => (tomes === 'tous' || (t.numero >= tomes.de && t.numero <= tomes.a) ? { ...t, lecture } : t)),
-      }),
+      (changements) => depot.reglerTomes(id, changements),
+      (o, changements) => ({ ...o, tomes: appliquerChangements(o.tomes, changements) }),
+      (l, changements) => ({ ...l, tomes: appliquerChangements(l.tomes, changements) }),
     ),
   )
 
@@ -300,7 +281,6 @@ export function useModifierOeuvre(id: string) {
   return {
     statut,
     possession,
-    possessionTomes,
     monEdition,
     suppression,
     progression,
@@ -308,7 +288,7 @@ export function useModifierOeuvre(id: string) {
     total,
     dateFin,
     appreciation,
-    lectureTomes,
+    tomes,
     media,
   }
 }

@@ -101,7 +101,7 @@ export function ProposerRessenti({
 export function ContenuRessenti({ valeur, choisir }: { valeur: Appreciation | null; choisir: (valeur: Appreciation) => void }) {
   return (
     <div className="flex flex-col gap-4">
-      <p className="m-0 text-[1.0625rem]">Un mot pour me souvenir de cette lecture, si j’en ai envie.</p>
+      <p className="m-0 text-[1.0625rem]">Un mot pour garder le souvenir de cette lecture, sans obligation.</p>
       {/* Ici, toucher le mot déjà choisi le garde, simplement. */}
       <Mots valeur={valeur} choisir={(v) => choisir(v ?? (valeur as Appreciation))} desactive={false} libelle="Mon ressenti" retirable={false} />
     </div>

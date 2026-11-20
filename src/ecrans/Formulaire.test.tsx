@@ -113,7 +113,7 @@ describe('ajout d’une œuvre', () => {
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Momo' } })
     await enregistrer()
     expect(faux.appels.enregistrerOeuvre).toHaveLength(0)
-    expect(screen.getByText('Hors connexion : je peux préparer la fiche, et l’enregistrer au retour du réseau.')).toBeInTheDocument()
+    expect(screen.getByText('Hors connexion : la fiche peut être préparée, puis enregistrée au retour du réseau.')).toBeInTheDocument()
   })
 
   it('demande avant d’abandonner une saisie', async () => {
@@ -276,7 +276,7 @@ describe('modification d’une œuvre', () => {
     })
     await ouvrir(faux, '#/oeuvre/vin/modifier')
     fireEvent.change(screen.getByLabelText('Nombre de tomes'), { target: { value: '1' } })
-    expect(screen.getByText('Les tomes 2 à 3 seront retirés, avec ce que j’avais noté sur leur possession.')).toBeInTheDocument()
+    expect(screen.getByText('Les tomes 2 à 3 seront retirés, avec la possession notée pour eux.')).toBeInTheDocument()
   })
 })
 
@@ -339,7 +339,7 @@ describe('couverture dans « Modifier » : tout attend « Enregistrer »', () =>
     fireEvent.click(screen.getByRole('button', { name: 'Retirer la couverture' }))
     fireEvent.click(barre().getByRole('button', { name: 'Annuler' }))
     const dialogue = screen.getByRole('dialog', { name: 'Abandonner mes modifications ?' })
-    expect(dialogue).toHaveTextContent('Rien de ce que j’ai changé ne sera enregistré, couverture comprise.')
+    expect(dialogue).toHaveTextContent('Aucun changement ne sera enregistré, couverture comprise.')
     await act(async () => fireEvent.click(within(dialogue).getByRole('button', { name: 'Abandonner' })))
     expect(faux.appels.ecritures).toHaveLength(0)
     expect(faux.oeuvres()[0].editions[0].couverture).toBe(CHEMIN)

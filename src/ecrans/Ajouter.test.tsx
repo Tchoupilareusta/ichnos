@@ -77,7 +77,7 @@ describe('écran « Ajouter »', () => {
     await ouvrir()
     expect(screen.getByRole('heading', { level: 1, name: 'Ajouter une œuvre' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Remplir automatiquement' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: 'Tout saisir moi-même' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Tout saisir à la main' })).toBeInTheDocument()
     expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveAttribute('inputmode', 'numeric')
     expect(screen.getByRole('link', { name: 'Ouvrir le formulaire complet' })).toHaveAttribute('href', '#/ajouter?mode=manuel')
   })
@@ -168,7 +168,7 @@ describe('ajout par ISBN', () => {
     await chercherIsbn('9782747024694')
     expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveAccessibleDescription(/Cet ISBN ne semble pas juste/)
     await chercherIsbn('2747024695')
-    expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveAccessibleDescription(/Il me faut l’ISBN à 13 chiffres/)
+    expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveAccessibleDescription(/L’ISBN à 13 chiffres est attendu/)
     expect(assistant.appels.chercherIsbn).toEqual([])
   })
 
@@ -264,7 +264,7 @@ describe('ajout par titre', () => {
     await attendre()
     expect(screen.getByLabelText('Titre')).toHaveValue('Momo')
     expect(screen.getByLabelText('Parution')).toHaveValue('1973')
-    expect(screen.getByText('Je n’ai pas encore noté mon édition.')).toBeInTheDocument()
+    expect(screen.getByText('Mon édition n’est pas encore notée.')).toBeInTheDocument()
     await enregistrer()
     expect(depot.appels.enregistrerOeuvre[0]).toMatchObject({ title_fr: 'Momo', editions: [], volumes: [] })
     // Sans édition, la couverture est celle de l'œuvre.
@@ -289,7 +289,7 @@ describe('ajout par titre', () => {
   it('demande un titre avant de chercher', async () => {
     const { assistant } = await ouvrir()
     await chercherTitre('   ')
-    expect(screen.getByLabelText('Titre')).toHaveAccessibleDescription(/Il me faut au moins le titre/)
+    expect(screen.getByLabelText('Titre')).toHaveAccessibleDescription(/Le titre, au moins, est attendu/)
     expect(assistant.appels.chercherTitre).toEqual([])
   })
 })

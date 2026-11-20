@@ -34,10 +34,10 @@ type Etape =
 
 const ECHECS: Record<EchecAssistant, string> = {
   reseau: 'Pas de connexion à internet : la recherche attendra le retour du réseau.',
-  limite: 'La recherche automatique ne répond pas pour le moment. Je peux tout saisir moi-même : Ichnos n’a besoin de rien d’autre.',
-  non_configure: 'La recherche automatique ne répond pas pour le moment. Je peux tout saisir moi-même : Ichnos n’a besoin de rien d’autre.',
-  ia: 'La recherche automatique ne répond pas pour le moment. Je peux tout saisir moi-même : Ichnos n’a besoin de rien d’autre.',
-  indisponible: 'La recherche automatique ne répond pas pour le moment. Je peux tout saisir moi-même : Ichnos n’a besoin de rien d’autre.',
+  limite: 'La recherche automatique ne répond pas pour le moment. Tout saisir à la main reste possible : Ichnos n’a besoin de rien d’autre.',
+  non_configure: 'La recherche automatique ne répond pas pour le moment. Tout saisir à la main reste possible : Ichnos n’a besoin de rien d’autre.',
+  ia: 'La recherche automatique ne répond pas pour le moment. Tout saisir à la main reste possible : Ichnos n’a besoin de rien d’autre.',
+  indisponible: 'La recherche automatique ne répond pas pour le moment. Tout saisir à la main reste possible : Ichnos n’a besoin de rien d’autre.',
 }
 
 const BOUTON_DISCRET =
@@ -95,7 +95,7 @@ function AjoutAutomatique() {
     if (!/^97[89]\d{10}$/.test(compact) || !isbnValide(compact)) {
       setErreurIsbn(
         /^\d{9}[\dX]$/.test(compact)
-          ? 'Il me faut l’ISBN à 13 chiffres : il commence par 978 ou 979.'
+          ? 'L’ISBN à 13 chiffres est attendu : il commence par 978 ou 979.'
           : 'Cet ISBN ne semble pas juste : 13 chiffres, à vérifier sur le livre.',
       )
       refIsbn.current?.focus()
@@ -114,7 +114,7 @@ function AjoutAutomatique() {
       const reponse = await assistant.chercherIsbn(compact)
       if (!reponse.ok) return setMessage({ pour: 'isbn', texte: ECHECS[reponse.echec] })
       if (!reponse.valeur.trouve) {
-        return setMessage({ pour: 'isbn', texte: 'Aucun catalogue ne connaît cet ISBN. Je vérifie les chiffres, ou je cherche par le titre.' })
+        return setMessage({ pour: 'isbn', texte: 'Aucun catalogue ne connaît cet ISBN. Vérifier les chiffres, ou chercher par le titre.' })
       }
       suite({ ...depuisNotice(reponse.valeur.notice, compact), couverture: reponse.valeur.couverture, descriptions: reponse.valeur.descriptions }, compact)
     } finally {
@@ -127,7 +127,7 @@ function AjoutAutomatique() {
     if (!enLigne || recherche) return
     const cherche = titre.trim()
     if (!cherche) {
-      setErreurTitre('Il me faut au moins le titre.')
+      setErreurTitre('Le titre, au moins, est attendu.')
       refTitre.current?.focus()
       return
     }
@@ -138,7 +138,7 @@ function AjoutAutomatique() {
       const reponse = await assistant.chercherTitre(cherche, auteur.trim() || undefined)
       if (!reponse.ok) return setMessage({ pour: 'titre', texte: ECHECS[reponse.echec] })
       if (reponse.valeur.resultats.length === 0) {
-        return setMessage({ pour: 'titre', texte: 'Aucun catalogue ne connaît ce titre. Je vérifie l’orthographe, ou je saisis la fiche moi-même.' })
+        return setMessage({ pour: 'titre', texte: 'Aucun catalogue ne connaît ce titre. Vérifier l’orthographe, ou saisir la fiche à la main.' })
       }
       setEtape({ nom: 'resultats', resultats: reponse.valeur.resultats })
     } finally {
@@ -171,7 +171,7 @@ function AjoutAutomatique() {
             <h1 ref={refEntete} tabIndex={-1} className="m-0 font-titre text-[2.125rem] leading-[1.1] outline-none tablette:text-[2.5rem]">
               Quelle œuvre ?
             </h1>
-            <p className="m-0 max-w-[60ch] text-discret">Je choisis la bonne : sa fiche se remplit, et je relis tout avant d’enregistrer.</p>
+            <p className="m-0 max-w-[60ch] text-discret">Choisir la bonne : sa fiche se remplit, à relire avant d’enregistrer.</p>
           </div>
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {etape.resultats.map((resultat, rang) => (
@@ -268,7 +268,7 @@ function AjoutAutomatique() {
               Remplir automatiquement
             </h2>
             <p className="m-0 max-w-[60ch] text-discret">
-              Ichnos interroge la BnF, Google Books et Open Library. Je relis tout avant d’enregistrer.
+              Ichnos interroge la BnF, Google Books et Open Library. Tout relire avant d’enregistrer.
             </p>
           </div>
 
@@ -285,7 +285,7 @@ function AjoutAutomatique() {
                 surChange={setIsbn}
               />
               <Bouton type="submit" occupe={recherche !== null || !enLigne} className="self-start">
-                {recherche === 'isbn' ? 'Je cherche…' : 'Chercher ce livre'}
+                {recherche === 'isbn' ? 'Recherche…' : 'Chercher ce livre'}
               </Bouton>
               <Retour recherche={recherche === 'isbn'} message={message?.pour === 'isbn' ? message.texte : null} />
             </form>
@@ -314,7 +314,7 @@ function AjoutAutomatique() {
                 onChange={(e) => setAuteur(e.target.value)}
               />
               <Bouton type="submit" variante="secondaire" occupe={recherche !== null || !enLigne} className="self-start">
-                {recherche === 'titre' ? 'Je cherche…' : 'Chercher cette œuvre'}
+                {recherche === 'titre' ? 'Recherche…' : 'Chercher cette œuvre'}
               </Bouton>
               <Retour recherche={recherche === 'titre'} message={message?.pour === 'titre' ? message.texte : null} />
             </form>
@@ -323,7 +323,7 @@ function AjoutAutomatique() {
 
         <section aria-labelledby="ajout-manuel" className="flex flex-col items-start gap-3">
           <h2 id="ajout-manuel" className="m-0 font-titre text-2xl">
-            Tout saisir moi-même
+            Tout saisir à la main
           </h2>
           <p className="m-0 max-w-[60ch] text-discret">Le formulaire complet, sans recherche : chaque champ est le mien.</p>
           <a href={LIENS.ajouterManuel} aria-label="Ouvrir le formulaire complet" className={`${LIEN_BORDE} mt-1`}>
@@ -340,7 +340,7 @@ function Retour({ recherche, message }: { recherche: boolean; message: string | 
   return (
     <div data-etat={recherche || message ? 'ouvert' : 'ferme'} className="flex flex-col">
       <p role="status" className="m-0 text-sm text-discret empty:hidden">
-        {recherche ? 'Je cherche dans les catalogues…' : ''}
+        {recherche ? 'Recherche dans les catalogues…' : ''}
       </p>
       {message && !recherche && (
         <p role="alert" className={MESSAGE}>

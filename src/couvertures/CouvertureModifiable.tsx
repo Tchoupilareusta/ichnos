@@ -124,7 +124,7 @@ export function CouvertureModifiable({
       </div>
 
       {oeuvre.estSerie && <p className="m-0 max-w-[40ch] text-center text-sm text-discret">Elle s’affiche tant qu’aucun tome n’a la sienne.</p>}
-      {!enLigne && <p className="m-0 text-center text-sm text-discret">Je pourrai changer la couverture au retour du réseau.</p>}
+      {!enLigne && <p className="m-0 text-center text-sm text-discret">La couverture pourra changer au retour du réseau.</p>}
 
       <ChoisirImage ref={image} sansBouton enLigne={enLigne} surImage={garder} />
       <AutresCouvertures ref={autres} sansBouton recherche={rechercheDeLOeuvre(oeuvre)} enLigne={enLigne} surImage={garder} />

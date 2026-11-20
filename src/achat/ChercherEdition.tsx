@@ -27,12 +27,12 @@ type Etat =
   | { nom: 'ailleurs'; texte: string; fiche: { id: string; titre: string | null } }
 
 const SANS: Record<EchecAssistant | 'inconnu', string> = {
-  inconnu: 'Aucun catalogue ne connaît cet ISBN. Je vérifie les chiffres, ou je remplis l’édition moi-même.',
+  inconnu: 'Aucun catalogue ne connaît cet ISBN. Vérifier les chiffres, ou remplir l’édition à la main.',
   reseau: 'Pas de connexion à internet : la recherche attendra le retour du réseau.',
-  limite: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard.',
-  non_configure: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard.',
-  ia: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard.',
-  indisponible: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard.',
+  limite: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard.',
+  non_configure: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard.',
+  ia: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard.',
+  indisponible: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard.',
 }
 
 /**
@@ -148,7 +148,7 @@ export function ChercherEdition({
       <div data-etat={etat.nom} className="flex flex-col gap-5">
         {etat.nom === 'recherche' && (
           <p role="status" className="m-0 text-[0.9375rem] text-discret">
-            Je cherche dans ma bibliothèque et dans les catalogues…
+            Recherche dans ma bibliothèque et dans les catalogues…
           </p>
         )}
 
@@ -157,7 +157,7 @@ export function ChercherEdition({
             {titreTrouve && <p className="m-0 font-titre text-xl leading-tight">{titreTrouve}</p>}
             {autreLivre && (
               <p className="m-0 rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte">
-                Ce livre semble être « {titreTrouve} ». Je vérifie l’ISBN.
+                Ce livre semble être « {titreTrouve} ». Vérifier l’ISBN.
               </p>
             )}
             {lignes.length > 0 ? (

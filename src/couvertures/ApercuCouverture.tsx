@@ -62,7 +62,7 @@ export function ApercuCouverture({
       <div className="flex min-w-0 flex-[1_1_12rem] flex-col items-start gap-2">
         {cherche ? (
           <p role="status" className="m-0 text-[0.9375rem] text-discret">
-            Je cherche la couverture…
+            Recherche de la couverture…
           </p>
         ) : choisie ? (
           <>
@@ -109,7 +109,7 @@ export function ApercuCouverture({
           {sans.enLigne ? (
             <ConseilPhoto />
           ) : (
-            <p className="m-0 text-sm text-discret">Hors connexion : une image ne pourrait pas être rangée. J’attends le retour du réseau.</p>
+            <p className="m-0 text-sm text-discret">Hors connexion : une image ne pourrait pas être rangée. Attendre le retour du réseau.</p>
           )}
           {/* Les deux panneaux ne rangent rien : l'image validée revient ici, et suit le geste en cours. */}
           <ChoisirImage ref={photo} sansBouton enLigne={sans.enLigne} surImage={(image) => sans.surChoix({ image, origine: 'photo' })} />

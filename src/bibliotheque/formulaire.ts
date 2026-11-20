@@ -189,7 +189,7 @@ export function valider(etat: EtatFormulaire): Erreurs {
     const episodes = media.episodes.trim()
     if (episodes && (!ENTIER.test(episodes) || Number(episodes) === 0)) erreurs[idChamp.episodes(media.cle)] = 'Un nombre d’épisodes, en chiffres.'
     else if (episodes && media.episodesVus !== null && Number(episodes) < media.episodesVus)
-      erreurs[idChamp.episodes(media.cle)] = `J’ai déjà vu ${media.episodesVus} épisodes : le total ne peut pas être plus petit.`
+      erreurs[idChamp.episodes(media.cle)] = `Déjà ${media.episodesVus} épisodes vus : le total ne peut pas être plus petit.`
   }
   return erreurs
 }

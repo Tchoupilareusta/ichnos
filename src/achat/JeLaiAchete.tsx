@@ -28,14 +28,14 @@ type Image = { etat: 'aucune' } | { etat: 'recherche' } | { etat: 'trouvee'; tro
 const ECHECS: Record<EchecAchat, string> = {
   reseau: 'Pas de connexion à internet : l’achat n’a pas été noté.',
   isbn_ailleurs: 'Cet ISBN est déjà noté ailleurs dans ma bibliothèque : rien n’a été enregistré.',
-  invalide: 'Cet ISBN n’a pas été accepté : rien n’a été enregistré. Je vérifie les chiffres.',
+  invalide: 'Cet ISBN n’a pas été accepté : rien n’a été enregistré. Vérifier les chiffres.',
   introuvable: 'Cette œuvre n’est plus dans ma bibliothèque : rien n’a été enregistré.',
-  inconnu: 'L’achat n’a pas pu être noté. Je réessaie dans un instant.',
+  inconnu: 'L’achat n’a pas pu être noté. Réessayer dans un instant.',
 }
 
 const SANS_CATALOGUE: Record<'inconnu' | 'muets' | 'hors_ligne', string> = {
-  inconnu: 'Aucun catalogue ne connaît cet ISBN. Je vérifie les chiffres, ou je le note quand même : il sera seul sur la fiche.',
-  muets: 'La recherche automatique ne répond pas pour le moment. Je peux noter l’ISBN seul, ou réessayer plus tard.',
+  inconnu: 'Aucun catalogue ne connaît cet ISBN. Vérifier les chiffres, ou le noter quand même : il sera seul sur la fiche.',
+  muets: 'La recherche automatique ne répond pas pour le moment. Noter l’ISBN seul, ou réessayer plus tard.',
   hors_ligne: 'Pas de connexion à internet : la recherche attendra le retour du réseau.',
 }
 
@@ -116,7 +116,7 @@ export function JeLaiAchete({
     if (!/^97[89]\d{10}$/.test(isbn) || !isbnValide(isbn)) {
       setErreurIsbn(
         /^\d{9}[\dX]$/.test(isbn)
-          ? 'Il me faut l’ISBN à 13 chiffres : il commence par 978 ou 979.'
+          ? 'L’ISBN à 13 chiffres est attendu : il commence par 978 ou 979.'
           : 'Cet ISBN ne semble pas juste : 13 chiffres, à vérifier sur le livre.',
       )
       refIsbn.current?.focus()
@@ -138,7 +138,7 @@ export function JeLaiAchete({
         return setMessage(
           deja.echec === 'reseau'
             ? 'Pas de connexion à internet : la recherche attendra le retour du réseau.'
-            : 'Ma bibliothèque n’a pas pu être consultée. Je réessaie dans un instant.',
+            : 'Ma bibliothèque n’a pas pu être consultée. Réessayer dans un instant.',
         )
       }
       if (deja.trouve && deja.trouve.id !== oeuvre.id) {
@@ -259,10 +259,10 @@ export function JeLaiAchete({
               surChange={setSaisie}
             />
             <Bouton type="submit" occupe={recherche || !enLigne}>
-              {recherche ? 'Je cherche…' : 'Chercher ce livre'}
+              {recherche ? 'Recherche…' : 'Chercher ce livre'}
             </Bouton>
             <p role="status" className="m-0 text-sm text-discret empty:hidden">
-              {recherche ? 'Je cherche dans ma bibliothèque et dans les catalogues…' : ''}
+              {recherche ? 'Recherche dans ma bibliothèque et dans les catalogues…' : ''}
             </p>
             {!enLigne && <p className="m-0 text-sm text-discret">Hors connexion : la recherche attendra le retour du réseau.</p>}
           </form>
@@ -280,7 +280,7 @@ export function JeLaiAchete({
                 )}
                 {(autreLivre || autreTome) && (
                   <p className={MESSAGE}>
-                    {autreLivre ? `Ce livre semble être « ${titreTrouve} ». Je vérifie l’ISBN.` : `Ce livre semble être le tome ${tomeTrouve}. Je vérifie l’ISBN.`}
+                    {autreLivre ? `Ce livre semble être « ${titreTrouve} ». Vérifier l’ISBN.` : `Ce livre semble être le tome ${tomeTrouve}. Vérifier l’ISBN.`}
                   </p>
                 )}
                 {lignes.length > 0 && (
@@ -316,7 +316,7 @@ export function JeLaiAchete({
             </p>
             <ActionsFeuille>
               <Bouton occupe={envoi || !enLigne || image.etat === 'recherche'} onClick={valider}>
-                {envoi ? 'J’enregistre…' : etape.catalogues === 'connu' ? 'C’est mon exemplaire' : 'Noter cet ISBN quand même'}
+                {envoi ? 'Enregistrement…' : etape.catalogues === 'connu' ? 'C’est mon exemplaire' : 'Noter cet ISBN quand même'}
               </Bouton>
               <Bouton variante="secondaire" onClick={changerIsbn}>
                 Changer d’ISBN

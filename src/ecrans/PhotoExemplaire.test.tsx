@@ -186,7 +186,7 @@ describe('« Je l’ai acheté » sans couverture trouvée', () => {
 
   it('pour un tome, seule la photo est proposée, et elle va sur ce tome', async () => {
     const { depot, couvertures } = await ouvrir('#/oeuvre/vin', { assistant: sansCouverture(TOME_2) })
-    fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: /^Tome 2 / }))
+    fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: /^Tome 2,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
     await acheter('9782351423561')
     expect(screen.getByRole('button', { name: PHOTO })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: AUTRES })).not.toBeInTheDocument()
@@ -221,7 +221,7 @@ describe('« Je l’ai acheté » sans couverture trouvée', () => {
     await act(async () => void window.dispatchEvent(new Event('offline')))
     expect(screen.getByRole('button', { name: PHOTO })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByRole('button', { name: AUTRES })).toHaveAttribute('aria-disabled', 'true')
-    expect(apercu().getByText('Hors connexion : une image ne pourrait pas être rangée. J’attends le retour du réseau.')).toBeInTheDocument()
+    expect(apercu().getByText('Hors connexion : une image ne pourrait pas être rangée. Attendre le retour du réseau.')).toBeInTheDocument()
     const clics = vi.spyOn(champPhoto(), 'click').mockImplementation(() => {})
     fireEvent.click(screen.getByRole('button', { name: PHOTO }))
     expect(clics).not.toHaveBeenCalled()

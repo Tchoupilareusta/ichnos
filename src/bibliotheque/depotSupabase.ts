@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { titresAffiches } from '../catalogue/titres'
 import { cibleCouverture, couvertureAffichee } from '../couvertures/choix'
-import type { ChoixTomes, CouvertureRangee, Depot, EchecEcriture, EnCours, Etiquette, ManqueCouverture, OeuvreDetaillee, OeuvreListee } from './depot'
+import type { CouvertureRangee, Depot, EchecEcriture, EnCours, Etiquette, ManqueCouverture, OeuvreDetaillee, OeuvreListee } from './depot'
 import { preparerEnvoi, type FichierCatalogue } from './envoiCatalogue'
 import {
   comparerTitres,
@@ -336,15 +336,6 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
     return { ok: true as const }
   }
 
-  async function ecrireTomes(id: string, tomes: ChoixTomes, valeurs: Record<string, unknown>) {
-    let requete = client.from('volumes').update(valeurs).eq('work_id', id)
-    if (tomes !== 'tous') requete = requete.gte('number', tomes.de).lte('number', tomes.a)
-    const { data, error } = await requete.select('number')
-    if (error) return { ok: false as const, echec: echecEcriture(error) }
-    if (!data || data.length === 0) return { ok: false as const, echec: 'introuvable' as const }
-    return { ok: true as const }
-  }
-
   return {
     async listerOeuvres() {
       const { data, error } = await client.from('works').select(COLONNES)
@@ -430,7 +421,6 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
 
     changerAppreciation: (id, appreciation) => ecrireEntree(id, { appreciation }),
 
-    changerLectureTomes: (id, tomes, lecture) => ecrireTomes(id, tomes, { reading_status: lecture }),
 
     async changerMedia(id, media, valeurs) {
       const changement: Record<string, unknown> = {}
@@ -446,7 +436,7 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
 
     changerMonEdition: (id, edition) => ecrireEntree(id, { edition_id: edition }),
 
-    changerPossessionTomes: (id: string, tomes: ChoixTomes, possession: Possession) => ecrireTomes(id, tomes, { ownership: possession }),
+    reglerTomes: (id, changements) => appeler('regler_tomes', { oeuvre: id, changements }),
 
     async noterAchat(id, achat) {
       const { data, error } = await client.rpc('noter_achat', { oeuvre: id, achat })

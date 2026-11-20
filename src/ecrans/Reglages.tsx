@@ -69,7 +69,7 @@ function MonCompte() {
     setErreur(
       resultat.echec === 'reseau'
         ? 'Pas de connexion à internet : la déconnexion attendra le retour du réseau.'
-        : 'La déconnexion n’a pas abouti. Je réessaie dans un instant.',
+        : 'La déconnexion n’a pas abouti. Réessayer dans un instant.',
     )
   }
 
@@ -80,7 +80,7 @@ function MonCompte() {
       </h2>
       <p className="m-0 mb-1 break-all text-discret">{compte.email}</p>
       <Bouton variante="secondaire" occupe={occupe} onClick={meDeconnecter}>
-        Me déconnecter
+        Se déconnecter
       </Bouton>
       {erreur && (
         <p role="alert" className="m-0 rounded-carte bg-accent-doux px-5 py-3 text-[0.9375rem] leading-snug text-accent-texte">

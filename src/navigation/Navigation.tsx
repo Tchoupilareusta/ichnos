@@ -1,6 +1,6 @@
 import type { Ecran } from './routes'
 import { LIENS } from './routes'
-import { useEnSaisie } from './saisie'
+import { useBarreDuBasMasquee, useEnSaisie } from './saisie'
 import { IconeAccueil, IconeAjouter, IconeBibliotheque, IconeDecouvrir, IconeReglages } from '../composants/Icones'
 
 const ONGLETS = [
@@ -11,7 +11,7 @@ const ONGLETS = [
 
 /** Barre du bas (iPhone), en forme de pilule flottante comme dans les maquettes. Masquée pendant une saisie. */
 export function BarreDuBas({ ecran }: { ecran: Ecran }) {
-  if (useEnSaisie()) return null
+  if (useBarreDuBasMasquee()) return null
   return (
     <nav
       aria-label="Navigation principale"
