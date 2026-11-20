@@ -84,6 +84,18 @@ describe('assistant (fonction serveur)', () => {
     })
   })
 
+  it('écarte sur l’appareil une image presque uniforme (page blanche, toile unie) : « pas de couverture »', async () => {
+    const image = { type: 'image/jpeg', base64: btoa('page-blanche') }
+    const { client } = fauxClient({ data: { trouve: true, source: 'open_library', image, largeur: 2480, hauteur: 3509 } })
+    const vues: number[] = []
+    const ecarter = async (blob: Blob) => (vues.push(blob.size), true)
+    expect(await creerAssistantSupabase(client, ecarter).couverture({ isbn: '9782253008484' })).toEqual({ ok: true, valeur: null })
+    expect(vues).toEqual(['page-blanche'.length])
+    // Une vraie couverture passe.
+    const garde = await creerAssistantSupabase(client, async () => false).couverture({ isbn: '9782253008484' })
+    expect(garde).toMatchObject({ ok: true, valeur: { largeur: 2480 } })
+  })
+
   it('rend « aucune couverture » sans en faire une erreur', async () => {
     const { client, appels } = fauxClient({ data: { trouve: false } })
     expect(await creerAssistantSupabase(client).couverture({ ref: { source: 'google_books', id: 'zyTCAlFPjgYC' } })).toEqual({ ok: true, valeur: null })
