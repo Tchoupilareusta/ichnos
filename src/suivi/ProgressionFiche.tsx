@@ -231,7 +231,7 @@ export function ProgressionFiche({
                 {oeuvre.estSerie ? 'Tous les tomes sont lus. Marquer la série comme terminée ?' : 'La fin est atteinte. Marquer ce livre comme terminé ?'}
               </p>
               <Bouton occupe={!enLigne} onClick={terminer}>
-                {oeuvre.estSerie ? 'Oui, j’ai terminé la série' : 'Oui, je l’ai terminé'}
+                {oeuvre.estSerie ? 'Oui, terminée' : 'Oui, terminé'}
               </Bouton>
             </>
           )}

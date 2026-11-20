@@ -106,7 +106,7 @@ describe('accès réservé', () => {
     const { appels } = await ouvrirConnecte()
     aller('#/reglages')
     expect(screen.getByText(MOI.email)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Me déconnecter' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Se déconnecter' }))
     expect(await screen.findByLabelText('Mon adresse e-mail')).toBeInTheDocument()
     expect(appels.deconnecter).toBe(1)
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()

@@ -42,7 +42,8 @@ const SEUIL_GLISSEMENT = 8
 const STYLE_TOME: Record<Possession, string> = {
   possede: 'border border-accent bg-accent font-bold text-sur-accent',
   a_acheter: 'border-2 border-dashed border-accent-texte bg-surface font-bold text-accent-texte',
-  non_possede: 'border border-bordure bg-transparent font-semibold text-discret',
+  // Le contour atteint 3:1 sur le fond (clair et sombre), sans peser autant qu'un tome que j'ai.
+  non_possede: 'border border-contour bg-transparent font-semibold text-discret',
 }
 
 const PASTILLE_LECTURE = 'flex size-[1.125rem] items-center justify-center rounded-full border border-bordure bg-surface text-accent-texte'
@@ -253,7 +254,10 @@ export function MesTomes({
   )
 }
 
-/** La légende, en deux lignes : la possession (le cercle), puis la lecture (la marque). */
+/**
+ * La légende, en deux lignes : la possession (le cercle), puis la lecture (la marque). Un tome sans
+ * marque est à lire : la légende ne le dit pas, l'étiquette VoiceOver de chaque tome, si.
+ */
 function Legende() {
   const element = 'flex items-center gap-1.5 whitespace-nowrap'
   return (
@@ -275,7 +279,6 @@ function Legende() {
             {libelleLectureTome(lecture)}
           </span>
         ))}
-        <span className={element}>À lire : rien</span>
       </dd>
     </dl>
   )

@@ -103,7 +103,7 @@ function DateDeFin({
   const max = `${aujourdhui.getFullYear()}-${String(aujourdhui.getMonth() + 1).padStart(2, '0')}-${String(aujourdhui.getDate()).padStart(2, '0')}`
 
   return (
-    <Feuille ouvert={ouvert} titre="Quand l’ai-je terminé ?" fermer={fermer}>
+    <Feuille ouvert={ouvert} titre="Date de fin" fermer={fermer}>
       <form
         noValidate
         className="flex flex-col gap-6"

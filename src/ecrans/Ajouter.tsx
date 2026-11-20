@@ -323,7 +323,7 @@ function AjoutAutomatique() {
 
         <section aria-labelledby="ajout-manuel" className="flex flex-col items-start gap-3">
           <h2 id="ajout-manuel" className="m-0 font-titre text-2xl">
-            Tout saisir moi-même
+            Tout saisir à la main
           </h2>
           <p className="m-0 max-w-[60ch] text-discret">Le formulaire complet, sans recherche : chaque champ est le mien.</p>
           <a href={LIENS.ajouterManuel} aria-label="Ouvrir le formulaire complet" className={`${LIEN_BORDE} mt-1`}>

@@ -230,7 +230,7 @@ describe('Réglages : remplacer les couvertures de petite taille', () => {
 describe('Réglages : déconnexion', () => {
   it('efface les couvertures gardées sur l’appareil', async () => {
     const { couvertures, auth } = await ouvrir()
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Me déconnecter' })))
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Se déconnecter' })))
     await laisserPasser(500)
     expect(auth.appels.deconnecter).toBe(1)
     expect(couvertures.appels.oublier).toBe(1)

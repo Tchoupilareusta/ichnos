@@ -33,6 +33,7 @@
   --sur-accent: #fbf8f3;
   --accent-doux: #eeddd8;
   --bordure: #ddd0c0;
+  --contour: #8f8172;
   --piste: #e6dacb;
   --barre: #550000;
   --surlignage: #ebd3cd;
@@ -52,6 +53,7 @@
     --sur-accent: #f5efe9;
     --accent-doux: #3a1e1d;
     --bordure: #3a3734;
+    --contour: #6e6862;
     --piste: #3a3734;
     --barre: #c46a6a;
     --surlignage: #4a2524;
@@ -71,6 +73,7 @@
   --sur-accent: #f5efe9;
   --accent-doux: #3a1e1d;
   --bordure: #3a3734;
+  --contour: #6e6862;
   --piste: #3a3734;
   --barre: #c46a6a;
   --surlignage: #4a2524;
@@ -90,6 +93,8 @@
   --color-sur-accent: var(--sur-accent);
   --color-accent-doux: var(--accent-doux);
   --color-bordure: var(--bordure);
+  /* Contour d'un tome « Je ne l'ai pas » : au moins 3:1 sur le fond, là où --bordure reste décoratif. */
+  --color-contour: var(--contour);
   --color-piste: var(--piste);
   --color-barre: var(--barre);
   --color-surlignage: var(--surlignage);

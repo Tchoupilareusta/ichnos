@@ -77,7 +77,7 @@ describe('écran « Ajouter »', () => {
     await ouvrir()
     expect(screen.getByRole('heading', { level: 1, name: 'Ajouter une œuvre' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Remplir automatiquement' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: 'Tout saisir moi-même' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Tout saisir à la main' })).toBeInTheDocument()
     expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveAttribute('inputmode', 'numeric')
     expect(screen.getByRole('link', { name: 'Ouvrir le formulaire complet' })).toHaveAttribute('href', '#/ajouter?mode=manuel')
   })

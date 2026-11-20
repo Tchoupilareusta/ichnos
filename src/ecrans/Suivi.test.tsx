@@ -101,7 +101,7 @@ describe('progression sur la fiche', () => {
     await ouvrir(faux, '#/oeuvre/sid')
     expect(screen.getByText('La fin est atteinte. Marquer ce livre comme terminé ?')).toBeInTheDocument()
     expect(faux.appels.ecritures).toHaveLength(0)
-    await cliquer(screen.getByRole('button', { name: 'Oui, je l’ai terminé' }))
+    await cliquer(screen.getByRole('button', { name: 'Oui, terminé' }))
     expect(ecritures(faux)).toEqual([{ action: 'statut', valeur: 'termine' }])
 
     // Puis mon ressenti, sans obligation.
@@ -175,7 +175,7 @@ describe('statut, parcours et ressenti sur la fiche', () => {
     const faux = depotFictif({ oeuvres: [siddhartha({ statut: 'termine', historique: [] })] })
     await ouvrir(faux, '#/oeuvre/sid')
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter la date de fin' }))
-    const panneau = screen.getByRole('dialog', { name: 'Quand l’ai-je terminé ?' })
+    const panneau = screen.getByRole('dialog', { name: 'Date de fin' })
     expect(within(panneau).getByRole('radio', { name: 'L’année' })).toBeChecked()
     fireEvent.change(within(panneau).getByLabelText('Année'), { target: { value: '2019' } })
     await cliquer(within(panneau).getByRole('button', { name: 'Enregistrer' }))
