@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { JeLaiAchete } from '../achat/JeLaiAchete'
 import { titresAffiches } from '../catalogue/titres'
 import { mentionTraduction, nomLangue } from '../catalogue/langues'
@@ -32,6 +32,7 @@ import { Dialogue } from '../composants/Dialogue'
 import { Feuille } from '../composants/Feuille'
 import { IconeAjouter, IconeChevronBas, IconeCoche, IconeModifier, IconeMoins, IconeRetour, IconeSignet } from '../composants/Icones'
 import { IconePossession, IconeStatut } from '../composants/IconesLecture'
+import { Isbn } from '../composants/Isbn'
 import { Menu } from '../composants/Menu'
 import { EtatVide, BoutonPrincipal, Page } from '../composants/Page'
 import { LIEN_ACTION, Section } from '../composants/Section'
@@ -469,8 +470,9 @@ function MonEdition({
   const precisions = edition
     ? ([
         ['Traduction', edition.translator],
-        ['ISBN', edition.isbn],
-      ].filter(([, valeur]) => valeur) as [string, string][])
+        // Avec ses tirets ; VoiceOver le lit chiffre par chiffre.
+        ['ISBN', edition.isbn ? <Isbn valeur={edition.isbn} /> : null],
+      ] as [string, ReactNode][]).filter(([, valeur]) => valeur)
     : []
 
   return (

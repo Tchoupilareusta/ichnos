@@ -29,6 +29,7 @@ import { EchecDepot, useEnregistrerOeuvre, useModifierOeuvre, useOeuvre, useVoca
 import { useSession } from '../session/Session'
 import { Bouton } from '../composants/Bouton'
 import { CHAMP, ChampListe, ChampLong, ChampTexte, Pastilles } from '../composants/Champs'
+import { ChampIsbn } from '../composants/Isbn'
 import { Dialogue } from '../composants/Dialogue'
 import { IconeAjouter, IconeChevronBas, IconeFermer, IconeSupprimer } from '../composants/Icones'
 import { BoutonPrincipal, EtatVide, Page, TitrePage } from '../composants/Page'
@@ -866,12 +867,11 @@ function ChampsEdition({
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2 flex flex-col gap-2">
-        <ChampTexte
+        <ChampIsbn
           id={idChamp.isbnEdition(edition.cle)}
           libelle="ISBN"
-          inputMode="numeric"
           value={edition.isbn}
-          onChange={(e) => changer(edition.cle, { isbn: e.target.value })}
+          surChange={(isbn) => changer(edition.cle, { isbn })}
           erreur={erreurs[idChamp.isbnEdition(edition.cle)]}
           autoComplete="off"
           enterKeyHint="done"
@@ -1140,12 +1140,11 @@ function Tomes({ etat, maj, erreurs, initial }: PropsBloc & { erreurs: Erreurs; 
                   onChange={(e) => maj({ tomes: etat.tomes.map((t) => (t.numero === tome.numero ? { ...t, titre: e.target.value } : t)) })}
                   autoComplete="off"
                 />
-                <ChampTexte
+                <ChampIsbn
                   id={idChamp.isbnTome(tome.numero)}
                   libelle={`Tome ${tome.numero} : ISBN`}
-                  inputMode="numeric"
                   value={tome.isbn}
-                  onChange={(e) => maj({ tomes: etat.tomes.map((t) => (t.numero === tome.numero ? { ...t, isbn: e.target.value } : t)) })}
+                  surChange={(isbn) => maj({ tomes: etat.tomes.map((t) => (t.numero === tome.numero ? { ...t, isbn } : t)) })}
                   erreur={erreurs[idChamp.isbnTome(tome.numero)]}
                   autoComplete="off"
                 />

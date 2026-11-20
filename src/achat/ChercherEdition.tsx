@@ -6,6 +6,7 @@ import { isbnCompact } from '../bibliotheque/modele'
 import { nomLangue } from '../catalogue/langues'
 import { Bouton } from '../composants/Bouton'
 import { ActionsFeuille, Feuille } from '../composants/Feuille'
+import { Isbn } from '../composants/Isbn'
 import { ApercuCouverture } from '../couvertures/ApercuCouverture'
 import { LIENS } from '../navigation/routes'
 import { useSession } from '../session/Session'
@@ -135,7 +136,7 @@ export function ChercherEdition({
   }
 
   return (
-    <Feuille ouvert={ouvert} titre={etat.nom === 'trouvee' ? 'Ce qui a été trouvé' : 'Chercher cette édition'} sousTitre={`ISBN ${isbnCompact(isbn)}`} fermer={fermer}>
+    <Feuille ouvert={ouvert} titre={etat.nom === 'trouvee' ? 'Ce qui a été trouvé' : 'Chercher cette édition'} sousTitre={<>ISBN <Isbn valeur={isbn} /></>} fermer={fermer}>
       <div data-etat={etat.nom} className="flex flex-col gap-5">
         {etat.nom === 'recherche' && (
           <p role="status" className="m-0 text-[0.9375rem] text-discret">

@@ -7,7 +7,7 @@ import { isbnCompact, isbnValide } from '../bibliotheque/modele'
 import { CLES } from '../bibliotheque/requetes'
 import { nomLangue } from '../catalogue/langues'
 import { Bouton } from '../composants/Bouton'
-import { ChampTexte } from '../composants/Champs'
+import { ChampIsbn, Isbn } from '../composants/Isbn'
 import { ActionsFeuille, Feuille } from '../composants/Feuille'
 import { ApercuCouverture } from '../couvertures/ApercuCouverture'
 import { LIENS } from '../navigation/routes'
@@ -223,16 +223,15 @@ export function JeLaiAchete({
       <div data-etat={etape.nom} className="flex flex-col gap-5">
         {etape.nom === 'isbn' && (
           <form noValidate onSubmit={chercher} className="flex flex-col gap-4">
-            <ChampTexte
+            <ChampIsbn
               ref={refIsbn}
               libelle="ISBN à 13 chiffres de mon exemplaire"
               aide="Au dos du livre, sous le code-barres. Tirets et espaces acceptés."
               erreur={erreurIsbn}
-              inputMode="numeric"
               autoComplete="off"
               enterKeyHint="search"
               value={saisie}
-              onChange={(e) => setSaisie(e.target.value)}
+              surChange={setSaisie}
             />
             <Bouton type="submit" occupe={recherche || !enLigne}>
               {recherche ? 'Je cherche…' : 'Chercher ce livre'}
@@ -282,7 +281,9 @@ export function JeLaiAchete({
             ) : (
               <p className="m-0 text-[1.0625rem] leading-relaxed">{SANS_CATALOGUE[etape.catalogues]}</p>
             )}
-            <p className="m-0 text-sm text-discret tabular-nums">ISBN {etape.isbn}</p>
+            <p className="m-0 text-sm text-discret">
+              ISBN <Isbn valeur={etape.isbn} />
+            </p>
             <ActionsFeuille>
               <Bouton occupe={envoi || !enLigne || image.etat === 'recherche'} onClick={valider}>
                 {envoi ? 'J’enregistre…' : etape.catalogues === 'connu' ? 'C’est mon exemplaire' : 'Noter cet ISBN quand même'}

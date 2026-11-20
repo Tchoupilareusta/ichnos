@@ -98,6 +98,10 @@ describe('fiche d’une œuvre', () => {
     // Mon édition tient en une ligne ; traduction et ISBN se déplient.
     expect(screen.getByText('Le Livre de Poche · poche · français')).toBeInTheDocument()
     expect(screen.getByText('Détails').closest('details')).toHaveTextContent('Joseph Delage')
+    // L'ISBN s'affiche avec ses tirets ; VoiceOver le lit chiffre par chiffre, sans les tirets.
+    const isbn = screen.getByText('978-2-253-01218-4')
+    expect(isbn).toHaveAttribute('aria-hidden', 'true')
+    expect(isbn.parentElement).toHaveTextContent('9 7 8 2 2 5 3 0 1 2 1 8 4')
     await choisirDansMenu(/Mon édition : Le Livre de Poche/, 'Penguin · anglais')
     expect(faux.appels.ecritures).toContainEqual({ action: 'monEdition', id: 'sid', valeur: 'e2' })
     expect(await screen.findByRole('heading', { level: 1, name: 'Siddhartha (en)' })).toBeInTheDocument()

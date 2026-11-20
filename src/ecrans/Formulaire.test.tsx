@@ -201,7 +201,7 @@ describe('modification d’une œuvre', () => {
     await ouvrir(faux, '#/oeuvre/sid/modifier')
     const titres = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
     expect(titres).toEqual(['Mon édition', 'Titre et auteur'])
-    expect(screen.getByLabelText('ISBN')).toHaveValue('9782253008484')
+    expect(screen.getByLabelText('ISBN')).toHaveValue('978-2-253-00848-4')
     expect(screen.getByLabelText('Pages')).toHaveValue('217')
     expect(screen.getByLabelText('Auteur')).toHaveValue('Hermann Hesse')
     // Le traducteur n'est pas en haut : il est dans « Détails de l'œuvre », replié.

@@ -8,6 +8,7 @@ import { useOeuvres } from '../bibliotheque/requetes'
 import { nomLangue } from '../catalogue/langues'
 import { Bouton } from '../composants/Bouton'
 import { ChampTexte } from '../composants/Champs'
+import { ChampIsbn } from '../composants/Isbn'
 import { Page, TitrePage } from '../composants/Page'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
@@ -273,16 +274,15 @@ function AjoutAutomatique() {
 
           <div className="grid grid-cols-1 gap-8 min-[64rem]:grid-cols-2 min-[64rem]:gap-12">
             <form noValidate onSubmit={chercherParIsbn} className="flex flex-col gap-4">
-              <ChampTexte
+              <ChampIsbn
                 ref={refIsbn}
                 libelle="ISBN à 13 chiffres"
                 aide="Au dos de mon exemplaire, sous le code-barres. Tirets et espaces acceptés."
                 erreur={erreurIsbn}
-                inputMode="numeric"
                 autoComplete="off"
                 enterKeyHint="search"
                 value={isbn}
-                onChange={(e) => setIsbn(e.target.value)}
+                surChange={setIsbn}
               />
               <Bouton type="submit" occupe={recherche !== null || !enLigne} className="self-start">
                 {recherche === 'isbn' ? 'Je cherche…' : 'Chercher ce livre'}

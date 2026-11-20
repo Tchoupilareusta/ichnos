@@ -108,7 +108,8 @@ describe('ajout par ISBN', () => {
     expect(screen.getByLabelText('Auteur')).toHaveValue('Michael Ende')
     expect(screen.getByLabelText('Éditeur')).toHaveValue('Bayard jeunesse')
     expect(screen.getByLabelText('Traduction')).toHaveValue('Corinna Gepner')
-    expect(screen.getByLabelText('ISBN')).toHaveValue(ISBN)
+    // Sans tirets en base, avec ses tirets dans le champ.
+    expect(screen.getByLabelText('ISBN')).toHaveValue('978-2-7470-2469-3')
     expect(screen.getByLabelText('Pages')).toHaveValue('430')
     expect(screen.getByLabelText('Pages')).toHaveAccessibleDescription(/D’après Google Books/)
     // L'édition trouvée est la mienne : elle est en haut, sous « Mon édition ».
@@ -175,7 +176,7 @@ describe('ajout par ISBN', () => {
     await ouvrir({ assistant: assistantFictif({ isbn: reponseIsbnFictive({ trouve: false, notice: noticeFictive() }) }) })
     await chercherIsbn(ISBN)
     expect(principal().getByRole('alert')).toHaveTextContent('Aucun catalogue ne connaît cet ISBN')
-    expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveValue(ISBN)
+    expect(screen.getByLabelText('ISBN à 13 chiffres')).toHaveValue('978-2-7470-2469-3')
   })
 
   it('pour l’ISBN d’un tome, prépare la série et range la couverture sur ce tome', async () => {
@@ -227,7 +228,7 @@ describe('œuvre déjà dans ma bibliothèque', () => {
     await attendre()
     expect(window.location.hash).toBe('#/oeuvre/momo/modifier')
     expect(screen.getByRole('heading', { level: 1, name: 'Modifier la fiche' })).toBeInTheDocument()
-    expect(screen.getAllByLabelText('ISBN').map((champ) => (champ as HTMLInputElement).value)).toEqual([ISBN, autreIsbn])
+    expect(screen.getAllByLabelText('ISBN').map((champ) => (champ as HTMLInputElement).value)).toEqual(['978-2-7470-2469-3', '978-2-07-036822-8'])
     await enregistrer()
     expect(depot.appels.enregistrerOeuvre[0]).toMatchObject({ id: 'momo', editions: [{ id: 'e1', isbn: ISBN, mienne: true }, { isbn: autreIsbn, publisher: 'Bayard jeunesse', mienne: false }] })
   })
