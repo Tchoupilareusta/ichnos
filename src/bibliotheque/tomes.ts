@@ -61,13 +61,12 @@ const tomes = (n: number) => (n === 1 ? '1 tome' : `${n} tomes`)
 /** « 4 tomes sélectionnés » */
 export const texteSelection = (n: number) => (n === 1 ? '1 tome sélectionné' : `${n} tomes sélectionnés`)
 
-/** Le message temporaire après un changement : « 4 tomes marqués « Je l’ai » ». */
-export const texteApplique = (n: number, choix: ChoixTomes) =>
-  `${n === 1 ? '1 tome marqué' : `${n} tomes marqués`} « ${libelleChoix(choix)} »`
+/** Le message temporaire après un changement, court pour tenir sur une ligne : « 6 tomes : Je l’ai », « Tome 4 : Lu ». */
+export const texteApplique = (numeros: number[], choix: ChoixTomes) =>
+  `${numeros.length === 1 ? `Tome ${numeros[0]}` : `${numeros.length} tomes`} : ${libelleChoix(choix)}`
 
-/** Quand aucun tome sélectionné ne change. */
-export const texteRienAChanger = (n: number, choix: ChoixTomes) =>
-  `${n === 1 ? 'Ce tome est déjà' : 'Ces tomes sont déjà'} « ${libelleChoix(choix)} » : rien n’a changé.`
+/** Quand aucun tome sélectionné ne change (court, pour tenir sur une ligne). */
+export const texteRienAChanger = (choix: ChoixTomes) => `Déjà « ${libelleChoix(choix)} » : rien n’a changé.`
 
 /** La confirmation au-delà du seuil : « Changer 12 tomes ? » */
 export const titreConfirmation = (n: number) => `Changer ${tomes(n)} ?`

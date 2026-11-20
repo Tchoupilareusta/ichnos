@@ -122,16 +122,22 @@ describe('série', () => {
     tomes: Array.from({ length: 12 }, (_, i) => ({ numero: i + 1, titre: null, isbn: null, possession: 'non_possede' as const, lecture: 'a_lire' as const })),
   }
 
-  it('calcule « J’en ai une partie », mène aux tomes, et montre une légende en deux lignes', async () => {
+  it('calcule « J’en ai une partie », mène aux tomes ; une ligne d’aide au-dessus de la grille, la légende dessous', async () => {
     await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
     const resume = screen.getByRole('button', { name: 'Possession : J’en ai une partie. Voir mes tomes' })
     expect(resume).not.toHaveAttribute('aria-haspopup')
     fireEvent.click(resume)
     expect(document.activeElement).toBe(document.getElementById('mes-tomes'))
     expect(within(grille()).getAllByRole('button')).toHaveLength(3)
-    expect(screen.getByText('Possession', { selector: 'dt' })).toBeInTheDocument()
+    const aide = screen.getByText('Toucher ou glisser pour sélectionner.')
+    const legende = screen.getByText('Possession', { selector: 'dt' })
     expect(screen.getByText('Lecture', { selector: 'dt' })).toBeInTheDocument()
-    expect(screen.getByText('Toucher les tomes à changer, ou glisser le doigt dessus. Appui long : les détails d’un tome.')).toBeInTheDocument()
+    expect(screen.getByText('Appui long sur un tome : ses détails.')).toBeInTheDocument()
+    // L'aide vient avant la grille, la légende après.
+    expect(aide.compareDocumentPosition(grille()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(grille().compareDocumentPosition(legende) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // « Tout sélectionner » n'a de sens qu'une fois la sélection commencée : il est dans le menu.
+    expect(screen.queryByRole('button', { name: 'Tout sélectionner' })).not.toBeInTheDocument()
     // Plus de menu « Tous les tomes » ni de lien « Changer plusieurs tomes ».
     expect(screen.queryByRole('button', { name: /Tous les tomes/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Changer plusieurs tomes' })).not.toBeInTheDocument()
@@ -153,9 +159,25 @@ describe('série', () => {
     // Toucher à nouveau désélectionne.
     fireEvent.click(tome3)
     expect(tome3).toHaveAttribute('aria-pressed', 'false')
+    // La croix du menu annule la sélection.
     fireEvent.click(within(barre()!).getByRole('button', { name: 'Annuler la sélection' }))
     expect(barre()).not.toBeInTheDocument()
     expect(screen.getAllByRole('navigation', { name: 'Navigation principale' })).toHaveLength(2)
+    // Ni « Détails du tome » ni grand bouton « Annuler la sélection » dans le menu.
+    fireEvent.click(tome3)
+    expect(within(barre()!).queryByRole('button', { name: 'Détails du tome' })).not.toBeInTheDocument()
+    expect(within(barre()!).getAllByRole('button', { name: /Annuler/ })).toHaveLength(1)
+  })
+
+  it('un toucher ailleurs que sur la grille et le menu vide la sélection', async () => {
+    await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
+    fireEvent.click(tome('Tome 2, à lire, à acheter'))
+    // Toucher dans le menu ne la vide pas.
+    fireEvent.click(within(barre()!).getByText('1 tome sélectionné'))
+    expect(barre()).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('heading', { level: 1, name: 'Vinland Saga' }))
+    expect(barre()).not.toBeInTheDocument()
+    expect(tome('Tome 2, à lire, à acheter')).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('applique un choix aux tomes sélectionnés en une écriture, puis « Annuler » remet l’état d’avant', async () => {
@@ -167,9 +189,9 @@ describe('série', () => {
     // Le tome 1 l'est déjà : seul le tome 3 change.
     expect(faux.appels.ecritures).toEqual([{ action: 'reglerTomes', id: 'vin', valeur: [{ numero: 3, possession: 'possede' }] }])
     expect(barre()).not.toBeInTheDocument()
-    expect(screen.getByText('1 tome marqué « Je l’ai »')).toBeInTheDocument()
+    expect(screen.getByText('Tome 3 : Je l’ai')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Tome 3, à lire, je l’ai' })).toBeInTheDocument()
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Annuler : 1 tome marqué « Je l’ai »' })))
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Annuler : Tome 3 : Je l’ai' })))
     expect(faux.appels.ecritures[1]).toEqual({
       action: 'reglerTomes',
       id: 'vin',
@@ -195,14 +217,15 @@ describe('série', () => {
     await ouvrirFiche(faux, 'vin')
     fireEvent.click(tome('Tome 1, à lire, je l’ai'))
     fireEvent.click(within(barre()!).getByRole('button', { name: 'Je l’ai' }))
-    expect(screen.getByText('Ce tome est déjà « Je l’ai » : rien n’a changé.')).toBeInTheDocument()
+    expect(screen.getByText('Déjà « Je l’ai » : rien n’a changé.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Annuler :/ })).not.toBeInTheDocument()
     expect(faux.appels.ecritures).toHaveLength(0)
   })
 
-  it('« Tout sélectionner », puis Maj + clic et Échap au clavier', async () => {
+  it('« Tout sélectionner » dans le menu, puis Maj + clic et Échap au clavier', async () => {
     await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
-    fireEvent.click(screen.getByRole('button', { name: 'Tout sélectionner' }))
+    fireEvent.click(tome('Tome 2, à lire, à acheter'))
+    fireEvent.click(within(barre()!).getByRole('button', { name: 'Tout sélectionner' }))
     expect(barre()).toHaveTextContent('3 tomes sélectionnés')
     expect(within(barre()!).queryByRole('button', { name: 'Tout sélectionner' })).not.toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -215,7 +238,8 @@ describe('série', () => {
   it('demande confirmation au-delà de dix tomes qui changent vraiment', async () => {
     const faux = depotFictif({ oeuvres: [SERIE_LONGUE] })
     await ouvrirFiche(faux, 'vin')
-    fireEvent.click(screen.getByRole('button', { name: 'Tout sélectionner' }))
+    fireEvent.click(within(grille()).getAllByRole('button')[0])
+    fireEvent.click(within(barre()!).getByRole('button', { name: 'Tout sélectionner' }))
     fireEvent.click(within(barre()!).getByRole('button', { name: 'Lu' }))
     const dialogue = screen.getByRole('dialog', { name: 'Changer 12 tomes ?' })
     expect(dialogue).toHaveTextContent('Ils seront marqués « Lu ». « Annuler » restera possible quelques secondes.')
@@ -223,23 +247,22 @@ describe('série', () => {
     await act(async () => fireEvent.click(within(dialogue).getByRole('button', { name: 'Changer' })))
     expect(faux.appels.ecritures).toHaveLength(1)
     expect(faux.appels.ecritures[0].valeur).toHaveLength(12)
-    expect(screen.getByText('12 tomes marqués « Lu »')).toBeInTheDocument()
+    expect(screen.getByText('12 tomes : Lu')).toBeInTheDocument()
   })
 
-  it('ouvre les détails d’un tome depuis la barre, avec son ISBN et « Je l’ai acheté »', async () => {
+  it('ouvre les détails d’un tome au clavier (touche I), avec son ISBN et « Je l’ai acheté »', async () => {
     const avecIsbn = { ...SERIE, tomes: SERIE.tomes.map((t) => (t.numero === 3 ? { ...t, isbn: '9782351420010' } : t)) }
     await ouvrirFiche(depotFictif({ oeuvres: [avecIsbn] }), 'vin')
-    fireEvent.click(tome('Tome 3, à lire, je ne l’ai pas'))
-    fireEvent.click(within(barre()!).getByRole('button', { name: 'Détails du tome' }))
+    const tome3 = tome('Tome 3, à lire, je ne l’ai pas')
+    expect(tome3).toHaveAttribute('aria-keyshortcuts', 'I')
+    fireEvent.keyDown(tome3, { key: 'i' })
     const panneau = screen.getByRole('dialog', { name: 'Tome 3' })
     expect(within(panneau).getByText('978-2-35142-001-0')).toBeInTheDocument()
     expect(within(panneau).getByRole('button', { name: 'Je l’ai acheté' })).toBeInTheDocument()
     // Le panneau ne change plus la lecture ni la possession : c'est le rôle de la barre.
     expect(within(panneau).queryByRole('radio')).not.toBeInTheDocument()
-    // Avec deux tomes sélectionnés, « Détails du tome » n'a plus de sens.
-    fireEvent.click(within(panneau).getByRole('button', { name: 'Fermer' }))
-    fireEvent.click(tome('Tome 1, à lire, je l’ai'))
-    expect(within(barre()!).queryByRole('button', { name: 'Détails du tome' })).not.toBeInTheDocument()
+    // Ouvrir les détails ne change pas la sélection.
+    expect(tome3).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('hors connexion : la sélection reste possible, les bulles sont grisées', async () => {

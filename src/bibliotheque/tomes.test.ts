@@ -78,13 +78,14 @@ describe('textes, sans erreur de nombre ni « je »', () => {
   it('compte les tomes sélectionnés et ceux qui ont changé', () => {
     expect(texteSelection(1)).toBe('1 tome sélectionné')
     expect(texteSelection(4)).toBe('4 tomes sélectionnés')
-    expect(texteApplique(1, { type: 'lecture', valeur: 'lu' })).toBe('1 tome marqué « Lu »')
-    expect(texteApplique(4, { type: 'possession', valeur: 'possede' })).toBe('4 tomes marqués « Je l’ai »')
+    // Court, pour tenir sur une ligne à 393 points : le numéro quand un seul tome change.
+    expect(texteApplique([4], { type: 'lecture', valeur: 'lu' })).toBe('Tome 4 : Lu')
+    expect(texteApplique([1, 2, 3, 5, 8, 9], { type: 'possession', valeur: 'possede' })).toBe('6 tomes : Je l’ai')
   })
 
   it('dit quand rien ne change', () => {
-    expect(texteRienAChanger(1, { type: 'possession', valeur: 'a_acheter' })).toBe('Ce tome est déjà « À acheter » : rien n’a changé.')
-    expect(texteRienAChanger(3, { type: 'lecture', valeur: 'en_cours' })).toBe('Ces tomes sont déjà « En cours » : rien n’a changé.')
+    expect(texteRienAChanger({ type: 'possession', valeur: 'a_acheter' })).toBe('Déjà « À acheter » : rien n’a changé.')
+    expect(texteRienAChanger({ type: 'lecture', valeur: 'en_cours' })).toBe('Déjà « En cours » : rien n’a changé.')
   })
 
   it('pose la question de confirmation à l’infinitif', () => {

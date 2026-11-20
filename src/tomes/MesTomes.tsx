@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent as EvenementSouris, type PointerEvent as EvenementPointeur } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent as EvenementSouris, type PointerEvent as EvenementPointeur, type ReactNode } from 'react'
 import type { OeuvreDetaillee, Tome } from '../bibliotheque/depot'
 import { POSSESSIONS, libellePossession, type Possession } from '../bibliotheque/modele'
 import type { EchecDepot, useModifierOeuvre } from '../bibliotheque/requetes'
@@ -20,11 +20,11 @@ import {
 import { Bouton } from '../composants/Bouton'
 import { Dialogue } from '../composants/Dialogue'
 import { ActionsFeuille, Feuille } from '../composants/Feuille'
-import { IconeCoche, IconeSignet } from '../composants/Icones'
+import { IconeCoche, IconeFermer, IconeSignet } from '../composants/Icones'
 import { IconePossession } from '../composants/IconesLecture'
 import { Isbn } from '../composants/Isbn'
 import { MessageTemporaire, type Message } from '../composants/MessageTemporaire'
-import { LIEN_ACTION, Section } from '../composants/Section'
+import { Section } from '../composants/Section'
 import { ChoisirImage } from '../couvertures/ChoisirImage'
 import { Couverture } from '../couvertures/Couverture'
 import { useMasquerBarreDuBas } from '../navigation/saisie'
@@ -46,28 +46,42 @@ const STYLE_TOME: Record<Possession, string> = {
   non_possede: 'border border-contour bg-transparent font-semibold text-discret',
 }
 
-const PASTILLE_LECTURE = 'flex size-[1.125rem] items-center justify-center rounded-full border border-bordure bg-surface text-accent-texte'
+const PASTILLE_LECTURE = 'flex items-center justify-center rounded-full border border-bordure bg-surface text-accent-texte'
 
-/** La marque de lecture d'un tome, posée dans son coin : une coche s'il est lu, un signet s'il est en cours. */
+/** La marque de lecture d'un tome, posée en haut à droite du cercle : une coche s'il est lu, un signet s'il est en cours. */
 function MarqueLecture({ lecture, dansLaLegende = false }: { lecture: LectureTome; dansLaLegende?: boolean }) {
   if (lecture === 'a_lire') return null
   return (
-    <span aria-hidden="true" className={`${PASTILLE_LECTURE} ${dansLaLegende ? '' : 'pointer-events-none absolute -top-1.5 -right-1.5'}`}>
-      {lecture === 'lu' ? <IconeCoche taille={12} /> : <IconeSignet taille={10} />}
+    <span
+      aria-hidden="true"
+      className={`${PASTILLE_LECTURE} ${dansLaLegende ? 'size-4' : 'pointer-events-none absolute -top-0.5 -right-0.5 size-5 shadow-douce'}`}
+    >
+      {lecture === 'lu' ? <IconeCoche taille={dansLaLegende ? 11 : 13} /> : <IconeSignet taille={dansLaLegende ? 9 : 11} />}
     </span>
   )
 }
 
-const MESSAGES_ECHEC: Record<string, string> = {
-  reseau: 'Pas de connexion à internet : rien n’a changé.',
-  introuvable: 'Ces tomes ne sont plus dans la bibliothèque : rien n’a changé.',
+/** L'icône d'un choix, dans le menu et dans le message qui le confirme. */
+function IconeChoix({ choix, taille = 16 }: { choix: ChoixTomes; taille?: number }) {
+  if (choix.type === 'possession') return <IconePossession possession={choix.valeur} taille={taille} />
+  if (choix.valeur === 'lu') return <IconeCoche taille={taille} />
+  if (choix.valeur === 'en_cours') return <IconeSignet taille={taille - 1} />
+  return null
 }
-const texteEchec = (erreur: EchecDepot) => MESSAGES_ECHEC[erreur.echec] ?? 'Ce changement n’a pas pu être enregistré : rien n’a changé.'
+
+const MESSAGES_ECHEC: Record<string, string> = {
+  reseau: 'Pas de connexion : rien n’a changé.',
+  introuvable: 'Tomes introuvables : rien n’a changé.',
+}
+const texteEchec = (erreur: EchecDepot) => MESSAGES_ECHEC[erreur.echec] ?? 'Échec de l’enregistrement : rien n’a changé.'
+
+/** Une touche du clavier ouvre les détails du tome qui a le focus (iPad avec clavier). */
+const estToucheDetails = (e: React.KeyboardEvent) => e.key === 'i' || e.key === 'I' || e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')
 
 /**
  * « Mes tomes » : sélectionner d'abord, puis appliquer (comme Photos). Toucher un tome le
  * sélectionne ou le désélectionne ; glisser le doigt en sélectionne plusieurs ; un appui long
- * ouvre ses détails. Dès qu'un tome est sélectionné, la barre d'actions remplace la barre du bas.
+ * ouvre ses détails. Le doigt levé, le menu de sélection remplace la barre du bas.
  */
 export function MesTomes({
   oeuvre,
@@ -91,8 +105,13 @@ export function MesTomes({
   const [message, setMessage] = useState<Message | null>(null)
   const [confirmation, setConfirmation] = useState<{ choix: ChoixTomes; preparation: ReturnType<typeof preparerChangement> } | null>(null)
   const refSection = useRef<HTMLDivElement>(null)
+  const refMenu = useRef<HTMLDivElement>(null)
 
-  useMasquerBarreDuBas(selection.size > 0)
+  const gestes = useGestesGrille({ numeros, selection, setSelection, ouvrirDetails: setDetails, poserAncre: setAncre })
+  // Le menu n'apparaît que le doigt levé : pendant un glissement, rien ne couvre la grille.
+  const menuOuvert = selection.size > 0 && !gestes.enCours
+
+  useMasquerBarreDuBas(menuOuvert)
 
   // Un tome retiré (depuis « Modifier ») quitte la sélection.
   const cleNumeros = numeros.join(',')
@@ -106,36 +125,52 @@ export function MesTomes({
 
   const vider = useCallback(() => setSelection(new Set()), [])
 
-  // Échap vide la sélection (clavier de l'iPad), sauf si un panneau ouvert la réclame.
+  // Échap vide la sélection (clavier de l'iPad), sauf si un panneau ouvert la réclame. Un toucher
+  // ailleurs que sur la grille ou le menu la vide aussi ; un défilement n'est pas un toucher (il ne
+  // produit pas de clic).
   useEffect(() => {
     if (selection.size === 0) return
     const surTouche = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('dialog[open]')) return
       vider()
     }
+    const surClic = (e: MouseEvent) => {
+      const cible = e.target as Node | null
+      if (!cible || document.querySelector('dialog[open]')) return
+      if (gestes.refGrille.current?.contains(cible) || refMenu.current?.contains(cible)) return
+      vider()
+    }
     window.addEventListener('keydown', surTouche)
-    return () => window.removeEventListener('keydown', surTouche)
-  }, [selection.size, vider])
+    document.addEventListener('click', surClic, true)
+    return () => {
+      window.removeEventListener('keydown', surTouche)
+      document.removeEventListener('click', surClic, true)
+    }
+  }, [selection.size, vider, gestes.refGrille])
 
   const effacerMessage = useCallback(() => setMessage(null), [])
 
-  function signaler(texte: string, annuler?: () => void) {
-    setMessage({ cle: Date.now(), texte, annuler, nomAnnuler: annuler ? `Annuler : ${texte}` : undefined })
+  function signaler(texte: string, options: { icone?: ReactNode; annuler?: () => void } = {}) {
+    setMessage({ cle: Date.now(), texte, icone: options.icone, annuler: options.annuler, nomAnnuler: options.annuler ? `Annuler : ${texte}` : undefined })
   }
 
   function executer(choix: ChoixTomes, { changements, annulation }: ReturnType<typeof preparerChangement>) {
-    const texte = texteApplique(changements.length, choix)
-    modifier.tomes.mutate(changements, { onError: (erreur) => signaler(texteEchec(erreur)) })
-    signaler(texte, () => modifier.tomes.mutate(annulation, { onError: (erreur) => signaler(texteEchec(erreur)) }))
+    const texte = texteApplique(
+      changements.map((c) => c.numero),
+      choix,
+    )
+    const echec = (erreur: EchecDepot) => signaler(texteEchec(erreur))
+    modifier.tomes.mutate(changements, { onError: echec })
+    signaler(texte, { icone: <IconeChoix choix={choix} />, annuler: () => modifier.tomes.mutate(annulation, { onError: echec }) })
     vider()
-    // La barre disparaît avec la sélection : le focus revient sur la section, et le message est annoncé.
+    // Le menu disparaît avec la sélection : le focus revient sur la section, et le message est annoncé.
     refSection.current?.closest('section')?.focus({ preventScroll: true })
   }
 
   function appliquer(choix: ChoixTomes) {
     if (!enLigne || selection.size === 0) return
     const preparation = preparerChangement(tomes, selection, choix)
-    if (preparation.changements.length === 0) return signaler(texteRienAChanger(selection.size, choix))
+    if (preparation.changements.length === 0) return signaler(texteRienAChanger(choix), { icone: <IconeChoix choix={choix} /> })
     if (preparation.changements.length > SEUIL_CONFIRMATION) return setConfirmation({ choix, preparation })
     executer(choix, preparation)
   }
@@ -151,27 +186,13 @@ export function MesTomes({
     setAncre(numero)
   }
 
-  const gestes = useGestesGrille({ numeros, selection, setSelection, ouvrirDetails: setDetails, poserAncre: setAncre })
   const tomeDetaille = tomes.find((t) => t.numero === details) ?? null
-  const tous = selection.size === tomes.length
 
   return (
-    <Section
-      titre="Mes tomes"
-      ancre={ANCRE_TOMES}
-      complement={
-        selection.size === 0 && (
-          <button type="button" onClick={() => setSelection(new Set(numeros))} className={LIEN_ACTION}>
-            Tout sélectionner
-          </button>
-        )
-      }
-    >
+    <Section titre="Mes tomes" ancre={ANCRE_TOMES}>
       <div ref={refSection} className="flex flex-col gap-3">
-        <Legende />
-        {/* Toujours affichée : la faire disparaître à la première sélection ferait remonter la grille sous le doigt. */}
-        <p id="aide-tomes" className="m-0 text-sm text-discret">
-          Toucher les tomes à changer, ou glisser le doigt dessus. Appui long : les détails d’un tome.
+        <p id="aide-tomes" className="m-0 text-[0.9375rem] text-discret">
+          Toucher ou glisser pour sélectionner.
         </p>
         <ul
           ref={gestes.refGrille}
@@ -182,24 +203,32 @@ export function MesTomes({
           onPointerUp={gestes.surPointeurFin}
           onPointerCancel={gestes.surPointeurFin}
           onContextMenu={gestes.surMenuContextuel}
-          className="m-0 grid touch-manipulation list-none grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-3 p-0 pt-2 select-none [-webkit-touch-callout:none]"
+          // Cinq colonnes sur iPhone (des cercles d'environ 58 points à 393) ; sur iPad, des cercles
+          // de taille fixe, et autant de colonnes que la largeur en permet.
+          className="m-0 grid touch-manipulation list-none grid-cols-5 gap-3 p-0 pt-1 select-none [-webkit-touch-callout:none] tablette:grid-cols-[repeat(auto-fill,3.75rem)]"
         >
           {tomes.map((tome) => {
             const choisi = selection.has(tome.numero)
             const appuye = gestes.appui === tome.numero
             return (
-              <li key={tome.numero} className="relative flex">
+              <li key={tome.numero} className="relative">
                 <button
                   type="button"
                   data-numero={tome.numero}
                   data-etat={choisi ? 'selectionne' : 'libre'}
                   aria-pressed={choisi}
+                  aria-keyshortcuts="I"
                   aria-label={`Tome ${tome.numero}${tome.titre ? `, ${tome.titre}` : ''}, ${libelleLectureTome(tome.lecture).toLocaleLowerCase('fr')}, ${libellePossession(tome.possession).toLocaleLowerCase('fr')}`}
                   onClick={(e) => {
                     if (gestes.clicAIgnorer()) return
                     basculer(tome.numero, e.shiftKey)
                   }}
-                  className={`flex h-11 w-full min-w-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] tabular-nums ring-offset-2 ring-offset-fond select-none focus-visible:outline-offset-[7px] [-webkit-touch-callout:none] data-[etat=selectionne]:ring-3 data-[etat=selectionne]:ring-anneau ${STYLE_TOME[tome.possession]} ${
+                  onKeyDown={(e) => {
+                    if (!estToucheDetails(e)) return
+                    e.preventDefault()
+                    setDetails(tome.numero)
+                  }}
+                  className={`flex aspect-square w-full cursor-pointer items-center justify-center rounded-full p-0 text-base tabular-nums ring-offset-2 ring-offset-fond select-none focus-visible:outline-offset-[7px] [-webkit-touch-callout:none] data-[etat=selectionne]:ring-3 data-[etat=selectionne]:ring-anneau ${STYLE_TOME[tome.possession]} ${
                     appuye
                       ? 'scale-[0.88] transition-transform duration-500 ease-out motion-reduce:scale-100 motion-reduce:opacity-70'
                       : 'transition-transform duration-200'
@@ -212,16 +241,17 @@ export function MesTomes({
             )
           })}
         </ul>
+        <Legende />
       </div>
 
-      <BarreTomes
-        selection={gestes.enCours ? new Set<number>() : selection}
-        tous={tous}
+      <MenuTomes
+        refMenu={refMenu}
+        selection={menuOuvert ? selection : new Set<number>()}
+        tous={selection.size === tomes.length}
         enLigne={enLigne}
         appliquer={appliquer}
         toutSelectionner={() => setSelection(new Set(numeros))}
         vider={vider}
-        ouvrirDetails={() => setDetails([...selection][0])}
         message={message}
         effacerMessage={effacerMessage}
       />
@@ -255,32 +285,36 @@ export function MesTomes({
 }
 
 /**
- * La légende, en deux lignes : la possession (le cercle), puis la lecture (la marque). Un tome sans
- * marque est à lire : la légende ne le dit pas, l'étiquette VoiceOver de chaque tome, si.
+ * La légende, sous la grille, en petit : c'est une référence, pas la première chose à lire. La
+ * possession (le cercle), la lecture (la marque ; un tome sans marque est à lire, et l'étiquette
+ * VoiceOver de chaque tome le dit), puis l'appui long.
  */
 function Legende() {
   const element = 'flex items-center gap-1.5 whitespace-nowrap'
   return (
-    <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1.5 text-sm text-discret">
-      <dt className="font-semibold text-encre">Possession</dt>
-      <dd className="m-0 flex flex-wrap gap-x-3 gap-y-1">
-        {POSSESSIONS.map((p) => (
-          <span key={p.valeur} className={element}>
-            <span aria-hidden="true" className={`inline-block size-3.5 shrink-0 rounded-full ${STYLE_TOME[p.valeur]}`} />
-            {p.libelle}
-          </span>
-        ))}
-      </dd>
-      <dt className="font-semibold text-encre">Lecture</dt>
-      <dd className="m-0 flex flex-wrap gap-x-3 gap-y-1">
-        {(['lu', 'en_cours'] as const).map((lecture) => (
-          <span key={lecture} className={element}>
-            <MarqueLecture lecture={lecture} dansLaLegende />
-            {libelleLectureTome(lecture)}
-          </span>
-        ))}
-      </dd>
-    </dl>
+    <div className="flex flex-col gap-1 pt-1 text-[0.8125rem] text-discret">
+      <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
+        <dt className="font-semibold">Possession</dt>
+        <dd className="m-0 flex flex-wrap gap-x-3 gap-y-1">
+          {POSSESSIONS.map((p) => (
+            <span key={p.valeur} className={element}>
+              <span aria-hidden="true" className={`inline-block size-3 shrink-0 rounded-full ${STYLE_TOME[p.valeur]}`} />
+              {p.libelle}
+            </span>
+          ))}
+        </dd>
+        <dt className="font-semibold">Lecture</dt>
+        <dd className="m-0 flex flex-wrap gap-x-3 gap-y-1">
+          {(['lu', 'en_cours'] as const).map((lecture) => (
+            <span key={lecture} className={element}>
+              <MarqueLecture lecture={lecture} dansLaLegende />
+              {libelleLectureTome(lecture)}
+            </span>
+          ))}
+        </dd>
+      </dl>
+      <p className="m-0">Appui long sur un tome : ses détails.</p>
+    </div>
   )
 }
 
@@ -505,34 +539,71 @@ function useGestesGrille({
   }
 }
 
+/** Une rangée de choix en contrôle segmenté : une seule pilule, des segments séparés par un filet. */
+function Segments({
+  nom,
+  options,
+  enLigne,
+  appliquer,
+}: {
+  nom: string
+  options: ChoixTomes[]
+  enLigne: boolean
+  appliquer: (choix: ChoixTomes) => void
+}) {
+  return (
+    <div role="group" aria-label={nom} className="flex rounded-pilule border border-bordure bg-fond">
+      {options.map((choix, i) => (
+        <button
+          key={choix.valeur}
+          type="button"
+          aria-disabled={!enLigne || undefined}
+          onClick={() => appliquer(choix)}
+          className={`flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-1 px-2 text-[0.875rem] font-semibold whitespace-nowrap text-encre transition-colors duration-150 first:rounded-l-pilule last:rounded-r-pilule focus-visible:outline-offset-[-3px] active:bg-accent-doux aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:bg-transparent ${
+            i > 0 ? 'border-l border-bordure' : ''
+          }`}
+        >
+          <IconeChoix choix={choix} />
+          {choix.type === 'possession'
+            ? BULLES_POSSESSION.find((p) => p.valeur === choix.valeur)!.libelle
+            : BULLES_LECTURE.find((l) => l.valeur === choix.valeur)!.libelle}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const CHOIX_POSSESSION: ChoixTomes[] = BULLES_POSSESSION.map((p) => ({ type: 'possession', valeur: p.valeur }))
+const CHOIX_LECTURE: ChoixTomes[] = BULLES_LECTURE.map((l) => ({ type: 'lecture', valeur: l.valeur }))
+
 /**
- * La barre d'actions : le nombre de tomes sélectionnés, les bulles Possession et Lecture, les
- * détails d'un tome, « Tout sélectionner » et « Annuler la sélection ». Juste au-dessus, le
- * message temporaire « 4 tomes marqués « Je l’ai » · Annuler ».
+ * Le menu de sélection, compact pour laisser voir la grille : le nombre de tomes sélectionnés,
+ * « Tout sélectionner » et la croix qui annule la sélection ; puis la possession et la lecture,
+ * chacune sur une ligne. Juste au-dessus, le message temporaire « 6 tomes : Je l'ai · Annuler ».
  */
-function BarreTomes({
+function MenuTomes({
+  refMenu,
   selection,
   tous,
   enLigne,
   appliquer,
   toutSelectionner,
   vider,
-  ouvrirDetails,
   message,
   effacerMessage,
 }: {
+  refMenu: React.RefObject<HTMLDivElement | null>
   selection: Set<number>
   tous: boolean
   enLigne: boolean
   appliquer: (choix: ChoixTomes) => void
   toutSelectionner: () => void
   vider: () => void
-  ouvrirDetails: () => void
   message: Message | null
   effacerMessage: () => void
 }) {
-  const ouverte = selection.size > 0
-  const refBarre = useRef<HTMLDivElement>(null)
+  const ouvert = selection.size > 0
+  const refPanneau = useRef<HTMLDivElement>(null)
   // La première annonce dit où sont les actions ; les suivantes, seulement le nombre. Le texte ne
   // change qu'avec le nombre de tomes sélectionnés (un nouveau rendu ne le refait pas).
   const annonce = useRef({ taille: 0, texte: '' })
@@ -544,113 +615,68 @@ function BarreTomes({
     }
   }
 
-  // La page garde assez de place en bas pour que la barre ne cache jamais la fin de la fiche.
+  // La page garde assez de place en bas pour que le menu ne cache jamais la fin de la fiche.
   useEffect(() => {
-    const barre = refBarre.current
+    const panneau = refPanneau.current
     const racine = document.documentElement
-    if (!barre || !ouverte) return
-    const mesurer = () => racine.style.setProperty('--place-barre', `${barre.offsetHeight}px`)
+    if (!panneau || !ouvert) return
+    const mesurer = () => racine.style.setProperty('--place-barre', `${panneau.offsetHeight}px`)
     mesurer()
     const observateur = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mesurer)
-    observateur?.observe(barre)
+    observateur?.observe(panneau)
     return () => {
       observateur?.disconnect()
       racine.style.removeProperty('--place-barre')
     }
-  }, [ouverte])
-
-  const bulle =
-    'flex min-h-11 cursor-pointer items-center gap-1 rounded-pilule border border-bordure bg-fond px-3 text-[0.875rem] font-semibold text-encre transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:scale-100'
-  const titreGroupe = 'm-0 text-[0.8125rem] font-bold tracking-wide text-discret'
+  }, [ouvert])
 
   return (
     // Sans sélection, la barre du bas de l'iPhone est revenue : le message se pose juste au-dessus d'elle.
     <div
       className={`fixed z-30 flex flex-col items-stretch gap-2.5 left-[calc(env(safe-area-inset-left)+1rem)] right-[calc(env(safe-area-inset-right)+1rem)] tablette:right-[max(2.5rem,env(safe-area-inset-right))] tablette:left-[calc(env(safe-area-inset-left)+18.5rem)] tablette:bottom-[max(env(safe-area-inset-bottom),1rem)] ${
-        ouverte ? 'bottom-[max(env(safe-area-inset-bottom),1rem)]' : 'bottom-[calc(max(env(safe-area-inset-bottom),1rem)+min(4.5rem,80px)+0.625rem)]'
+        ouvert ? 'bottom-[max(env(safe-area-inset-bottom),1rem)]' : 'bottom-[calc(max(env(safe-area-inset-bottom),1rem)+min(4.5rem,80px)+0.625rem)]'
       }`}
     >
-      <div className="flex flex-col items-stretch gap-2.5 tablette:mx-auto tablette:w-full tablette:max-w-[28rem]">
+      <div ref={refMenu} className="flex flex-col items-stretch gap-2.5 tablette:mx-auto tablette:w-full tablette:max-w-[26rem]">
         <MessageTemporaire message={message} effacer={effacerMessage} />
         <p role="status" className="sr-only">
           {annonce.current.texte}
         </p>
         <div
-          ref={refBarre}
+          ref={refPanneau}
           role="region"
           aria-label="Actions sur les tomes sélectionnés"
-          data-etat={ouverte ? 'ouvert' : 'ferme'}
-          hidden={!ouverte}
-          className="flex max-h-[calc(100dvh-env(safe-area-inset-top)-2rem)] flex-col gap-3 overflow-y-auto overscroll-contain rounded-panneau border border-bordure bg-surface p-3.5 shadow-forte [&[hidden]]:hidden"
+          data-etat={ouvert ? 'ouvert' : 'ferme'}
+          hidden={!ouvert}
+          className="flex max-h-[calc(100dvh-env(safe-area-inset-top)-2rem)] flex-col gap-2 overflow-y-auto overscroll-contain rounded-panneau border border-bordure bg-surface p-2.5 shadow-forte [&[hidden]]:hidden"
         >
-          {ouverte && (
+          {ouvert && (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-x-3">
-                <p className="m-0 text-[1.0625rem] font-bold" aria-hidden="true">
+              <div className="flex items-center gap-1.5">
+                <p className="m-0 min-w-0 flex-1 truncate pl-1.5 text-[0.875rem] font-bold" aria-hidden="true">
                   {texteSelection(selection.size)}
                 </p>
                 {!tous && (
-                  <button type="button" onClick={toutSelectionner} className={LIEN_ACTION}>
+                  <button
+                    type="button"
+                    onClick={toutSelectionner}
+                    className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-pilule border border-bordure bg-fond px-3 text-[0.8125rem] font-semibold whitespace-nowrap text-encre transition-transform duration-200 active:scale-[0.97]"
+                  >
                     Tout sélectionner
                   </button>
                 )}
+                <button
+                  type="button"
+                  aria-label="Annuler la sélection"
+                  onClick={vider}
+                  className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-pilule border border-bordure bg-fond text-encre transition-transform duration-200 active:scale-[0.97]"
+                >
+                  <IconeFermer taille={18} />
+                </button>
               </div>
-
-              <div role="group" aria-labelledby="groupe-possession" className="flex flex-col gap-1.5">
-                <p id="groupe-possession" className={titreGroupe}>
-                  Possession
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {BULLES_POSSESSION.map((p) => (
-                    <button
-                      key={p.valeur}
-                      type="button"
-                      aria-disabled={!enLigne || undefined}
-                      onClick={() => appliquer({ type: 'possession', valeur: p.valeur })}
-                      className={bulle}
-                    >
-                      <IconePossession possession={p.valeur} />
-                      {p.libelle}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div role="group" aria-labelledby="groupe-lecture" className="flex flex-col gap-1.5">
-                <p id="groupe-lecture" className={titreGroupe}>
-                  Lecture
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {BULLES_LECTURE.map((l) => (
-                    <button
-                      key={l.valeur}
-                      type="button"
-                      aria-disabled={!enLigne || undefined}
-                      onClick={() => appliquer({ type: 'lecture', valeur: l.valeur })}
-                      className={bulle}
-                    >
-                      {l.valeur === 'lu' && <IconeCoche taille={16} />}
-                      {l.valeur === 'en_cours' && <IconeSignet taille={15} />}
-                      {l.libelle}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {!enLigne && (
-                <p className="m-0 text-sm text-discret">Hors connexion : les tomes pourront changer au retour du réseau.</p>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                {selection.size === 1 && (
-                  <Bouton variante="secondaire" aria-haspopup="dialog" onClick={ouvrirDetails} className="flex-1 basis-auto px-4 whitespace-nowrap">
-                    Détails du tome
-                  </Bouton>
-                )}
-                <Bouton variante="secondaire" onClick={vider} className="flex-1 basis-auto px-4 whitespace-nowrap">
-                  Annuler la sélection
-                </Bouton>
-              </div>
+              <Segments nom="Possession" options={CHOIX_POSSESSION} enLigne={enLigne} appliquer={appliquer} />
+              <Segments nom="Lecture" options={CHOIX_LECTURE} enLigne={enLigne} appliquer={appliquer} />
+              {!enLigne && <p className="m-0 px-1.5 text-sm text-discret">Hors connexion : les tomes pourront changer au retour du réseau.</p>}
             </>
           )}
         </div>
