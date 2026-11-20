@@ -137,6 +137,29 @@ describe('« Chercher d’autres couvertures »', () => {
     ])
   })
 
+  it('dans « Modifier », Entrée dans la recherche lance la recherche sans enregistrer la fiche', async () => {
+    const erreurs = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const faux = trouve([proposition(1)])
+    const { depot } = await ouvrir('#/oeuvre/conte/modifier', { assistant: faux.assistant })
+    await chercherAutres()
+    // La recherche n'est pas un formulaire dans le formulaire de la fiche : en HTML, un formulaire
+    // intérieur est ignoré, et Entrée enverrait le formulaire principal.
+    expect(document.querySelectorAll('form form')).toHaveLength(0)
+    expect(erreurs.mock.calls.flat().join(' ')).not.toMatch(/descendant of <form>/)
+    const champ = panneau().getByLabelText('Titre')
+    fireEvent.change(champ, { target: { value: 'Contes du jour et de la nuit' } })
+    // Entrée est retenue (le navigateur n'envoie pas le formulaire de la fiche) et lance la recherche.
+    let laisse = true
+    await act(async () => {
+      laisse = fireEvent.keyDown(champ, { key: 'Enter' })
+    })
+    await attendre()
+    expect(laisse).toBe(false)
+    expect(faux.appels.autresCouvertures.at(-1)).toEqual({ titre: 'Contes du jour et de la nuit', langue: 'fr' })
+    expect(depot.appels.enregistrerOeuvre).toHaveLength(0)
+    erreurs.mockRestore()
+  })
+
   it('montre chaque couverture avec son éditeur, sa collection et son année, et dit quand elle est de petite taille', async () => {
     const faux = trouve(
       [proposition(1), proposition(2, { editeur: 'Hatier', collection: null, annee: null }), proposition(3, { editeur: null, collection: null, annee: 1957 })],
