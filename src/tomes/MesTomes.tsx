@@ -198,7 +198,7 @@ export function MesTomes({
                     if (gestes.clicAIgnorer()) return
                     basculer(tome.numero, e.shiftKey)
                   }}
-                  className={`flex h-11 w-full min-w-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] tabular-nums ring-offset-2 ring-offset-fond select-none [-webkit-touch-callout:none] data-[etat=selectionne]:ring-3 data-[etat=selectionne]:ring-anneau ${STYLE_TOME[tome.possession]} ${
+                  className={`flex h-11 w-full min-w-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] tabular-nums ring-offset-2 ring-offset-fond select-none focus-visible:outline-offset-[7px] [-webkit-touch-callout:none] data-[etat=selectionne]:ring-3 data-[etat=selectionne]:ring-anneau ${STYLE_TOME[tome.possession]} ${
                     appuye
                       ? 'scale-[0.88] transition-transform duration-500 ease-out motion-reduce:scale-100 motion-reduce:opacity-70'
                       : 'transition-transform duration-200'
@@ -313,6 +313,8 @@ function useGestesGrille({
     souris: boolean
     mode: 'indecis' | 'selection' | 'defilement'
     long: boolean
+    /** Le dernier tome survolé : rien à recalculer tant que le doigt reste dessus. */
+    courant?: number
   } | null>(null)
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Le clic qui suit un glissement ou un appui long ne doit rien changer. Il n'atteint pas toujours
@@ -399,7 +401,9 @@ function useGestesGrille({
     if (g.mode !== 'selection') return
     const sous = document.elementFromPoint(e.clientX, e.clientY)
     const courant = numeroDe(sous)
-    if (courant !== null) setSelection(selectionGlissee(numeros, g.avant, g.depart, courant))
+    if (courant === null || courant === g.courant) return
+    g.courant = courant
+    setSelection(selectionGlissee(numeros, g.avant, g.depart, courant))
   }
 
   function surFin(e: EvenementPointeur<HTMLUListElement>) {
@@ -515,7 +519,7 @@ function BarreTomes({
           aria-label="Actions sur les tomes sélectionnés"
           data-etat={ouverte ? 'ouvert' : 'ferme'}
           hidden={!ouverte}
-          className="flex flex-col gap-3 rounded-panneau border border-bordure bg-surface p-3.5 shadow-forte [&[hidden]]:hidden"
+          className="flex max-h-[calc(100dvh-env(safe-area-inset-top)-2rem)] flex-col gap-3 overflow-y-auto overscroll-contain rounded-panneau border border-bordure bg-surface p-3.5 shadow-forte [&[hidden]]:hidden"
         >
           {ouverte && (
             <>
