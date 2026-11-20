@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useRef, useState, type FormEvent, type Ref } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, type Ref } from 'react'
 import type { EchecAssistant, ImageTrouvee, PropositionCouverture } from '../ajout/assistant'
 import type { OeuvreDetaillee } from '../bibliotheque/depot'
 import { isbnValide } from '../bibliotheque/modele'
@@ -201,6 +201,15 @@ export function AutresCouvertures({
     )
   }
 
+  // Entrée dans un champ de la recherche relance la recherche. Elle est retenue (preventDefault) : la
+  // feuille est rendue dans le formulaire de « Modifier » ou d'« Ajouter », et Entrée enverrait sinon ce
+  // formulaire-là, donc enregistrerait la fiche.
+  const surEntree = (evenement: KeyboardEvent<HTMLInputElement>) => {
+    if (evenement.key !== 'Enter' || evenement.nativeEvent.isComposing) return
+    evenement.preventDefault()
+    void chercher({ titre, auteur })
+  }
+
   const pretes = proposees.filter((p): p is Extract<Proposee, { etat: 'prete' }> => p.etat === 'prete')
   const enAttente = proposees.some((p) => p.etat === 'attente')
   const rienTrouve = recherche === 'faite' && !message && !enAttente && pretes.length === 0
@@ -231,20 +240,14 @@ export function AutresCouvertures({
                 <IconeChevronBas taille={16} />
               </span>
             </summary>
-            <form
-              noValidate
-              onSubmit={(evenement: FormEvent) => {
-                evenement.preventDefault()
-                void chercher({ titre, auteur })
-              }}
-              className="flex flex-col gap-4 pt-2"
-            >
-              <ChampTexte libelle="Titre" erreur={erreurTitre} autoComplete="off" enterKeyHint="search" value={titre} onChange={(e) => setTitre(e.target.value)} />
-              <ChampTexte libelle="Auteur" aide="Facultatif : il départage les homonymes." autoComplete="off" enterKeyHint="search" value={auteur} onChange={(e) => setAuteur(e.target.value)} />
-              <Bouton type="submit" variante="secondaire" occupe={recherche === 'en_cours'}>
+            {/* Pas de <form> : celui-ci serait imbriqué dans le formulaire de la fiche, ce que le HTML ignore. */}
+            <div role="search" aria-label="Corriger la recherche" className="flex flex-col gap-4 pt-2">
+              <ChampTexte libelle="Titre" erreur={erreurTitre} autoComplete="off" enterKeyHint="search" value={titre} onChange={(e) => setTitre(e.target.value)} onKeyDown={surEntree} />
+              <ChampTexte libelle="Auteur" aide="Facultatif : il départage les homonymes." autoComplete="off" enterKeyHint="search" value={auteur} onChange={(e) => setAuteur(e.target.value)} onKeyDown={surEntree} />
+              <Bouton variante="secondaire" occupe={recherche === 'en_cours'} onClick={() => void chercher({ titre, auteur })}>
                 Chercher
               </Bouton>
-            </form>
+            </div>
           </details>
 
           <p role="status" className="m-0 text-[0.9375rem] text-discret empty:hidden">

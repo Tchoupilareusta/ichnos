@@ -120,8 +120,11 @@ describe('redresser', () => {
     const { creerToile, toiles } = atelier(scene)
     await redresser(PHOTO, LIVRE, creerToile)
     const origine = toiles.find((toile) => toile.poses.length > 0)!.poses[0]
-    // Aucun point de la couleur du parquet.
-    for (let i = 0; i < origine.length; i += 4) expect(origine[i] === 170 && origine[i + 1] === 120).toBe(false)
+    // Aucun point de la couleur du parquet. Les points sont comptés d'abord, puis vérifiés en une fois :
+    // un expect par point (900 000 pour 750 × 1200) prenait à lui seul plus de 5 s sur GitHub.
+    let parquet = 0
+    for (let i = 0; i < origine.length; i += 4) if (origine[i] === 170 && origine[i + 1] === 120) parquet++
+    expect(parquet).toBe(0)
     // Le haut du livre est sombre, le bas plus clair, comme sur la photo.
     expect(origine[0]).toBeLessThan(70)
     expect(origine[origine.length - 4]).toBeGreaterThan(160)
