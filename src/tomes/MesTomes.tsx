@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as EvenementPointeur } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent as EvenementSouris, type PointerEvent as EvenementPointeur } from 'react'
 import type { OeuvreDetaillee, Tome } from '../bibliotheque/depot'
 import { POSSESSIONS, libellePossession, type Possession } from '../bibliotheque/modele'
 import type { EchecDepot, useModifierOeuvre } from '../bibliotheque/requetes'
@@ -35,8 +35,8 @@ export const ANCRE_TOMES = 'mes-tomes'
 
 /** Sans bouger pendant ce temps, un appui sur un tome ouvre ses détails. */
 export const DUREE_APPUI_LONG = 500
-/** Distance (en points) au-delà de laquelle un appui devient un glissement. */
-const SEUIL_GLISSEMENT = 8
+/** Au-delà de cette distance (en points), l'appui n'est plus immobile : l'appui long est annulé, et le geste devient un glissement. */
+const SEUIL_GLISSEMENT = 10
 
 /** Le remplissage du cercle dit la possession : plein, pointillé, vide. */
 const STYLE_TOME: Record<Possession, string> = {
@@ -177,12 +177,12 @@ export function MesTomes({
           ref={gestes.refGrille}
           aria-label={`Tomes de ${titre}`}
           aria-describedby="aide-tomes"
-          onPointerDown={gestes.surDebut}
-          onPointerMove={gestes.surMouvement}
-          onPointerUp={gestes.surFin}
-          onPointerCancel={gestes.surFin}
+          onPointerDown={gestes.surPointeurDebut}
+          onPointerMove={gestes.surPointeurMouvement}
+          onPointerUp={gestes.surPointeurFin}
+          onPointerCancel={gestes.surPointeurFin}
           onContextMenu={gestes.surMenuContextuel}
-          className="m-0 grid touch-pan-y list-none grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-3 p-0 pt-2 select-none [-webkit-touch-callout:none]"
+          className="m-0 grid touch-manipulation list-none grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-3 p-0 pt-2 select-none [-webkit-touch-callout:none]"
         >
           {tomes.map((tome) => {
             const choisi = selection.has(tome.numero)
@@ -215,7 +215,7 @@ export function MesTomes({
       </div>
 
       <BarreTomes
-        selection={selection}
+        selection={gestes.enCours ? new Set<number>() : selection}
         tous={tous}
         enLigne={enLigne}
         appliquer={appliquer}
@@ -285,13 +285,20 @@ function Legende() {
 }
 
 /**
- * Les gestes sur la grille, distingués du défilement de la page :
- *  · un toucher sans bouger (le « clic ») sélectionne ou désélectionne le tome ;
- *  · un glissement parti d'un tome, d'abord plutôt horizontal (sur les 8 premiers points),
- *    sélectionne tous les tomes parcourus, comme dans Photos ; plutôt vertical, la page défile ;
- *  · avec une souris, tout glissement sélectionne (rien à faire défiler) ;
- *  · un appui d'une demi-seconde sans bouger ouvre les détails du tome (au doigt), comme le clic
- *    droit (à la souris), sans changer la sélection.
+ * Les gestes sur la grille, distingués du défilement de la page.
+ *
+ * Au doigt, tout passe par les événements tactiles (touchstart, touchmove, touchend). Sur iPhone,
+ * Safari cesse d'envoyer les événements de pointeur dès qu'il prend le geste pour un défilement,
+ * sans toujours envoyer pointercancel : un minuteur d'appui long armé sur pointerdown restait alors
+ * armé et ouvrait les détails au milieu d'un glissement. Les touchmove, eux, continuent d'arriver,
+ * et un preventDefault() sur touchmove est le moyen fiable d'empêcher le défilement.
+ *  · Un toucher sans bouger (le clic qui suit) sélectionne ou désélectionne le tome.
+ *  · Un glissement parti d'un tome, d'abord plutôt horizontal, sélectionne les tomes parcourus,
+ *    comme dans Photos ; plutôt vertical, la page défile normalement.
+ *  · Un appui immobile d'une demi-seconde ouvre les détails du tome ; le moindre mouvement
+ *    (10 points) ou un défilement l'annule.
+ * À la souris (iPad avec trackpad, ordinateur), les événements de pointeur : tout glissement
+ * sélectionne, et le clic droit ouvre les détails.
  */
 function useGestesGrille({
   numeros,
@@ -308,7 +315,6 @@ function useGestesGrille({
 }) {
   const refGrille = useRef<HTMLUListElement>(null)
   const geste = useRef<{
-    id: number
     x: number
     y: number
     depart: number
@@ -325,117 +331,170 @@ function useGestesGrille({
   // qui resterait levé et ferait perdre le toucher suivant.
   const ignorerJusqua = useRef(0)
   const [appui, setAppui] = useState<number | null>(null)
+  // Vrai pendant un glissement qui sélectionne : le menu attend que le doigt se lève.
+  const [enCours, setEnCours] = useState(false)
+  // Les écouteurs tactiles sont posés une fois : ils lisent les dernières valeurs ici.
+  const derniers = useRef({ numeros, selection, setSelection, ouvrirDetails, poserAncre })
+  derniers.current = { numeros, selection, setSelection, ouvrirDetails, poserAncre }
 
   const arreterMinuterie = () => {
     if (minuterie.current) clearTimeout(minuterie.current)
     minuterie.current = null
   }
 
-  // Pendant une sélection au doigt, la page ne défile pas ; après un appui long, le toucher qui
-  // se termine ne devient pas un clic (il fermerait le panneau qui vient de s'ouvrir).
-  useEffect(() => {
-    const grille = refGrille.current
-    if (!grille) return
-    const surMouvement = (e: TouchEvent) => {
-      if (geste.current?.mode === 'selection') e.preventDefault()
-    }
-    const surFin = (e: TouchEvent) => {
-      if (geste.current?.long || geste.current?.mode === 'selection') e.preventDefault()
-    }
-    grille.addEventListener('touchmove', surMouvement, { passive: false })
-    grille.addEventListener('touchend', surFin, { passive: false })
-    return () => {
-      grille.removeEventListener('touchmove', surMouvement)
-      grille.removeEventListener('touchend', surFin)
-    }
-  }, [])
-
-  useEffect(() => arreterMinuterie, [])
-
   const numeroDe = (cible: EventTarget | null) => {
     const bouton = cible instanceof Element ? cible.closest<HTMLElement>('[data-numero]') : null
     return bouton && refGrille.current?.contains(bouton) ? Number(bouton.dataset.numero) : null
   }
 
-  function surDebut(e: EvenementPointeur<HTMLUListElement>) {
-    const souris = e.pointerType === 'mouse'
-    if (souris && e.button !== 0) return
-    const numero = numeroDe(e.target)
-    if (numero === null) return
-    // Un nouveau toucher : le clic d'un geste précédent ne peut plus arriver.
+  /** Commencer un geste sur un tome ; au doigt, l'appui long s'arme. */
+  function commencer(numero: number, x: number, y: number, souris: boolean) {
     ignorerJusqua.current = 0
-    geste.current = { id: e.pointerId, x: e.clientX, y: e.clientY, depart: numero, avant: new Set(selection), souris, mode: 'indecis', long: false }
+    arreterMinuterie()
+    geste.current = { x, y, depart: numero, avant: new Set(derniers.current.selection), souris, mode: 'indecis', long: false }
     if (souris) return
     setAppui(numero)
-    arreterMinuterie()
     minuterie.current = setTimeout(() => {
       const g = geste.current
       if (!g || g.mode !== 'indecis') return
       g.long = true
       setAppui(null)
-      ouvrirDetails(numero)
+      derniers.current.ouvrirDetails(numero)
     }, DUREE_APPUI_LONG)
   }
 
-  function surMouvement(e: EvenementPointeur<HTMLUListElement>) {
+  /** Suivre le doigt ou la souris ; rend vrai quand la page ne doit pas défiler. */
+  function suivre(x: number, y: number): boolean {
     const g = geste.current
-    if (!g || e.pointerId !== g.id || g.long) return
+    if (!g) return false
+    if (g.long) return true
     if (g.mode === 'indecis') {
-      const dx = e.clientX - g.x
-      const dy = e.clientY - g.y
-      if (Math.hypot(dx, dy) < SEUIL_GLISSEMENT) return
+      const dx = x - g.x
+      const dy = y - g.y
+      // Tant que le geste n'est pas décidé, la page ne défile pas s'il penche vers l'horizontale.
+      if (Math.hypot(dx, dy) < SEUIL_GLISSEMENT) return !g.souris && Math.abs(dx) > Math.abs(dy)
       arreterMinuterie()
       setAppui(null)
-      if (g.souris || Math.abs(dx) >= Math.abs(dy)) {
-        g.mode = 'selection'
-        // À la souris, la grille garde le pointeur même s'il en sort un instant.
-        if (g.souris) {
-          try {
-            e.currentTarget.setPointerCapture(e.pointerId)
-          } catch {
-            // Pointeur déjà relâché : rien à garder.
-          }
-        }
-      } else {
+      if (!g.souris && Math.abs(dx) < Math.abs(dy)) {
         g.mode = 'defilement'
-        return
+        return false
       }
+      g.mode = 'selection'
+      setEnCours(true)
     }
-    if (g.mode !== 'selection') return
-    const sous = document.elementFromPoint(e.clientX, e.clientY)
-    const courant = numeroDe(sous)
-    if (courant === null || courant === g.courant) return
-    g.courant = courant
-    setSelection(selectionGlissee(numeros, g.avant, g.depart, courant))
+    if (g.mode !== 'selection') return false
+    const courant = numeroDe(document.elementFromPoint(x, y))
+    if (courant !== null && courant !== g.courant) {
+      g.courant = courant
+      const { numeros: liste, setSelection: choisir } = derniers.current
+      choisir(selectionGlissee(liste, g.avant, g.depart, courant))
+    }
+    return true
   }
 
-  function surFin(e: EvenementPointeur<HTMLUListElement>) {
+  /** Fin du geste ; rend vrai quand le clic qui suit doit être ignoré. */
+  function finir(): boolean {
     const g = geste.current
-    if (!g || e.pointerId !== g.id) return
     arreterMinuterie()
     setAppui(null)
-    if (g.mode === 'selection') poserAncre(g.depart)
-    if (g.mode === 'selection' || g.long) ignorerJusqua.current = performance.now() + 600
-    // Le clic qui suit le geste est ignoré ; le geste lui-même est oublié juste après.
-    setTimeout(() => {
-      if (geste.current === g) geste.current = null
-    }, 0)
+    setEnCours(false)
+    geste.current = null
+    if (!g) return false
+    if (g.mode === 'selection') derniers.current.poserAncre(g.depart)
+    const ignorer = g.mode === 'selection' || g.long
+    if (ignorer) ignorerJusqua.current = performance.now() + 600
+    return ignorer
   }
 
-  function surMenuContextuel(e: React.MouseEvent<HTMLUListElement>) {
+  // Au doigt : les événements tactiles, non passifs pour pouvoir empêcher le défilement.
+  useEffect(() => {
+    const grille = refGrille.current
+    if (!grille) return
+    const surDebut = (e: TouchEvent) => {
+      const numero = numeroDe(e.target)
+      if (e.touches.length !== 1 || numero === null) {
+        if (geste.current && !geste.current.souris) finir()
+        return
+      }
+      commencer(numero, e.touches[0].clientX, e.touches[0].clientY, false)
+    }
+    const surMouvement = (e: TouchEvent) => {
+      if (!geste.current || geste.current.souris || e.touches.length !== 1) return
+      if (suivre(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault()
+    }
+    const surFin = (e: TouchEvent) => {
+      if (!geste.current || geste.current.souris) return
+      // Après un glissement ou un appui long, le doigt levé ne devient pas un clic.
+      if (finir() && e.cancelable) e.preventDefault()
+    }
+    const surAnnulation = () => {
+      if (geste.current && !geste.current.souris) finir()
+    }
+    // Si la page défile quand même, l'appui n'est plus immobile : l'appui long est annulé.
+    const surDefilement = () => {
+      const g = geste.current
+      if (g && !g.souris && g.mode === 'indecis') {
+        arreterMinuterie()
+        setAppui(null)
+        g.mode = 'defilement'
+      }
+    }
+    grille.addEventListener('touchstart', surDebut, { passive: true })
+    grille.addEventListener('touchmove', surMouvement, { passive: false })
+    grille.addEventListener('touchend', surFin, { passive: false })
+    grille.addEventListener('touchcancel', surAnnulation)
+    window.addEventListener('scroll', surDefilement, { passive: true })
+    return () => {
+      grille.removeEventListener('touchstart', surDebut)
+      grille.removeEventListener('touchmove', surMouvement)
+      grille.removeEventListener('touchend', surFin)
+      grille.removeEventListener('touchcancel', surAnnulation)
+      window.removeEventListener('scroll', surDefilement)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => arreterMinuterie, [])
+
+  // À la souris : les événements de pointeur. Ceux d'un doigt ou d'un stylet sont laissés aux
+  // événements tactiles ci-dessus (Safari les envoie aussi, mais pas jusqu'au bout d'un geste).
+  function surPointeurDebut(e: EvenementPointeur<HTMLUListElement>) {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    const numero = numeroDe(e.target)
+    if (numero === null) return
+    commencer(numero, e.clientX, e.clientY, true)
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Pointeur déjà relâché : rien à garder.
+    }
+  }
+
+  function surPointeurMouvement(e: EvenementPointeur<HTMLUListElement>) {
+    if (e.pointerType !== 'mouse' || !geste.current?.souris) return
+    suivre(e.clientX, e.clientY)
+  }
+
+  function surPointeurFin(e: EvenementPointeur<HTMLUListElement>) {
+    if (e.pointerType !== 'mouse' || !geste.current?.souris) return
+    finir()
+  }
+
+  function surMenuContextuel(e: EvenementSouris<HTMLUListElement>) {
     // Ni menu « Copier / Chercher », ni menu du navigateur sur la grille.
     e.preventDefault()
     const numero = numeroDe(e.target)
-    if (numero === null || geste.current?.long) return
-    ouvrirDetails(numero)
+    if (numero === null || (geste.current && !geste.current.souris)) return
+    derniers.current.ouvrirDetails(numero)
   }
 
   return {
     refGrille,
     appui,
-    surDebut,
-    surMouvement,
-    surFin,
+    enCours,
+    surPointeurDebut,
+    surPointeurMouvement,
+    surPointeurFin,
     surMenuContextuel,
     /** Vrai si le clic vient d'un glissement ou d'un appui long : il ne change rien. */
     clicAIgnorer: () => {

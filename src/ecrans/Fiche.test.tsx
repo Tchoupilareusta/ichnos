@@ -113,7 +113,7 @@ describe('fiche d’une œuvre', () => {
   })
 })
 
-﻿describe('série', () => {
+describe('série', () => {
   const grille = () => screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
   const tome = (nom: string) => within(grille()).getByRole('button', { name: nom })
   const barre = () => screen.queryByRole('region', { name: 'Actions sur les tomes sélectionnés' })
@@ -254,7 +254,7 @@ describe('fiche d’une œuvre', () => {
     expect(barre()).toHaveTextContent('Hors connexion : les tomes pourront changer au retour du réseau.')
   })
 
-﻿  describe('gestes au doigt', () => {
+  describe('gestes', () => {
     // jsdom n'a ni PointerEvent ni elementFromPoint : un petit équivalent suffit pour ces tests.
     class FauxPointeur extends MouseEvent {
       pointerId: number
@@ -274,63 +274,100 @@ describe('fiche d’une œuvre', () => {
       vi.unstubAllGlobals()
       vi.useRealTimers()
     })
-    const appuyer = (el: Element, x: number, y: number) => fireEvent(el, new FauxPointeur('pointerdown', { bubbles: true, clientX: x, clientY: y, button: 0 }))
-    const bouger = (el: Element, x: number, y: number) => {
-      sousLeDoigt = el
-      fireEvent(el, new FauxPointeur('pointermove', { bubbles: true, clientX: x, clientY: y }))
+
+    /*
+     * Ce que Safari envoie sur iPhone : au toucher, pointerdown puis touchstart. Dès qu'il prend le
+     * geste pour un défilement, il cesse d'envoyer les événements de pointeur, sans toujours envoyer
+     * pointercancel ; les touchmove, eux, continuent. Les gestes au doigt ne doivent donc compter que
+     * sur les événements tactiles. fireEvent rend false quand l'événement a été empêché (preventDefault).
+     */
+    const poser = (el: Element, x: number, y: number) => {
+      fireEvent(el, new FauxPointeur('pointerdown', { bubbles: true, clientX: x, clientY: y, button: 0 }))
+      return fireEvent.touchStart(el, { touches: [{ clientX: x, clientY: y }], changedTouches: [{ clientX: x, clientY: y }] })
     }
-    const lever = (el: Element) => {
-      fireEvent(el, new FauxPointeur('pointerup', { bubbles: true }))
-      fireEvent.click(el)
+    const glisser = (depart: Element, sous: Element, x: number, y: number) => {
+      sousLeDoigt = sous
+      return fireEvent.touchMove(depart, { touches: [{ clientX: x, clientY: y }], changedTouches: [{ clientX: x, clientY: y }] })
     }
+    const lever = (depart: Element, x: number, y: number) =>
+      fireEvent.touchEnd(depart, { touches: [], changedTouches: [{ clientX: x, clientY: y }] })
 
-    it('un glissement d’abord horizontal sélectionne les tomes parcourus, sans clic en trop', async () => {
-      await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
-      const [t1, t2, t3] = within(grille()).getAllByRole('button')
-      appuyer(t1, 10, 10)
-      bouger(t1, 22, 12)
-      bouger(t2, 60, 12)
-      bouger(t3, 110, 14)
-      lever(t3)
-      expect([t1, t2, t3].map((t) => t.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
-      expect(barre()).toHaveTextContent('3 tomes sélectionnés')
-    })
-
-    it('après un glissement fini sur un autre tome, le toucher suivant compte', async () => {
-      await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
-      const [t1, t2, t3] = within(grille()).getAllByRole('button')
-      appuyer(t1, 10, 10)
-      bouger(t1, 22, 12)
-      bouger(t2, 60, 12)
-      // Le doigt se lève sur le tome 2 : le clic part sur la grille, pas sur un bouton.
-      fireEvent(t2, new FauxPointeur('pointerup', { bubbles: true }))
-      fireEvent.click(grille())
-      appuyer(t3, 110, 10)
-      lever(t3)
-      expect([t1, t2, t3].map((t) => t.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
-    })
-
-    it('un glissement d’abord vertical laisse la page défiler et ne sélectionne rien', async () => {
+    it('au doigt, un glissement vertical annule l’appui long, même quand Safari cesse d’envoyer les événements de pointeur', async () => {
+      vi.useFakeTimers()
       await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
       const [t1, t2] = within(grille()).getAllByRole('button')
-      appuyer(t1, 10, 10)
-      bouger(t1, 12, 30)
-      bouger(t2, 60, 60)
-      fireEvent(t2, new FauxPointeur('pointercancel', { bubbles: true }))
+      poser(t1, 10, 10)
+      // Ni pointermove ni pointercancel : seuls les touchmove arrivent.
+      expect(glisser(t1, t1, 11, 22)).toBe(true)
+      glisser(t1, t2, 12, 60)
+      act(() => vi.advanceTimersByTime(800))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      lever(t1, 12, 60)
       expect(barre()).not.toBeInTheDocument()
     })
 
-    it('un appui long ouvre les détails du tome sans changer la sélection', async () => {
+    it('au doigt, un glissement d’abord horizontal sélectionne les tomes parcourus, sans laisser la page défiler', async () => {
+      vi.useFakeTimers()
+      await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
+      const [t1, t2, t3] = within(grille()).getAllByRole('button')
+      poser(t1, 10, 10)
+      // Dès que le geste penche vers l'horizontale, la page ne défile plus.
+      expect(glisser(t1, t1, 14, 11)).toBe(false)
+      expect(glisser(t1, t1, 22, 12)).toBe(false)
+      glisser(t1, t2, 70, 14)
+      glisser(t1, t3, 130, 40)
+      // Pendant le glissement, rien ne couvre la grille.
+      expect(barre()).not.toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(800))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(lever(t1, 130, 40)).toBe(false)
+      fireEvent.click(grille())
+      expect([t1, t2, t3].map((t) => t.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
+      // Le doigt levé, le menu apparaît.
+      expect(barre()).toHaveTextContent('3 tomes sélectionnés')
+    })
+
+    it('au doigt, un appui immobile d’une demi-seconde ouvre les détails sans changer la sélection', async () => {
       vi.useFakeTimers()
       await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
       const t2 = tome('Tome 2, à lire, à acheter')
-      appuyer(t2, 10, 10)
+      poser(t2, 10, 10)
+      glisser(t2, t2, 13, 12) // un léger tremblement ne l'annule pas
       act(() => vi.advanceTimersByTime(500))
       expect(screen.getByRole('dialog', { name: 'Tome 2' })).toBeInTheDocument()
-      lever(t2)
+      // Le doigt levé ne devient pas un clic (il fermerait le panneau).
+      expect(lever(t2, 13, 12)).toBe(false)
       expect(t2).toHaveAttribute('aria-pressed', 'false')
     })
+
+    it('au doigt, un toucher sélectionne le tome au moment où le doigt se lève', async () => {
+      vi.useFakeTimers()
+      await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
+      const t3 = tome('Tome 3, à lire, je ne l’ai pas')
+      poser(t3, 10, 10)
+      expect(lever(t3, 10, 10)).toBe(true)
+      fireEvent.click(t3)
+      expect(t3).toHaveAttribute('aria-pressed', 'true')
+      act(() => vi.advanceTimersByTime(800))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('à la souris, tout glissement sélectionne', async () => {
+      await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
+      const [t1, t2, t3] = within(grille()).getAllByRole('button')
+      const souris = (type: string, el: Element, x: number, y: number) =>
+        fireEvent(el, new FauxPointeur(type, { bubbles: true, clientX: x, clientY: y, button: 0, pointerType: 'mouse' }))
+      souris('pointerdown', t1, 10, 10)
+      sousLeDoigt = t2
+      souris('pointermove', t1, 12, 40)
+      sousLeDoigt = t3
+      souris('pointermove', t1, 110, 40)
+      souris('pointerup', t3, 110, 40)
+      fireEvent.click(grille())
+      expect([t1, t2, t3].map((t) => t.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true'])
+    })
   })
+
   it('montre le média associé', async () => {
     await ouvrirFiche(depotFictif({ oeuvres: [SERIE] }), 'vin')
     expect(screen.getByText('Anime · 2 saisons · 48 épisodes')).toBeInTheDocument()
