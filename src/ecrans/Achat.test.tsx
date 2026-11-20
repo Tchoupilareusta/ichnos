@@ -145,6 +145,10 @@ describe('« Je l’ai acheté » : un livre', () => {
     // La couverture de cette édition, cherchée par l'ISBN dans les deux sources.
     expect(assistant.appels.couverture).toEqual([{ isbn: ISBN }])
     expect(panneau().getByText('Couverture trouvée sur Open Library.')).toBeInTheDocument()
+    // L'ISBN s'affiche avec ses tirets ; VoiceOver le lit chiffre par chiffre.
+    const isbn = panneau().getByText('978-2-07-036002-4')
+    expect(isbn).toHaveAttribute('aria-hidden', 'true')
+    expect(isbn.parentElement).toHaveTextContent('9 7 8 2 0 7 0 3 6 0 0 2 4')
     expect(achats(depot)).toHaveLength(0)
     expect(couvertures.deposees).toHaveLength(0)
   })
@@ -272,7 +276,7 @@ describe('« Je l’ai acheté » : un livre', () => {
     await ouvrirAchat()
     await saisirIsbn(ISBN)
     fireEvent.click(panneau().getByRole('button', { name: 'Changer d’ISBN' }))
-    expect(panneau().getByLabelText('ISBN à 13 chiffres de mon exemplaire')).toHaveValue(ISBN)
+    expect(panneau().getByLabelText('ISBN à 13 chiffres de mon exemplaire')).toHaveValue('978-2-07-036002-4')
     expect(achats(depot)).toHaveLength(0)
   })
 

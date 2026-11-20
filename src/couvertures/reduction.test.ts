@@ -1,3 +1,4 @@
+import { estMarquee, marquer } from './marque'
 import type { ToilePhoto } from './photo'
 import { estPetite, POIDS_SANS_RETOUCHE, reduireImage, tailleRangee } from './reduction'
 
@@ -5,7 +6,7 @@ import { estPetite, POIDS_SANS_RETOUCHE, reduireImage, tailleRangee } from './re
 const image = (octets: number, type = 'image/jpeg') => new Blob([new Uint8Array(octets)], { type })
 
 /** De faux outils : un décodeur qui « lit » une image de la taille voulue, et une toile qui retient ce qu'on lui demande. */
-function atelier(largeur: number, hauteur: number, options: { poidsSortie?: number; decodage?: boolean; contexte?: boolean } = {}) {
+function atelier(largeur: number, hauteur: number, options: { poidsSortie?: number; decodage?: boolean; contexte?: boolean; sortie?: Blob } = {}) {
   const toiles: { width: number; height: number; dessins: unknown[][]; sorties: [string, number][] }[] = []
   let decodages = 0
   let liberations = 0
@@ -34,7 +35,7 @@ function atelier(largeur: number, hauteur: number, options: { poidsSortie?: numb
         getContext: () => (options.contexte === false ? null : { fillStyle: '', fillRect: () => {}, drawImage: (...args: unknown[]) => void journal.dessins.push(args) }),
         toBlob: (suite: (sortie: Blob | null) => void, type: string, qualite: number) => {
           journal.sorties.push([type, qualite])
-          suite(new Blob([new Uint8Array(options.poidsSortie ?? 200_000)], { type }))
+          suite(options.sortie ?? new Blob([new Uint8Array(options.poidsSortie ?? 200_000)], { type }))
         },
       }
     },
@@ -134,5 +135,33 @@ describe('reduireImage', () => {
     expect(await reduireImage(origine, atelier(911, 1500, { decodage: false }).outils)).toBe(origine)
     expect(await reduireImage(origine, atelier(911, 1500, { contexte: false }).outils)).toBe(origine)
     expect(await reduireImage(origine, atelier(0, 0).outils)).toBe(origine)
+  })
+
+  describe('une couverture que j’ai cadrée moi-même', () => {
+    /** Un vrai début de fichier JPEG (début d'image, en-tête JFIF, début des données), du poids voulu. */
+    const jpeg = (octets: number) =>
+      new Blob(
+        [new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0xda, 0x00, 0x02]), new Uint8Array(octets), new Uint8Array([0xff, 0xd9])],
+        { type: 'image/jpeg' },
+      )
+
+    it('garde sa marque quand elle est rangée telle quelle', async () => {
+      const cadree = await marquer(jpeg(200_000))
+      const rangee = await reduireImage(cadree, atelier(750, 1200).outils)
+      expect(rangee).toBe(cadree)
+      expect(await estMarquee(rangee)).toBe(true)
+    })
+
+    it('retrouve sa marque après une recompression, qui l’aurait effacée', async () => {
+      const cadree = await marquer(jpeg(500_000))
+      const rangee = await reduireImage(cadree, atelier(750, 1200, { sortie: jpeg(150_000) }).outils)
+      expect(rangee.size).toBeLessThan(cadree.size)
+      expect(await estMarquee(rangee)).toBe(true)
+    })
+
+    it('une image ordinaire recompressée ne reçoit pas la marque', async () => {
+      const rangee = await reduireImage(jpeg(500_000), atelier(750, 1200, { sortie: jpeg(150_000) }).outils)
+      expect(await estMarquee(rangee)).toBe(false)
+    })
   })
 })

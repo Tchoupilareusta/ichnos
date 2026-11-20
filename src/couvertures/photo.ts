@@ -1,6 +1,6 @@
 // « Choisir une image » : une photo de mon exemplaire (photothèque, appareil photo ou fichiers)
-// devient une couverture. Lecture, recadrage libre et réduction se font sur l'appareil, avec les
-// seules fonctions du navigateur ; l'image produite est un JPEG léger. Jamais dans le dépôt GitHub.
+// devient une couverture. Lecture et réduction se font sur l'appareil, avec les seules fonctions du
+// navigateur ; le redressement est dans couvertures/redressement. Jamais dans le dépôt GitHub.
 
 /** Au-delà, le fichier n'est pas lu (30 Mo : bien plus qu'une photo d'iPhone). */
 export const TAILLE_MAX_FICHIER = 30 * 1024 * 1024
@@ -21,37 +21,13 @@ export function verifierFichier(fichier: File): 'ok' | 'pas_image' | 'trop_lourd
 }
 
 // ---------------------------------------------------------------------------
-// Le cadre de recadrage, en pixels de l'image de travail
+// Une partie d'image, en pixels
 // ---------------------------------------------------------------------------
 
 export type Cadre = { x: number; y: number; largeur: number; hauteur: number }
-export type Coin = 'haut-gauche' | 'haut-droite' | 'bas-gauche' | 'bas-droite'
-export const COINS: Coin[] = ['haut-gauche', 'haut-droite', 'bas-gauche', 'bas-droite']
 type Taille = { largeur: number; hauteur: number }
 
 export const cadreEntier = (largeur: number, hauteur: number): Cadre => ({ x: 0, y: 0, largeur, hauteur })
-
-export const estEntier = (cadre: Cadre, image: Taille) =>
-  cadre.x === 0 && cadre.y === 0 && cadre.largeur === image.largeur && cadre.hauteur === image.hauteur
-
-const borner = (valeur: number, min: number, max: number) => Math.min(Math.max(valeur, min), max)
-
-/**
- * Le cadre après avoir fait glisser un coin de (dx, dy) pixels : le coin opposé ne bouge pas,
- * le cadre ne sort pas de l'image et garde une taille minimale (un dixième du petit côté).
- */
-export function deplacerCoin(cadre: Cadre, coin: Coin, dx: number, dy: number, image: Taille): Cadre {
-  const minimum = Math.max(1, Math.round(Math.min(image.largeur, image.hauteur) / 10))
-  let gauche = cadre.x
-  let droite = cadre.x + cadre.largeur
-  let haut = cadre.y
-  let bas = cadre.y + cadre.hauteur
-  if (coin.endsWith('gauche')) gauche = borner(gauche + dx, 0, droite - minimum)
-  else droite = borner(droite + dx, gauche + minimum, image.largeur)
-  if (coin.startsWith('haut')) haut = borner(haut + dy, 0, bas - minimum)
-  else bas = borner(bas + dy, haut + minimum, image.hauteur)
-  return { x: Math.round(gauche), y: Math.round(haut), largeur: Math.round(droite - gauche), hauteur: Math.round(bas - haut) }
-}
 
 /** La taille de l'image rangée : le grand côté ramené à 1200 px au plus, jamais agrandi. */
 export function tailleSortie(cadre: Cadre, coteMax = COTE_MAX_SORTIE): Taille {
@@ -60,7 +36,7 @@ export function tailleSortie(cadre: Cadre, coteMax = COTE_MAX_SORTIE): Taille {
 }
 
 // ---------------------------------------------------------------------------
-// Lecture et recadrage (toile de dessin du navigateur ; une fausse dans les tests)
+// Lecture et mise en JPEG (toile de dessin du navigateur ; une fausse dans les tests)
 // ---------------------------------------------------------------------------
 
 /** Ce dont la photo a besoin d'une toile de dessin. */
@@ -75,7 +51,7 @@ export type ToilePhoto = {
   toBlob(suite: (image: Blob | null) => void, type: string, qualite: number): void
 }
 
-/** La photo prête à être recadrée : une image de travail (au plus 4096 px), et son aperçu affichable. */
+/** La photo prête à être redressée : une image de travail (au plus 4096 px), et son aperçu affichable. */
 export type ImageLue = { source: ToilePhoto; largeur: number; hauteur: number; apercu: string; liberer: () => void }
 export type LecturePhoto = { ok: true; image: ImageLue } | { ok: false; echec: EchecPhoto }
 
@@ -171,7 +147,3 @@ export async function enJpeg(source: unknown, cadre: Cadre, creerToile: () => To
     return null
   }
 }
-
-/** La partie choisie de la photo, prête à être rangée. Null si elle ne peut pas être produite. */
-export const recadrer = (image: ImageLue, cadre: Cadre, creerToile?: () => ToilePhoto): Promise<Blob | null> =>
-  enJpeg(image.source, cadre, creerToile)

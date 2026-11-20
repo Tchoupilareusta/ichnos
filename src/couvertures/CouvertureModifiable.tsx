@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { couverturesDeLaFiche, type OeuvreDetaillee } from '../bibliotheque/depot'
 import { IconeChevronBas, IconeFermer } from '../composants/Icones'
 import { Menu } from '../composants/Menu'
-import { AutresCouvertures } from './AutresCouvertures'
+import { AutresCouvertures, rechercheDeLOeuvre } from './AutresCouvertures'
 import { ChoisirImage, type OuvrirImage } from './ChoisirImage'
 import { couvertureAffichee, type CibleCouverture } from './choix'
 import { Couverture } from './Couverture'
@@ -72,9 +72,8 @@ export function CouvertureModifiable({
     else image.current?.ouvrir(geste)
   }
 
+  // Les deux panneaux ne rangent rien ici : `surImage` me rend l'image.
   const garder = (image: Blob) => changer({ etat: 'nouvelle', image })
-  // Les deux panneaux ne rangent rien ici : `surImage` me rend l'image. Leur cible ne sert pas.
-  const cible: CibleCouverture = { type: 'oeuvre' }
 
   return (
     <section aria-label="Couverture" data-etat={affichee} className="flex flex-col items-center gap-4">
@@ -127,8 +126,8 @@ export function CouvertureModifiable({
       {oeuvre.estSerie && <p className="m-0 max-w-[40ch] text-center text-sm text-discret">Elle s’affiche tant qu’aucun tome n’a la sienne.</p>}
       {!enLigne && <p className="m-0 text-center text-sm text-discret">Je pourrai changer la couverture au retour du réseau.</p>}
 
-      <ChoisirImage ref={image} sansBouton oeuvre={oeuvre.id} cible={cible} enLigne={enLigne} surImage={garder} />
-      <AutresCouvertures ref={autres} sansBouton oeuvre={oeuvre} cible={cible} enLigne={enLigne} surRangee={() => {}} surImage={garder} />
+      <ChoisirImage ref={image} sansBouton enLigne={enLigne} surImage={garder} />
+      <AutresCouvertures ref={autres} sansBouton recherche={rechercheDeLOeuvre(oeuvre)} enLigne={enLigne} surImage={garder} />
     </section>
   )
 }

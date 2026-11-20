@@ -2,10 +2,8 @@ import {
   cadreEntier,
   COTE_MAX_LECTURE,
   COTE_MAX_SORTIE,
-  deplacerCoin,
-  estEntier,
+  enJpeg,
   lireImage,
-  recadrer,
   tailleSortie,
   TAILLE_MAX_FICHIER,
   verifierFichier,
@@ -39,37 +37,6 @@ describe('verifierFichier', () => {
     expect(verifierFichier(fichier('image/jpeg', TAILLE_MAX_FICHIER))).toBe('ok')
     expect(verifierFichier(fichier('image/jpeg', TAILLE_MAX_FICHIER + 1))).toBe('trop_lourd')
     expect(TAILLE_MAX_FICHIER).toBe(30 * 1024 * 1024)
-  })
-})
-
-describe('cadre de recadrage', () => {
-  const IMAGE = { largeur: 3000, hauteur: 4000 }
-
-  it('part de l’image entière', () => {
-    expect(cadreEntier(3000, 4000)).toEqual({ x: 0, y: 0, largeur: 3000, hauteur: 4000 })
-    expect(estEntier(cadreEntier(3000, 4000), IMAGE)).toBe(true)
-  })
-
-  it('déplace un coin sans toucher au coin opposé', () => {
-    const cadre = deplacerCoin(cadreEntier(3000, 4000), 'haut-gauche', 300, 500, IMAGE)
-    expect(cadre).toEqual({ x: 300, y: 500, largeur: 2700, hauteur: 3500 })
-    expect(estEntier(cadre, IMAGE)).toBe(false)
-    expect(deplacerCoin(cadre, 'bas-droite', -200, -1000, IMAGE)).toEqual({ x: 300, y: 500, largeur: 2500, hauteur: 2500 })
-    expect(deplacerCoin(cadre, 'haut-droite', -100, 100, IMAGE)).toEqual({ x: 300, y: 600, largeur: 2600, hauteur: 3400 })
-    expect(deplacerCoin(cadre, 'bas-gauche', 100, -100, IMAGE)).toEqual({ x: 400, y: 500, largeur: 2600, hauteur: 3400 })
-  })
-
-  it('ne sort jamais de l’image', () => {
-    expect(deplacerCoin(cadreEntier(3000, 4000), 'haut-gauche', -500, -500, IMAGE)).toEqual(cadreEntier(3000, 4000))
-    expect(deplacerCoin(cadreEntier(3000, 4000), 'bas-droite', 900, 900, IMAGE)).toEqual(cadreEntier(3000, 4000))
-  })
-
-  it('garde une taille minimale : un coin ne dépasse pas le coin opposé', () => {
-    const cadre = deplacerCoin(cadreEntier(3000, 4000), 'haut-gauche', 5000, 5000, IMAGE)
-    expect(cadre.largeur).toBeGreaterThanOrEqual(300)
-    expect(cadre.hauteur).toBeGreaterThanOrEqual(300)
-    expect(cadre.x + cadre.largeur).toBe(3000)
-    expect(cadre.y + cadre.hauteur).toBe(4000)
   })
 })
 
@@ -167,13 +134,13 @@ describe('lireImage', () => {
   })
 })
 
-describe('recadrer', () => {
+describe('enJpeg', () => {
   const image = (creer: () => ToilePhoto) => ({ source: creer(), largeur: 3000, hauteur: 4000, apercu: 'blob:photo', liberer: () => {} })
 
   it('rend un JPEG de qualité 0,85 dont le grand côté fait 1200 px au plus', async () => {
     const { creer, toiles } = atelier()
     const source = image(creer)
-    const blob = await recadrer(source, cadreEntier(3000, 4000), creer)
+    const blob = await enJpeg(source.source, cadreEntier(3000, 4000), creer)
     expect(blob?.type).toBe('image/jpeg')
     const sortie = toiles[1]
     expect(sortie).toMatchObject({ width: 900, height: 1200 })
@@ -183,14 +150,14 @@ describe('recadrer', () => {
   it('ne dessine que la partie choisie', async () => {
     const { creer, toiles } = atelier()
     const source = image(creer)
-    await recadrer(source, { x: 300, y: 500, largeur: 2400, hauteur: 3000 }, creer)
+    await enJpeg(source.source, { x: 300, y: 500, largeur: 2400, hauteur: 3000 }, creer)
     expect(toiles[1]).toMatchObject({ width: 960, height: 1200 })
     expect(toiles[1].dessins[0].slice(1)).toEqual([300, 500, 2400, 3000, 0, 0, 960, 1200])
   })
 
   it('rend null si l’image ne peut pas être produite', async () => {
     const source = image(atelier().creer)
-    expect(await recadrer(source, cadreEntier(3000, 4000), atelier({ contexte: false }).creer)).toBeNull()
-    expect(await recadrer(source, cadreEntier(3000, 4000), atelier({ blob: false }).creer)).toBeNull()
+    expect(await enJpeg(source.source, cadreEntier(3000, 4000), atelier({ contexte: false }).creer)).toBeNull()
+    expect(await enJpeg(source.source, cadreEntier(3000, 4000), atelier({ blob: false }).creer)).toBeNull()
   })
 })

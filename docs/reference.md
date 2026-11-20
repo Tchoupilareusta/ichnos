@@ -11,6 +11,7 @@
 *Mise à jour du 19 novembre 2026 : nouvelle étape 10 « Nettoyage et optimisation » ; la revue de sécurité finale devient l'étape 11 et porte sur le code nettoyé (§11).*
 *Mise à jour du 19 novembre 2026 : corrections de couvertures (étape 6, suite) : couverture montrée en entier, grandes images, « Je l'ai acheté », « Choisir une image », « Chercher d'autres couvertures », fonction `noter_achat` (§3, §5, §6.1, §8, §10.2, §11).*
 *Mise à jour du 20 novembre 2026 : poids des couvertures : toute image est réduite au moment d'être rangée (§8.5, §11).*
+*Mise à jour du 20 novembre 2026 : ISBN à tirets, cadre de couverture 5:8 sans bandes, photo de mon exemplaire quand aucune couverture n’est trouvée, redressement d’une photo et correction légère de sa lumière (§3, §4.3, §5, §8.5, §10.1, §11).*
 *Mise à jour du 20 novembre 2026 : refonte de « Modifier » (couverture d'abord, sections repliées, barre « Annuler / Enregistrer », tout attend « Enregistrer », « Chercher cette édition »), boutons des panneaux empilés, fausses couvertures presque uniformes écartées (§3, §5, §8.1, §8.5, §11).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
@@ -58,9 +59,10 @@ Lire doit rester un plaisir. L'application ne mesure rien, ne pousse à rien et 
 | Langue de lecture | Français ou anglais. Le catalogue n'ajoute pas d'édition anglaise d'office. Quand j'ajoute un livre par son ISBN, l'édition est celle de mon exemplaire. Pour une œuvre écrite en anglais, « Découvrir ailleurs » indique si la version originale vaut le coup (ex. 1984 et son vocabulaire inventé). Si mon édition est en anglais, le titre original s'affiche en premier. Les fiches (synopsis, étiquettes) restent toujours en français. |
 | Anime | Média associé à l'œuvre (saisons, épisodes), jamais compté comme des livres. |
 | Hors connexion | Consultation possible. Les modifications demandent une connexion. |
-| Couvertures | Recherche automatique par ISBN (Google Books, puis Open Library), copie dans le stockage Supabase, couverture typographique générée en dernier recours. L'image est montrée en entier, jamais rognée. Je peux aussi choisir une photo de mon exemplaire, ou la couverture d'une autre édition. Une série montre le tome où j'en suis, sinon le tome 1 ; chaque tome montre la sienne dans son panneau ; la grille des tomes garde ses cercles (§8). |
+| Couvertures | Recherche automatique par ISBN (Google Books, puis Open Library), copie dans le stockage Supabase, couverture typographique générée en dernier recours. Elle s'affiche dans une case au format 5:8, celui des poches français : proche de ce format, elle remplit la case ; sinon elle est posée en bas, à sa vraie forme, sans bande colorée (§8.5 ; remplace, le 20 novembre 2026, « montrée en entier dans un cadre 2:3 »). Je peux aussi photographier mon exemplaire (la photo est redressée), ou choisir la couverture d'une autre édition. Une série montre le tome où j'en suis, sinon le tome 1 ; chaque tome montre la sienne dans son panneau ; la grille des tomes garde ses cercles (§8). |
 | Couvertures de manga | Par l'ISBN du tome français, aux mêmes sources. MangaDex est exclu définitivement : c'est un site de traductions de fans, sans droits sur les images (décidé le 19 novembre 2026). Aucune autre source gratuite, légale et fiable n'est connue pour les tomes en français : la voie sûre est la photo de mon exemplaire et l'ISBN de mon exemplaire (§8.5). |
 | Ajouter une œuvre | Deux manières : remplir automatiquement (ISBN à 13 chiffres de mon exemplaire, ou titre seul) ou tout saisir moi-même. Pas de scan du code-barres : un champ à clavier numérique qui accepte chiffres, tirets et espaces (Safari sur iPhone n'a pas de lecteur de code-barres natif, et aucune bibliothèque n'est ajoutée pour cela). |
+| ISBN | Rangé sans tirets, affiché avec ses tirets partout (978-2-253-00848-4), et les tirets se placent pendant la saisie. Leur place vient de la bibliothèque `isbn3` (licence MIT, 9,5 Ko compressé) ; un ISBN hors de ses plages reste sans tirets, jamais de tirets devinés (décidé le 20 novembre 2026, détail au §5). |
 | Source de chaque champ | Affichée sous le champ pendant l'ajout (« D'après la BnF »), jamais enregistrée : une fois validée, la fiche est la mienne. |
 | Citation du jour sur l'accueil | Retirée. |
 | Avertissements de contenu | Aucun, pour aucune œuvre (choix du propriétaire, remplace la demande du cahier des charges). |
@@ -103,6 +105,7 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 ### 4.3 Formes et mouvement
 
 - Rayons généreux : environ 24 px pour les cartes, boutons en forme de pilule, couvertures arrondies à 12–14 px.
+- Couvertures dans une case au format 5:8 (largeur ÷ hauteur = 0,625), partout : grille, accueil, fiche, panneaux, aperçus. Une couverture d'un autre format y est posée en bas, comme un livre sur une étagère ; l'ombre et les coins arrondis suivent alors la forme de l'image, et le reste de la case laisse voir le fond de l'appli.
 - Ombres très douces et chaudes, jamais grises et dures.
 - Animations courtes et amorties (ressorts légers). Respect de `prefers-reduced-motion`.
 - Interactions animées, discrètes et rapides (décidé le 19 novembre 2026, réalisé à l'étape 9) : ouverture du panneau des filtres, déroulement des menus Statut et Possession, changements de statut.
@@ -141,6 +144,20 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 | Réglages | Thème, « Chercher les couvertures manquantes » (une demande à la fois, sans IA, avec la liste de ce qui a été trouvé ou non, œuvre par œuvre ; une couverture de moins de 450 px de large est dite « de petite taille »), « Remplacer les couvertures de petite taille » (§8.5), export des données, compte, gestion des genres, thèmes et atmosphères. |
 
 Mise à jour de la progression : depuis l'accueil, le bouton « Où j'en suis » ouvre un panneau (saisie directe du nombre, − / +, Enregistrer) ; sur la fiche, − / + (enregistrés une seconde après le dernier appui) et saisie directe. Quand j'atteins le total, la fiche propose doucement « J'ai terminé ce livre ? », sans jamais le faire à ma place.
+
+ISBN à tirets (20 novembre 2026) :
+- **Affichage.** Partout où un ISBN se lit (fiche, « Je l'ai acheté », « Chercher cette édition »), il porte ses tirets. VoiceOver le lit chiffre par chiffre, sans les tirets.
+- **Saisie** (Ajouter, « Je l'ai acheté », Modifier : mon édition, autres éditions, tomes). Les tirets se placent au fil de la frappe, dès que le début saisi le permet (« 978-2-07 » n'attend pas la suite ; « 978-2-35 » attend de savoir si l'éditeur a cinq chiffres). Clavier numérique ; coller un ISBN avec ou sans tirets ou espaces fonctionne ; le curseur reste à sa place ; effacer un tiret efface le chiffre d'avant. ISBN à 10 caractères acceptés là où ils l'étaient.
+- **En base**, et dans tout ce qui part vers la base ou la fonction serveur : toujours sans tirets.
+- **Limites.** Un ISBN absent des plages d'`isbn3` reste sans tirets (les plages évoluent : mettre `isbn3` à jour à l'étape 10). Dans un champ en cours de saisie, VoiceOver lit la valeur telle qu'elle est écrite, tirets compris.
+
+Pas de couverture trouvée (20 novembre 2026) : dans « Je l'ai acheté », « Chercher cette édition » et « Ajouter » par ISBN, quand la recherche est finie sans couverture, le même bloc propose, empilés et pleine largeur :
+- **« Prendre une photo de mon exemplaire »** : l'appareil photo directement, puis le redressement (§8.5).
+- **« Chercher d'autres couvertures »**, en second : pour une œuvre, jamais pour un tome. Il part du titre et de l'auteur connus (ceux que j'ai saisis, dans « Ajouter »).
+- L'image suit le geste en cours : gardée avec « C'est mon exemplaire », « Appliquer à mon édition » puis « Enregistrer », ou à la validation de la fiche. « Ne pas la garder » revient aux deux boutons. Rien n'est rangé sans validation.
+- Dans « Je l'ai acheté », la photo est proposée aussi quand aucun catalogue ne connaît l'ISBN, ou quand la recherche ne répond pas (« Chercher d'autres couvertures » n'est alors pas proposé).
+- Par le titre seul, sans exemplaire en main, rien de tel n'est proposé.
+- Hors connexion, les deux boutons sont grisés : « Hors connexion : une image ne pourrait pas être rangée. J'attends le retour du réseau. »
 
 « Je l'ai acheté » (validé le 19 novembre 2026) : sur la fiche d'un livre que je n'ai pas encore, près de la possession ; pour une série, dans le panneau d'un tome que je n'ai pas. Le panneau se déroule en deux temps.
 - D'abord l'ISBN à 13 chiffres de mon exemplaire : même champ et même vérification que l'ajout automatique.
@@ -368,8 +385,15 @@ Précisions de l'étape 6 (validées le 19 novembre 2026) :
 
 Validé le 19 novembre 2026, après le premier essai sur iPhone (couvertures floues, rognées, et trop peu de tomes illustrés).
 
-Affichage :
-- Une couverture est montrée en entier dans son cadre au format 2:3, jamais rognée. Les bandes qu'elle laisse prennent la couleur moyenne de ses bords, adoucie vers le fond de l'appli.
+Affichage (décidé le 20 novembre 2026, après essai sur iPhone ; remplace le cadre 2:3 et ses bandes colorées) :
+- La case a le format 5:8 (0,625). Mesuré sur Open Library : les poches français (Folio, GF, Le Livre de poche, 108 à 110 × 178 mm) font 0,60 à 0,63 ; avec un cadre 2:3 (0,667), presque toute la bibliothèque aurait eu des bandes.
+- Trois règles, appliquées sur l'appareil au moment d'afficher, une seule fois par image. L'image rangée n'est jamais modifiée : les couvertures déjà rangées en profitent sans rien renvoyer.
+  1. **Les marges unies d'un scan sont rognées.** Une ligne de bord est unie si 98 % de ses points sont à 20 nuances près (sur 255, par canal) de la couleur du milieu de ce bord. Un côté n'est rogné que si sa bande fait moins de 4 % de la dimension, ou si le côté opposé a lui aussi une bande d'au moins 1 % (cadre de scan). Une bande large d'un seul côté (le blanc du haut d'un Folio, 5,5 %) fait partie du dessin : elle reste.
+  2. **À 6 % au plus de 5:8**, l'image remplit la case, recadrée au centre : elle perd au plus 3 % de chaque côté.
+  3. **Sinon**, elle est montrée à sa vraie forme, posée en bas de la case et centrée, comme un livre sur une étagère (mangas, 0,70 ; Minuit, 0,74). Aucune bande colorée : le reste de la case est vide, et les titres restent alignés d'une case à l'autre.
+- Deux précisions décidées en codant : une zone unie qui atteint 15 % de la dimension n'est pas une marge mais le fond de la couverture (rien n'est rogné de ce côté) ; et un simple liseré en face (moins de 1 %) ne fait pas un cadre de scan.
+- **Marque invisible.** Une couverture que j'ai cadrée moi-même (photo redressée) porte un commentaire dans son fichier JPEG (« Ichnos : cadrée à la main »). À l'affichage, elle n'est jamais rognée ni recadrée : elle remplit la case si elle en a déjà le format, à 1 % près, sinon elle est posée en bas. La réduction (voir « Poids ») garde la marque. Les photos rangées avant ce changement n'ont pas de marque : elles suivent la règle générale.
+- Limites : une marge de scan large d'un seul côté est gardée ; une marge dégradée ou bruitée (scan jauni) n'est pas reconnue ; une couverture blanche dont le dessin est centré, avec des marges blanches de moins de 15 % sur deux côtés opposés, est prise pour un scan et rognée ; un texte collé au bord peut être effleuré par les 3 %. Code : `src/couvertures/cadrage.ts`, `marque.ts`.
 
 Taille :
 - La fiche affiche la couverture sur près de 200 points : il faut environ 600 px de large pour une image nette sur iPhone. En dessous de 450 px, une couverture est dite « de petite taille », sauf si son grand côté atteint déjà 1200 px (voir « Poids ») : c'est alors la plus grande que l'appli range.
@@ -383,7 +407,7 @@ Taille :
 Poids (décidé le 20 novembre 2026) :
 - Toute image rangée dans mon stockage privé suit la même règle, qu'elle vienne d'un catalogue ou d'une photo : au plus 1200 px sur le grand côté, en JPEG de bonne qualité (0,85), soit 150 à 300 Ko environ. L'image d'origine d'un catalogue pèse parfois près de 1 Mo.
 - La réduction se fait sur l'appareil, au moment où l'image est rangée : à la validation de la fiche, à l'achat, au choix d'une autre couverture, à la recherche des couvertures manquantes et au remplacement des petites. Un aperçu que je ne garde pas n'est pas touché.
-- Une image n'est jamais agrandie. Déjà dans les 1200 px et sous 350 Ko, elle est rangée telle quelle (une photo recadrée n'est pas compressée deux fois) ; de bonne taille mais lourde, elle est recompressée, et la version la plus légère est gardée. Si la réduction échoue, l'image d'origine est rangée.
+- Une image n'est jamais agrandie. Déjà dans les 1200 px et sous 350 Ko, elle est rangée telle quelle (une photo redressée n’est pas compressée deux fois) ; de bonne taille mais lourde, elle est recompressée, et la version la plus légère est gardée. Si la réduction échoue, l'image d'origine est rangée.
 - La marge reste large pour la fiche : une couverture ordinaire réduite à 1200 px de haut garde 750 à 800 px de large, pour 588 pixels affichés sur un iPhone.
 - Mesuré le 20 novembre 2026 sur L'Étranger en Folio : 911 × 1500 px et 937 Ko à l'origine, 729 × 1200 px et 138 Ko une fois rangée.
 
@@ -395,8 +419,22 @@ Poids (décidé le 20 novembre 2026) :
 
 « Choisir une image » (dans « Modifier », par le menu « Changer la couverture », et dans le panneau d'un tome) :
 - Dans le panneau d'un tome, un seul bouton : l'iPhone propose la photothèque, l'appareil photo ou les fichiers. Dans « Modifier », « Prendre une photo » ouvre directement l'appareil photo, « Choisir dans mes photos » laisse l'iPhone proposer.
-- La photo s'affiche entière dans un panneau. Je peux la recadrer librement en faisant glisser ses quatre coins, ou la garder telle quelle.
+- La photo est redressée, à la manière du scanner de documents de l'iPhone (voir « Redressement d'une photo », plus bas). Le recadrage en rectangle du 19 novembre 2026 est remplacé.
 - Tout se fait sur l'appareil, sans dépendance ajoutée : l'image est réduite (même règle de poids que les autres couvertures) puis rangée dans mon stockage privé. Un fichier qui n'est pas une image, ou de plus de 30 Mo, est refusé.
+
+Redressement d'une photo (décidé le 20 novembre 2026) : un panneau en deux temps, pour toute photo (« Prendre une photo », « Choisir dans mes photos », panneau d'un tome, « Prendre une photo de mon exemplaire »).
+- **1. « Redresser la photo ».** Les quatre coins se placent d'eux-mêmes sur le livre trouvé. Je les ajuste au doigt (une loupe suit le coin, au-dessus du doigt) ou aux flèches du clavier ; chaque coin a un nom pour VoiceOver. Boutons : « Redresser », « Image entière » (les coins reviennent aux coins de la photo), « Reprendre la photo ». Si le livre n'est pas trouvé : « Je n'ai pas trouvé le livre : je place les coins moi-même. »
+- **2. « Vérifier la couverture ».** La couverture droite et rectangulaire, sans la table autour. Boutons : « Valider », « Revoir les coins », « Reprendre la photo ». Rien n'est rangé avant « Valider ».
+- **Détection des coins** : vision par ordinateur classique, sans IA ni réseau, sur la photo réduite à 512 px. Les couleurs du fond s'apprennent sur les bords de la photo (il peut y en avoir plusieurs : soleil et ombre, tapis à motifs) ; ce qui n'a pas une couleur du fond est le livre, morceaux proches compris ; puis, de chaque côté, on cherche le bord droit du livre, au ras de cette zone ou juste au-delà, là où l'image change le plus nettement. Si rien de plausible n'est trouvé (moins de 5 % de la photo, angle de moins de 40°), les coins sont ceux de la photo.
+- **Redressement** : homographie (système 8 × 8), interpolation bilinéaire. Le format du livre est déduit de la perspective en supposant l'objectif principal d'un iPhone (focale de 0,72 fois le grand côté de la photo) : la moyenne des côtés est fausse dès que le livre est vu de biais. Sortie : 1200 px au plus, JPEG, avec la marque invisible.
+- **Module maison** de 11 Ko (4,8 Ko compressé), sans dépendance, chargé seulement à l'ouverture du panneau (`src/couvertures/redressement`). OpenCV.js (10 Mo) et `jscanify` ont été écartés.
+- **Mesuré le 20 novembre 2026 sur six vraies photos** (Siddhartha au Livre de poche sur un drap gris foncé, à plat et de biais ; Vinland Saga tome 2 sur un parquet au soleil avec un reflet, en forte perspective avec un meuble et un tapis dans le champ, dans l'ombre, et sur un tissu à motifs) : les quatre coins sont trouvés sur les six, à quelques points près ; formats redressés 0,61 pour le Livre de poche (réel : 0,62) et 0,70 à 0,72 pour le manga (réel : 0,70). Détection : 0,2 à 0,3 s sur un ordinateur, à mesurer sur iPhone. Ces photos ne sont ni dans le dépôt ni dans les tests, qui n'utilisent que des images dessinées par le code.
+- **Limites** : six photos ne font pas une preuve. La détection est moins sûre si toute une bordure de la couverture a la couleur du fond, si le livre est tenu à la main ou coupé par le bord de la photo, ou sur un fond très chargé ; les coins restent toujours réglables. Avec un autre objectif que le principal (grand-angle, zoom) et un livre très penché, le format peut être faux de quelques centièmes. Une couverture souple ou cornée n'est pas plane : la courbure n'est pas corrigée. Avec VoiceOver sur iPhone, sans clavier, les coins ne se déplacent pas : restent les coins trouvés, ou « Image entière ».
+
+Lumière d'une photo (ajouté le 20 novembre 2026) : le redressement corrige la forme, pas la lumière.
+- **Conseil** : « Lumière douce, sans flash, téléphone bien à plat au-dessus du livre. » Affiché sous les boutons de photo les trois premières fois (l'appareil ne retient qu'un compte), puis seulement replié dans le panneau de redressement (« Conseils pour la photo »).
+- **Correction légère, sans IA**, appliquée à la couverture redressée, à la manière du bouton « Améliorer » de Photos : balance des couleurs mesurée sur les gris de l'image (corrigée aux deux tiers, 8 % au plus par canal, et pas du tout s'il n'y a pas assez de gris : une couleur franche vient du dessin, pas de la lumière), niveaux (le noir ne monte pas de plus de 32 nuances, le blanc ne descend pas de plus de 60), un soupçon de contraste. Activée par défaut ; l'interrupteur « Couleurs d'origine » la retire, et c'est l'image que je vois qui est gardée.
+- **Ni les reflets ni les ombres nettes ne sont effacés** : ce serait peu fiable. La correction agit sur toute l'image de la même façon. Le remède est « Reprendre la photo », toujours proposé à côté de « Valider ».
 
 « Chercher d'autres couvertures » (dans « Modifier », pour une œuvre, jamais pour un tome) :
 - La recherche part avec le titre et le premier auteur ; je peux la corriger et la relancer. Pas d'IA.
@@ -448,6 +486,7 @@ Import (validé le 18 novembre 2026) :
 - Supabase : PostgreSQL, authentification, stockage, Edge Functions.
 - `supabase-js` et TanStack Query, avec cache persistant pour la consultation hors ligne.
 - PWA avec `vite-plugin-pwa`, installable depuis Safari.
+- `isbn3` (version exacte 2.0.13) pour la place des tirets d'un ISBN : la seule dépendance ajoutée depuis l'étape 6.
 - Routage par hash (`#/…`), fiable sur GitHub Pages et invisible dans l'application installée.
 - Tests : Vitest, en priorité sur l'algorithme de recommandation et la progression.
 - Migrations de base de données versionnées dans `supabase/migrations`.
@@ -518,7 +557,11 @@ Points reportés :
 - **Étape 9, mouvements réduits.** Quand l'iPhone demande de réduire les animations, remplacer les mouvements (glissements, agrandissements) par des fondus courts, plutôt que de couper toutes les animations d'un bloc comme aujourd'hui. Relevé par l'audit de l'étape 4.
 - **Étape 9, deux détails relevés par l'audit de l'étape 5.** Sur la fiche, VoiceOver annonce le chiffre de la progression à chaque appui sur − ou + : regrouper l'annonce au moment de l'enregistrement (une seconde après le dernier appui). La barre de défilement du carrousel « En ce moment » est visible sur ordinateur (invisible sur iPhone et iPad) : la rendre discrète sans gêner le défilement au clavier.
 - **Étape 9, relevés par l'audit de l'étape 6.** Chargement progressif des couvertures de la grille : aujourd'hui, toutes les couvertures de la bibliothèque sont demandées dès l'ouverture de l'écran ; ne charger que celles qui approchent de l'écran. Langue des titres originaux étrangers : la donner à VoiceOver par l'attribut `lang` (d'après la langue d'origine de l'œuvre), sur la fiche, dans les résultats de recherche et dans le formulaire, pour qu'un titre anglais ou allemand ne soit pas lu à la française.
-- **Étape 9, relevé par l'audit des corrections de couvertures.** Le recadrage d'une photo ne se fait qu'au doigt ou à la souris (« Image entière » reste le chemin au clavier) : permettre de déplacer les coins avec les flèches du clavier.
+- **Coins au clavier : fait le 20 novembre 2026**, avec le redressement (§8.5). Relevé par l'audit des corrections de couvertures.
+- **ISBN et couvertures (20 novembre 2026) : à constater sur l'iPhone, après la fusion.** « Prendre une photo de mon exemplaire » ouvre-t-il directement l'appareil photo ; le format HEIC, l'orientation et le poids des photos (12 à 48 mégapixels) ; le temps de détection et de redressement ; le glisser des coins au doigt, la loupe au-dessus du doigt, la page qui ne doit pas défiler pendant le geste ; la justesse des coins sur mes livres et ma table ; mes couvertures réellement rangées (dont celles de Google Books) dans la case 5:8 ; la saisie à tirets avec le clavier numérique et le collage ; VoiceOver sur un ISBN affiché et sur les coins.
+- **Étape 9, relevés par l'audit « ISBN et couvertures ».** Déplacer les coins avec VoiceOver sur iPhone, sans clavier. Mesurer les couvertures au fil du défilement, avec leur chargement progressif. À 393 px, « Reprendre la photo » demande un petit défilement du panneau au premier temps. Dans « Modifier », la croix d'une couverture posée sur l'étagère est au coin de la case, pas de l'image.
+- **Étape 10, plages d'ISBN.** Mettre `isbn3` à jour : les plages des éditeurs évoluent, et un ISBN récent hors plages s'affiche sans tirets.
+- **Test intermittent, antérieur à ce travail.** « tire la progression d'une série de ses tomes » (`Suivi.test.tsx`) échoue environ une fois sur six quand toute la suite tourne, y compris avant ces changements : à stabiliser.
 - **Poids des couvertures trouvées : fait le 20 novembre 2026, sans attendre l'étape 10.** Relevé par l'audit des corrections de couvertures : la fonction garde désormais la plus grande image, et l'image d'origine d'Open Library pèse parfois près de 1 Mo. Toute image est maintenant réduite au moment d'être rangée (§8.5). Rien à reprendre pour les couvertures rangées avant ce changement : elles venaient de la taille « L » d'Open Library, 500 px de haut au plus.
 - **Étape 9, relevé par l'audit de la refonte de « Modifier ».** Les titres des sections repliées n'apparaissent pas dans la liste des titres de VoiceOver (rotor) : les y faire figurer sans casser le bouton qui les déplie. À essayer sur l'iPhone : « Prendre une photo » (ouverture directe de l'appareil photo), la barre fixe au-dessus de l'indicateur d'accueil, le message temporaire avec VoiceOver.
 - **Étape 10, nettoyage des images qui ne servent plus.** Depuis la refonte de « Modifier » (20 novembre 2026), une image choisie puis abandonnée n'est jamais envoyée : elle n'est rangée qu'avec « Enregistrer ». Restent les couvertures retirées et celles des œuvres supprimées : elles restent dans mon dossier du stockage privé : elle n'est jamais effacée sur le moment, car une même image (nommée d'après son contenu) peut servir à deux œuvres. Prévoir un nettoyage des images qui ne sont plus rattachées à aucune œuvre, édition ni tome.
