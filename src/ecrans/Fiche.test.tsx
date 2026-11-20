@@ -180,16 +180,23 @@ describe('série', () => {
     expect(tome('Tome 2, à lire, à acheter')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('applique un choix aux tomes sélectionnés en une écriture, puis « Annuler » remet l’état d’avant', async () => {
+  it('applique un choix en une écriture ; la sélection reste, le choix s’allume, et « Annuler » remet l’état d’avant', async () => {
     const faux = depotFictif({ oeuvres: [SERIE] })
     await ouvrirFiche(faux, 'vin')
     fireEvent.click(tome('Tome 1, à lire, je l’ai'))
     fireEvent.click(tome('Tome 3, à lire, je ne l’ai pas'))
+    // Possessions mélangées : rien n'est mis en avant dans ce groupe ; la lecture, commune, l'est.
+    const possession = within(barre()!).getByRole('group', { name: 'Possession' })
+    expect(within(possession).queryByRole('button', { name: /choisi/ })).not.toBeInTheDocument()
+    expect(within(barre()!).getByRole('button', { name: 'À lire, choisi' })).toBeInTheDocument()
     await act(async () => fireEvent.click(within(barre()!).getByRole('button', { name: 'Je l’ai' })))
     // Le tome 1 l'est déjà : seul le tome 3 change.
     expect(faux.appels.ecritures).toEqual([{ action: 'reglerTomes', id: 'vin', valeur: [{ numero: 3, possession: 'possede' }] }])
-    expect(barre()).not.toBeInTheDocument()
-    expect(screen.getByText('Tome 3 : Je l’ai')).toBeInTheDocument()
+    // La sélection reste, le menu aussi, et le choix s'allume tout de suite.
+    expect(barre()).toHaveTextContent('2 tomes sélectionnés')
+    expect(within(barre()!).getByRole('button', { name: 'Je l’ai, choisi' })).toBeInTheDocument()
+    // Le message est dans le menu, avec un vrai bouton « Annuler ».
+    expect(within(barre()!).getByText('Tome 3 : Je l’ai')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Tome 3, à lire, je l’ai' })).toBeInTheDocument()
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Annuler : Tome 3, Je l’ai' })))
     expect(faux.appels.ecritures[1]).toEqual({
@@ -198,6 +205,28 @@ describe('série', () => {
       valeur: [{ numero: 3, possession: 'non_possede', lecture: 'a_lire' }],
     })
     expect(await screen.findByRole('button', { name: 'Tome 3, à lire, je ne l’ai pas' })).toBeInTheDocument()
+    // L'état revient, et la mise en avant suit.
+    expect(within(possession).queryByRole('button', { name: /choisi/ })).not.toBeInTheDocument()
+  })
+
+  it('enchaîne « Je l’ai » puis « Lu » sur les mêmes tomes, sans les resélectionner', async () => {
+    const faux = depotFictif({ oeuvres: [SERIE] })
+    await ouvrirFiche(faux, 'vin')
+    fireEvent.click(tome('Tome 2, à lire, à acheter'))
+    fireEvent.click(tome('Tome 3, à lire, je ne l’ai pas'))
+    await act(async () => fireEvent.click(within(barre()!).getByRole('button', { name: 'Je l’ai' })))
+    await act(async () => fireEvent.click(within(barre()!).getByRole('button', { name: 'Lu' })))
+    expect(faux.appels.ecritures).toEqual([
+      { action: 'reglerTomes', id: 'vin', valeur: [{ numero: 2, possession: 'possede' }, { numero: 3, possession: 'possede' }] },
+      { action: 'reglerTomes', id: 'vin', valeur: [{ numero: 2, lecture: 'lu' }, { numero: 3, lecture: 'lu' }] },
+    ])
+    expect(within(barre()!).getByRole('button', { name: 'Je l’ai, choisi' })).toBeInTheDocument()
+    expect(within(barre()!).getByRole('button', { name: 'Lu, choisi' })).toBeInTheDocument()
+    expect(within(barre()!).getByText('2 tomes : Lu')).toBeInTheDocument()
+    // La croix vide la sélection et emporte le message.
+    fireEvent.click(within(barre()!).getByRole('button', { name: 'Annuler la sélection' }))
+    expect(barre()).not.toBeInTheDocument()
+    expect(screen.queryByText('2 tomes : Lu')).not.toBeInTheDocument()
   })
 
   it('applique « En cours » tel quel, sans cascade', async () => {
@@ -212,11 +241,11 @@ describe('série', () => {
     expect(await screen.findByRole('button', { name: 'Tome 1, à lire, je l’ai' })).toBeInTheDocument()
   })
 
-  it('dit simplement quand rien ne change, sans « Annuler » ni écriture', async () => {
+  it('le choix déjà mis en avant ne change rien, et le dit sans « Annuler »', async () => {
     const faux = depotFictif({ oeuvres: [SERIE] })
     await ouvrirFiche(faux, 'vin')
     fireEvent.click(tome('Tome 1, à lire, je l’ai'))
-    fireEvent.click(within(barre()!).getByRole('button', { name: 'Je l’ai' }))
+    fireEvent.click(within(barre()!).getByRole('button', { name: 'Je l’ai, choisi' }))
     expect(screen.getByText('Déjà « Je l’ai » : rien n’a changé.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Annuler :/ })).not.toBeInTheDocument()
     expect(faux.appels.ecritures).toHaveLength(0)

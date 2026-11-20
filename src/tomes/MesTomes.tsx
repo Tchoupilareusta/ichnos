@@ -21,7 +21,7 @@ import { Bouton } from '../composants/Bouton'
 import { Dialogue } from '../composants/Dialogue'
 import { ActionsFeuille, Feuille } from '../composants/Feuille'
 import { IconeCoche, IconeFermer, IconeSignet } from '../composants/Icones'
-import { IconePossession } from '../composants/IconesLecture'
+import { IconeLivre, IconePossession } from '../composants/IconesLecture'
 import { Isbn } from '../composants/Isbn'
 import { MessageTemporaire, type Message } from '../composants/MessageTemporaire'
 import { Section } from '../composants/Section'
@@ -66,7 +66,7 @@ function IconeChoix({ choix, taille = 16 }: { choix: ChoixTomes; taille?: number
   if (choix.type === 'possession') return <IconePossession possession={choix.valeur} taille={taille} />
   if (choix.valeur === 'lu') return <IconeCoche taille={taille} />
   if (choix.valeur === 'en_cours') return <IconeSignet taille={taille - 1} />
-  return null
+  return <IconeLivre taille={taille} />
 }
 
 const MESSAGES_ECHEC: Record<string, string> = {
@@ -123,7 +123,10 @@ export function MesTomes({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cleNumeros])
 
-  const vider = useCallback(() => setSelection(new Set()), [])
+  const vider = useCallback(() => {
+    setSelection(new Set())
+    setMessage(null)
+  }, [])
 
   // Échap vide la sélection (clavier de l'iPad), sauf si un panneau ouvert la réclame. Un toucher
   // ailleurs que sur la grille ou le menu la vide aussi ; un défilement n'est pas un toucher (il ne
@@ -162,9 +165,6 @@ export function MesTomes({
     const echec = (erreur: EchecDepot) => signaler(texteEchec(erreur))
     modifier.tomes.mutate(changements, { onError: echec })
     signaler(texte, { icone: <IconeChoix choix={choix} />, annuler: () => modifier.tomes.mutate(annulation, { onError: echec }) })
-    vider()
-    // Le menu disparaît avec la sélection : le focus revient sur la section, et le message est annoncé.
-    refSection.current?.closest('section')?.focus({ preventScroll: true })
   }
 
   function appliquer(choix: ChoixTomes) {
@@ -187,6 +187,9 @@ export function MesTomes({
   }
 
   const tomeDetaille = tomes.find((t) => t.numero === details) ?? null
+  const choisis = tomes.filter((t) => selection.has(t.numero))
+  const commun = <K extends 'possession' | 'lecture'>(cle: K): Tome[K] | null =>
+    choisis.length > 0 && choisis.every((t) => t[cle] === choisis[0][cle]) ? choisis[0][cle] : null
 
   return (
     <Section titre="Mes tomes" ancre={ANCRE_TOMES}>
@@ -248,6 +251,8 @@ export function MesTomes({
         refMenu={refMenu}
         selection={menuOuvert ? selection : new Set<number>()}
         tous={selection.size === tomes.length}
+        possessionActuelle={commun('possession')}
+        lectureActuelle={commun('lecture')}
         enLigne={enLigne}
         appliquer={appliquer}
         toutSelectionner={() => setSelection(new Set(numeros))}
@@ -543,32 +548,41 @@ function useGestesGrille({
 function Segments({
   nom,
   options,
+  actuel,
   enLigne,
   appliquer,
 }: {
   nom: string
   options: ChoixTomes[]
+  /** La valeur commune à tous les tomes sélectionnés, ou null s'ils sont mélangés. */
+  actuel: string | null
   enLigne: boolean
   appliquer: (choix: ChoixTomes) => void
 }) {
   return (
     <div role="group" aria-label={nom} className="flex rounded-pilule border border-bordure bg-fond">
-      {options.map((choix, i) => (
-        <button
-          key={choix.valeur}
-          type="button"
-          aria-disabled={!enLigne || undefined}
-          onClick={() => appliquer(choix)}
-          className={`flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-1 px-2 text-[0.875rem] font-semibold whitespace-nowrap text-encre transition-colors duration-150 first:rounded-l-pilule last:rounded-r-pilule focus-visible:outline-offset-[-3px] active:bg-accent-doux aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:active:bg-transparent ${
-            i > 0 ? 'border-l border-bordure' : ''
-          }`}
-        >
-          <IconeChoix choix={choix} />
-          {choix.type === 'possession'
-            ? BULLES_POSSESSION.find((p) => p.valeur === choix.valeur)!.libelle
-            : BULLES_LECTURE.find((l) => l.valeur === choix.valeur)!.libelle}
-        </button>
-      ))}
+      {options.map((choix, i) => {
+        const choisi = choix.valeur === actuel
+        return (
+          <button
+            key={choix.valeur}
+            type="button"
+            data-etat={choisi ? 'actuel' : 'libre'}
+            aria-disabled={!enLigne || undefined}
+            onClick={() => appliquer(choix)}
+            // Le choix actuel a le style des bulles actives de l'appli (fond d'accent, texte sur accent).
+            className={`flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-1 px-2 text-[0.875rem] whitespace-nowrap transition-colors duration-150 first:rounded-l-pilule last:rounded-r-pilule focus-visible:outline-offset-[-3px] aria-disabled:cursor-default aria-disabled:opacity-50 ${
+              choisi ? 'bg-accent font-bold text-sur-accent' : 'font-semibold text-encre active:bg-accent-doux aria-disabled:active:bg-transparent'
+            } ${i > 0 ? (choisi ? 'border-l border-accent' : 'border-l border-bordure') : ''}`}
+          >
+            <IconeChoix choix={choix} />
+            {choix.type === 'possession'
+              ? BULLES_POSSESSION.find((p) => p.valeur === choix.valeur)!.libelle
+              : BULLES_LECTURE.find((l) => l.valeur === choix.valeur)!.libelle}
+            {choisi && <span className="sr-only">, choisi</span>}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -579,12 +593,15 @@ const CHOIX_LECTURE: ChoixTomes[] = BULLES_LECTURE.map((l) => ({ type: 'lecture'
 /**
  * Le menu de sélection, compact pour laisser voir la grille : le nombre de tomes sélectionnés,
  * « Tout sélectionner » et la croix qui annule la sélection ; puis la possession et la lecture,
- * chacune sur une ligne. Juste au-dessus, le message temporaire « 6 tomes : Je l'ai · Annuler ».
+ * chacune sur une ligne, le choix actuel mis en avant quand tous les tomes sélectionnés le partagent.
+ * Après un choix, la sélection reste : le message « 6 tomes : Je l'ai · Annuler » s'affiche en haut du menu.
  */
 function MenuTomes({
   refMenu,
   selection,
   tous,
+  possessionActuelle,
+  lectureActuelle,
   enLigne,
   appliquer,
   toutSelectionner,
@@ -595,6 +612,8 @@ function MenuTomes({
   refMenu: React.RefObject<HTMLDivElement | null>
   selection: Set<number>
   tous: boolean
+  possessionActuelle: string | null
+  lectureActuelle: string | null
   enLigne: boolean
   appliquer: (choix: ChoixTomes) => void
   toutSelectionner: () => void
@@ -634,11 +653,10 @@ function MenuTomes({
     // Sans sélection, la barre du bas de l'iPhone est revenue : le message se pose juste au-dessus d'elle.
     <div
       className={`fixed z-30 flex flex-col items-stretch gap-2.5 left-[calc(env(safe-area-inset-left)+1rem)] right-[calc(env(safe-area-inset-right)+1rem)] tablette:right-[max(2.5rem,env(safe-area-inset-right))] tablette:left-[calc(env(safe-area-inset-left)+18.5rem)] tablette:bottom-[max(env(safe-area-inset-bottom),1rem)] ${
-        ouvert ? 'bottom-[max(env(safe-area-inset-bottom),1rem)]' : 'bottom-[calc(max(env(safe-area-inset-bottom),1rem)+min(4.5rem,80px)+0.625rem)]'
+        'bottom-[max(env(safe-area-inset-bottom),1rem)]'
       }`}
     >
       <div ref={refMenu} className="flex flex-col items-stretch gap-2.5 tablette:mx-auto tablette:w-full tablette:max-w-[26rem]">
-        <MessageTemporaire message={message} effacer={effacerMessage} />
         <p role="status" className="sr-only">
           {annonce.current.texte}
         </p>
@@ -652,6 +670,8 @@ function MenuTomes({
         >
           {ouvert && (
             <>
+              {/* Le message se loge dans le menu, en haut : il ne recouvre ni la grille, ni la légende, ni les choix. */}
+              <MessageTemporaire message={message} effacer={effacerMessage} />
               <div className="flex items-center gap-1.5">
                 <p className="m-0 min-w-0 flex-1 truncate pl-1.5 text-[0.875rem] font-bold" aria-hidden="true">
                   {texteSelection(selection.size)}
@@ -674,8 +694,8 @@ function MenuTomes({
                   <IconeFermer taille={18} />
                 </button>
               </div>
-              <Segments nom="Possession" options={CHOIX_POSSESSION} enLigne={enLigne} appliquer={appliquer} />
-              <Segments nom="Lecture" options={CHOIX_LECTURE} enLigne={enLigne} appliquer={appliquer} />
+              <Segments nom="Possession" options={CHOIX_POSSESSION} actuel={possessionActuelle} enLigne={enLigne} appliquer={appliquer} />
+              <Segments nom="Lecture" options={CHOIX_LECTURE} actuel={lectureActuelle} enLigne={enLigne} appliquer={appliquer} />
               {!enLigne && <p className="m-0 px-1.5 text-sm text-discret">Hors connexion : les tomes pourront changer au retour du réseau.</p>}
             </>
           )}
