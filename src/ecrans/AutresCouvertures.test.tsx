@@ -100,7 +100,7 @@ describe('« Chercher d’autres couvertures »', () => {
     expect(screen.getByRole('menuitem', { name: 'Chercher d’autres couvertures' })).toBeInTheDocument()
     window.location.hash = '#/oeuvre/vag'
     await act(async () => window.dispatchEvent(new HashChangeEvent('hashchange')))
-    fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vagabond' })).getByRole('button', { name: /^Tome 1,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
+    fireEvent.keyDown(within(screen.getByRole('list', { name: 'Tomes de Vagabond' })).getByRole('button', { name: /^Tome 1,/ }), { key: 'i' })
     expect(within(screen.getByRole('dialog', { name: 'Tome 1' })).queryByRole('button', { name: 'Chercher d’autres couvertures' })).not.toBeInTheDocument()
   })
 

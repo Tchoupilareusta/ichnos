@@ -430,7 +430,7 @@ describe('choisir une image', () => {
 describe('choisir une image pour un tome', () => {
   const ouvrirTome = async () => {
     const monde = await ouvrir('#/oeuvre/vin')
-    fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: /^Tome 2,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
+    fireEvent.keyDown(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: /^Tome 2,/ }), { key: 'i' })
     return { ...monde, panneau: screen.getByRole('dialog', { name: 'Tome 2' }) }
   }
 

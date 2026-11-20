@@ -80,7 +80,7 @@ async function ouvrirAchat() {
 }
 
 async function ouvrirAchatDuTome(numero: number) {
-  fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: new RegExp(`^Tome ${numero},`) })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
+  fireEvent.keyDown(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: new RegExp(`^Tome ${numero},`) }), { key: 'i' })
   await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Je l’ai acheté' })))
 }
 
@@ -310,11 +310,10 @@ describe('« Je l’ai acheté » : un tome', () => {
   it('propose l’action dans le panneau d’un tome que je n’ai pas, pas dans celui d’un tome que j’ai', async () => {
     await ouvrirFiche('vin')
     const tomes = within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' }))
-    fireEvent.click(tomes.getByRole('button', { name: /^Tome 1,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
+    fireEvent.keyDown(tomes.getByRole('button', { name: /^Tome 1,/ }), { key: 'i' })
     expect(panneau().queryByRole('button', { name: 'Je l’ai acheté' })).not.toBeInTheDocument()
     await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Fermer' })))
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler la sélection' }))
-    fireEvent.click(tomes.getByRole('button', { name: /^Tome 2,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
+    fireEvent.keyDown(tomes.getByRole('button', { name: /^Tome 2,/ }), { key: 'i' })
     expect(panneau().getByRole('button', { name: 'Je l’ai acheté' })).toBeInTheDocument()
   })
 

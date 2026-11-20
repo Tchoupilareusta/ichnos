@@ -186,7 +186,7 @@ describe('« Je l’ai acheté » sans couverture trouvée', () => {
 
   it('pour un tome, seule la photo est proposée, et elle va sur ce tome', async () => {
     const { depot, couvertures } = await ouvrir('#/oeuvre/vin', { assistant: sansCouverture(TOME_2) })
-    fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: /^Tome 2,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
+    fireEvent.keyDown(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: /^Tome 2,/ }), { key: 'i' })
     await acheter('9782351423561')
     expect(screen.getByRole('button', { name: PHOTO })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: AUTRES })).not.toBeInTheDocument()
