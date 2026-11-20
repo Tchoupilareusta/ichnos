@@ -191,7 +191,7 @@ describe('série', () => {
     expect(barre()).not.toBeInTheDocument()
     expect(screen.getByText('Tome 3 : Je l’ai')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Tome 3, à lire, je l’ai' })).toBeInTheDocument()
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Annuler : Tome 3 : Je l’ai' })))
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Annuler : Tome 3, Je l’ai' })))
     expect(faux.appels.ecritures[1]).toEqual({
       action: 'reglerTomes',
       id: 'vin',

@@ -151,7 +151,7 @@ export function MesTomes({
   const effacerMessage = useCallback(() => setMessage(null), [])
 
   function signaler(texte: string, options: { icone?: ReactNode; annuler?: () => void } = {}) {
-    setMessage({ cle: Date.now(), texte, icone: options.icone, annuler: options.annuler, nomAnnuler: options.annuler ? `Annuler : ${texte}` : undefined })
+    setMessage({ cle: Date.now(), texte, icone: options.icone, annuler: options.annuler, nomAnnuler: options.annuler ? `Annuler : ${texte.replace(' : ', ', ')}` : undefined })
   }
 
   function executer(choix: ChoixTomes, { changements, annulation }: ReturnType<typeof preparerChangement>) {
