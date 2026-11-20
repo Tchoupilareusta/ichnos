@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { JeLaiAchete } from '../achat/JeLaiAchete'
 import { titresAffiches } from '../catalogue/titres'
 import { mentionTraduction, nomLangue } from '../catalogue/langues'
-import { couverturesDeLaFiche, type Edition, type Media, type OeuvreDetaillee, type Tome } from '../bibliotheque/depot'
+import { couverturesDeLaFiche, type Edition, type Media, type OeuvreDetaillee } from '../bibliotheque/depot'
 import {
   LONGUEURS,
   POSSESSIONS,
@@ -12,25 +12,17 @@ import {
   libelleStatut,
   libelleTypeMedia,
   possessionAffichee,
-  type Possession,
   type Statut,
 } from '../bibliotheque/modele'
 import { EchecDepot, useModifierOeuvre, useOeuvre } from '../bibliotheque/requetes'
 import {
-  LECTURES_TOME,
   STATUTS_MEDIA,
-  libelleLectureTome,
   libelleStatutMedia,
   texteEpisodes,
-  type LectureTome,
   type StatutMedia,
 } from '../bibliotheque/suivi'
-import { texteConfirmationTomes, titreConfirmationTomes } from '../bibliotheque/tomes'
 import { Bouton } from '../composants/Bouton'
-import { ChampTexte, Pastilles } from '../composants/Champs'
-import { Dialogue } from '../composants/Dialogue'
-import { Feuille } from '../composants/Feuille'
-import { IconeAjouter, IconeChevronBas, IconeCoche, IconeModifier, IconeMoins, IconeRetour, IconeSignet } from '../composants/Icones'
+import { IconeAjouter, IconeChevronBas, IconeModifier, IconeMoins, IconeRetour } from '../composants/Icones'
 import { IconePossession, IconeStatut } from '../composants/IconesLecture'
 import { Isbn } from '../composants/Isbn'
 import { Menu } from '../composants/Menu'
@@ -39,17 +31,16 @@ import { LIEN_ACTION, Section } from '../composants/Section'
 import { MonParcours } from '../suivi/Parcours'
 import { ProgressionFiche } from '../suivi/ProgressionFiche'
 import { MonRessenti, ProposerRessenti } from '../suivi/Ressenti'
-import { ChoisirImage } from '../couvertures/ChoisirImage'
 import { couvertureAffichee } from '../couvertures/choix'
 import { Couverture } from '../couvertures/Couverture'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { revenir, useRoute } from '../navigation/useRoute'
+import { ANCRE_TOMES, MesTomes } from '../tomes/MesTomes'
 
 const PASTILLE = 'flex min-h-11 items-center gap-1.5 rounded-pilule pr-3.5 pl-3.5 text-[0.9375rem]'
 const PASTILLE_DOUCE = `${PASTILLE} border-0 bg-accent-doux font-bold text-accent-texte`
 const PASTILLE_CLAIRE = `${PASTILLE} border border-bordure bg-surface font-semibold text-encre`
-const ANCRE_TOMES = 'mes-tomes'
 
 const OPTIONS_STATUT = STATUTS.map((s) => ({ ...s, icone: <IconeStatut statut={s.valeur} taille={19} /> }))
 const OPTIONS_POSSESSION = POSSESSIONS.map((p) => ({ ...p, icone: <IconePossession possession={p.valeur} /> }))
@@ -149,7 +140,6 @@ const MESSAGES_ECRITURE: Record<string, string> = {
 function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   const enLigne = useEnLigne()
   const modifier = useModifierOeuvre(oeuvre.id)
-  const [confirmation, setConfirmation] = useState<Possession | null>(null)
   // Passer à « Terminé » propose mon ressenti, sans obligation.
   const [ressenti, setRessenti] = useState(false)
   // « Je l'ai acheté » : pour le livre, ou pour un tome de la série. L'annonce reste après la fermeture du panneau.
@@ -183,14 +173,12 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
   const erreurs = [
     modifier.statut,
     modifier.possession,
-    modifier.possessionTomes,
     modifier.monEdition,
     modifier.progression,
     modifier.unite,
     modifier.total,
     modifier.dateFin,
     modifier.appreciation,
-    modifier.lectureTomes,
     modifier.media,
   ]
     .map((mutation) => mutation.error?.echec)
@@ -357,14 +345,11 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
           <MonEdition oeuvre={oeuvre} edition={edition} enLigne={enLigne} choisir={(valeur) => modifier.monEdition.mutate(valeur)} />
         )}
         {avecTomes && (
-          <Tomes
-            oeuvre={oeuvre.id}
+          <MesTomes
+            oeuvre={oeuvre}
             titre={principal}
-            tomes={oeuvre.tomes}
             enLigne={enLigne}
-            changer={(tomes, valeur) => modifier.possessionTomes.mutate({ tomes, possession: valeur })}
-            changerLecture={(tomes, lecture) => modifier.lectureTomes.mutate({ tomes, lecture })}
-            changerTous={setConfirmation}
+            modifier={modifier}
             acheter={(numero) => setAchat({ ouvert: true, tome: numero })}
           />
         )}
@@ -401,18 +386,6 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         }}
       />
 
-      <Dialogue
-        ouvert={confirmation !== null}
-        titre={confirmation ? titreConfirmationTomes(oeuvre.tomes, confirmation) : ''}
-        confirmer="Confirmer"
-        onAnnuler={() => setConfirmation(null)}
-        onConfirmer={() => {
-          if (confirmation) modifier.possessionTomes.mutate({ tomes: 'tous', possession: confirmation })
-          setConfirmation(null)
-        }}
-      >
-        {confirmation && texteConfirmationTomes(oeuvre.tomes, confirmation)}
-      </Dialogue>
     </div>
   )
 }
@@ -523,260 +496,6 @@ function MonEdition({
         <p className="m-0 text-discret">Je n’ai pas encore choisi l’édition que je lis.</p>
       )}
     </Section>
-  )
-}
-
-const STYLE_TOME: Record<Possession, string> = {
-  possede: 'border border-accent bg-accent font-bold text-sur-accent',
-  a_acheter: 'border-2 border-dashed border-accent-texte bg-surface font-bold text-accent-texte',
-  non_possede: 'border border-bordure bg-transparent font-semibold text-discret',
-}
-
-const PASTILLE_LECTURE = 'flex size-[1.125rem] items-center justify-center rounded-full border border-bordure bg-surface text-accent-texte'
-
-/** La marque de lecture d'un tome, posée dans son coin : une coche s'il est lu, un signet s'il est en cours. */
-function MarqueLecture({ lecture, dansLaLegende = false }: { lecture: LectureTome; dansLaLegende?: boolean }) {
-  if (lecture === 'a_lire') return null
-  return (
-    <span aria-hidden="true" className={`${PASTILLE_LECTURE} ${dansLaLegende ? '' : 'absolute -top-1.5 -right-1.5'}`}>
-      {lecture === 'lu' ? <IconeCoche taille={12} /> : <IconeSignet taille={10} />}
-    </span>
-  )
-}
-
-function Tomes({
-  oeuvre,
-  titre,
-  tomes,
-  enLigne,
-  changer,
-  changerLecture,
-  changerTous,
-  acheter,
-}: {
-  /** Identifiant de la série : pour ranger la photo d'un tome. */
-  oeuvre: string
-  titre: string
-  tomes: Tome[]
-  enLigne: boolean
-  /** Ouvre « Je l'ai acheté » pour ce tome. */
-  acheter: (numero: number) => void
-  changer: (tomes: { de: number; a: number }, possession: Possession) => void
-  changerLecture: (tomes: { de: number; a: number }, lecture: LectureTome) => void
-  /** Ouvre la confirmation qui applique une possession à tous les tomes. */
-  changerTous: (possession: Possession) => void
-}) {
-  const [plage, setPlage] = useState(false)
-  const [ouvert, setOuvert] = useState<number | null>(null)
-  const tomeOuvert = tomes.find((t) => t.numero === ouvert) ?? null
-
-  return (
-    <Section
-      titre="Mes tomes"
-      ancre={ANCRE_TOMES}
-      complement={
-        <Menu
-          nom="Tous les tomes : changer leur possession"
-          contenuBouton={
-            <>
-              Tous les tomes
-              <IconeChevronBas taille={16} />
-            </>
-          }
-          classeBouton={PASTILLE_CLAIRE}
-          options={OPTIONS_POSSESSION}
-          valeur={null}
-          onChoisir={changerTous}
-          desactive={!enLigne}
-        />
-      }
-    >
-      <ul aria-label="Légende" className="m-0 flex list-none flex-wrap gap-x-5 gap-y-2 p-0 text-sm text-discret">
-        {POSSESSIONS.map((p) => (
-          <li key={p.valeur} className="flex items-center gap-2">
-            <span aria-hidden="true" className={`inline-block size-4 rounded-full ${STYLE_TOME[p.valeur]}`} />
-            {p.libelle}
-          </li>
-        ))}
-        {(['lu', 'en_cours'] as const).map((lecture) => (
-          <li key={lecture} className="flex items-center gap-2">
-            <MarqueLecture lecture={lecture} dansLaLegende />
-            {libelleLectureTome(lecture)}
-          </li>
-        ))}
-      </ul>
-      <ul aria-label={`Tomes de ${titre}`} className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-2 p-0 pt-1.5">
-        {tomes.map((tome) => (
-          <li key={tome.numero} className="relative flex">
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              aria-label={`Tome ${tome.numero}${tome.titre ? `, ${tome.titre}` : ''} : ${libelleLectureTome(tome.lecture).toLocaleLowerCase('fr')}, ${libellePossession(tome.possession).toLocaleLowerCase('fr')}. Changer`}
-              onClick={() => setOuvert(tome.numero)}
-              className={`flex h-11 w-full min-w-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] tabular-nums ${STYLE_TOME[tome.possession]}`}
-            >
-              {tome.numero}
-            </button>
-            <MarqueLecture lecture={tome.lecture} />
-          </li>
-        ))}
-      </ul>
-      {plage ? (
-        <PlageDeTomes
-          premier={tomes[0].numero}
-          dernier={tomes[tomes.length - 1].numero}
-          fermer={() => setPlage(false)}
-          appliquer={(de, a, choix) => {
-            if (choix.type === 'lecture') changerLecture({ de, a }, choix.valeur)
-            else changer({ de, a }, choix.valeur)
-            setPlage(false)
-          }}
-          enLigne={enLigne}
-        />
-      ) : (
-        <button
-          type="button"
-          aria-disabled={!enLigne || undefined}
-          onClick={() => enLigne && setPlage(true)}
-          className={`${LIEN_ACTION} self-start`}
-        >
-          Changer plusieurs tomes
-        </button>
-      )}
-
-      {/* Toucher un tome : sa lecture et sa possession, réglées tout de suite. */}
-      <Feuille
-        ouvert={tomeOuvert !== null}
-        titre={tomeOuvert ? `Tome ${tomeOuvert.numero}` : ''}
-        sousTitre={tomeOuvert?.titre ?? undefined}
-        fermer={() => setOuvert(null)}
-      >
-        {tomeOuvert && (
-          <div className="flex flex-col gap-6">
-            {tomeOuvert.couverture && (
-              <Couverture
-                titre={titre}
-                graine={`${titre}-${tomeOuvert.numero}`}
-                chemin={tomeOuvert.couverture}
-                className="w-28 self-center"
-              />
-            )}
-            <Pastilles
-              legende="Ma lecture"
-              options={LECTURES_TOME}
-              valeur={tomeOuvert.lecture}
-              onChange={(lecture) => changerLecture({ de: tomeOuvert.numero, a: tomeOuvert.numero }, lecture)}
-              desactive={!enLigne}
-            />
-            <Pastilles
-              legende="Ma possession"
-              options={POSSESSIONS}
-              valeur={tomeOuvert.possession}
-              onChange={(possession) => changer({ de: tomeOuvert.numero, a: tomeOuvert.numero }, possession)}
-              desactive={!enLigne}
-            />
-            {/* Mon exemplaire : son ISBN quand je l'achète, et sa photo, la voie sûre pour la couverture d'un tome. */}
-            <div className="flex flex-col gap-3">
-              {tomeOuvert.possession !== 'possede' && (
-                <Bouton
-                  variante="secondaire"
-                  aria-haspopup="dialog"
-                  occupe={!enLigne}
-                  onClick={() => {
-                    const numero = tomeOuvert.numero
-                    setOuvert(null)
-                    acheter(numero)
-                  }}
-                >
-                  Je l’ai acheté
-                </Bouton>
-              )}
-              <ChoisirImage oeuvre={oeuvre} cible={{ type: 'tome', numero: tomeOuvert.numero }} enLigne={enLigne} />
-            </div>
-            {!enLigne && <p className="m-0 text-sm text-discret">Je pourrai changer ce tome au retour du réseau.</p>}
-          </div>
-        )}
-      </Feuille>
-    </Section>
-  )
-}
-
-type ChoixPlage = { type: 'lecture'; valeur: LectureTome } | { type: 'possession'; valeur: Possession }
-
-const CE_QUE_JE_CHANGE: { valeur: 'lecture' | 'possession'; libelle: string }[] = [
-  { valeur: 'lecture', libelle: 'Ma lecture' },
-  { valeur: 'possession', libelle: 'Ma possession' },
-]
-
-function PlageDeTomes({
-  premier,
-  dernier,
-  appliquer,
-  fermer,
-  enLigne,
-}: {
-  premier: number
-  dernier: number
-  appliquer: (de: number, a: number, choix: ChoixPlage) => void
-  fermer: () => void
-  enLigne: boolean
-}) {
-  const [de, setDe] = useState(String(premier))
-  const [a, setA] = useState(String(dernier))
-  const [type, setType] = useState<'lecture' | 'possession'>('lecture')
-  const [lecture, setLecture] = useState<LectureTome>('lu')
-  const [possession, setPossession] = useState<Possession>('possede')
-  const [erreur, setErreur] = useState<string | null>(null)
-
-  return (
-    <form
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault()
-        const debut = Number(de)
-        const fin = Number(a)
-        if (!Number.isInteger(debut) || !Number.isInteger(fin) || debut < premier || fin > dernier || debut > fin) {
-          setErreur(`Choisir des tomes entre ${premier} et ${dernier}, le premier avant le dernier.`)
-          return
-        }
-        appliquer(debut, fin, type === 'lecture' ? { type, valeur: lecture } : { type, valeur: possession })
-      }}
-      className="flex flex-col gap-5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce"
-    >
-      <div className="grid grid-cols-2 gap-4">
-        <ChampTexte
-          libelle="Du tome"
-          inputMode="numeric"
-          value={de}
-          onChange={(e) => setDe(e.target.value)}
-          autoFocus
-        />
-        <ChampTexte libelle="Au tome" inputMode="numeric" value={a} onChange={(e) => setA(e.target.value)} />
-      </div>
-      {erreur && (
-        <p role="alert" className="m-0 -mt-3 text-sm font-semibold text-accent-texte">
-          {erreur}
-        </p>
-      )}
-      <Pastilles legende="Je change…" options={CE_QUE_JE_CHANGE} valeur={type} onChange={setType} />
-      {type === 'lecture' ? (
-        <Pastilles legende="Ces tomes, je les ai…" options={[
-          { valeur: 'lu' as const, libelle: 'Lus' },
-          { valeur: 'en_cours' as const, libelle: 'En cours' },
-          { valeur: 'a_lire' as const, libelle: 'À lire' },
-        ]} valeur={lecture} onChange={setLecture} />
-      ) : (
-        <Pastilles legende="Ces tomes, je…" options={POSSESSIONS} valeur={possession} onChange={setPossession} />
-      )}
-      <div className="flex flex-wrap gap-3">
-        <Bouton type="submit" occupe={!enLigne}>
-          Appliquer
-        </Bouton>
-        <Bouton variante="secondaire" onClick={fermer}>
-          Annuler
-        </Bouton>
-      </div>
-    </form>
   )
 }
 

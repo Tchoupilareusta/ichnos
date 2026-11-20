@@ -80,7 +80,7 @@ async function ouvrirAchat() {
 }
 
 async function ouvrirAchatDuTome(numero: number) {
-  fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: new RegExp(`^Tome ${numero} `) }))
+  fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' })).getByRole('button', { name: new RegExp(`^Tome ${numero},`) })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
   await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Je l’ai acheté' })))
 }
 
@@ -310,10 +310,11 @@ describe('« Je l’ai acheté » : un tome', () => {
   it('propose l’action dans le panneau d’un tome que je n’ai pas, pas dans celui d’un tome que j’ai', async () => {
     await ouvrirFiche('vin')
     const tomes = within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' }))
-    fireEvent.click(tomes.getByRole('button', { name: /^Tome 1 / }))
+    fireEvent.click(tomes.getByRole('button', { name: /^Tome 1,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
     expect(panneau().queryByRole('button', { name: 'Je l’ai acheté' })).not.toBeInTheDocument()
     await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Fermer' })))
-    fireEvent.click(tomes.getByRole('button', { name: /^Tome 2 / }))
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler la sélection' }))
+    fireEvent.click(tomes.getByRole('button', { name: /^Tome 2,/ })); fireEvent.click(screen.getByRole('button', { name: 'Détails du tome' }))
     expect(panneau().getByRole('button', { name: 'Je l’ai acheté' })).toBeInTheDocument()
   })
 
@@ -325,7 +326,7 @@ describe('« Je l’ai acheté » : un tome', () => {
     await valider()
     expect(achats(depot)).toEqual([{ action: 'achat', id: 'vin', valeur: { isbn: '9791032705544', tome: 2, couverture: couvertures.deposees[0].chemin } }])
     const tomes = within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' }))
-    expect(await tomes.findByRole('button', { name: 'Tome 2 : en cours, je l’ai. Changer' })).toBeInTheDocument()
+    expect(await tomes.findByRole('button', { name: 'Tome 2, en cours, je l’ai' })).toBeInTheDocument()
     expect(screen.getByText('C’est noté : j’ai le tome 2 de « Vinland Saga », avec l’ISBN de mon exemplaire.')).toHaveAttribute('role', 'status')
   })
 

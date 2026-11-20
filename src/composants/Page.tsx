@@ -16,7 +16,8 @@ export function Page({ children, entete }: { children: ReactNode; entete?: React
       }`}
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
-        paddingBottom: 'calc(max(env(safe-area-inset-bottom), 1rem) + 7.5rem)',
+        // Assez de place sous le contenu pour la navigation, ou pour la barre d'actions des tomes quand elle est plus haute.
+        paddingBottom: 'calc(max(env(safe-area-inset-bottom), 1rem) + max(7.5rem, var(--place-barre, 0px) + 1.5rem))',
       }}
     >
       {entete}

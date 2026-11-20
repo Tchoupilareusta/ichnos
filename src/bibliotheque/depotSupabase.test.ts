@@ -427,16 +427,14 @@ describe('écritures', () => {
     expect(requetes[0].etapes[0]).toEqual(['update', { appreciation: null }])
   })
 
-  it('change la lecture d’une plage de tomes', async () => {
-    const { client, requetes } = fauxClient({ 'volumes.update': { data: [{ number: 1 }] } })
-    expect(await creerDepotSupabase(client, charger).changerLectureTomes('w1', { de: 1, a: 8 }, 'lu')).toEqual({ ok: true })
-    expect(requetes[0].etapes).toEqual([
-      ['update', { reading_status: 'lu' }],
-      ['eq', 'work_id', 'w1'],
-      ['gte', 'number', 1],
-      ['lte', 'number', 8],
-      ['select', 'number'],
-    ])
+  it('change plusieurs tomes par la fonction regler_tomes, en tout ou rien', async () => {
+    const { client, rpc, requetes } = fauxClient()
+    const changements = [{ numero: 2, possession: 'possede' as const }, { numero: 5, lecture: 'lu' as const, possession: 'a_acheter' as const }]
+    expect(await creerDepotSupabase(client, charger).reglerTomes('w1', changements)).toEqual({ ok: true })
+    expect(rpc).toEqual([{ nom: 'regler_tomes', arguments_: { oeuvre: 'w1', changements } }])
+    expect(requetes).toHaveLength(0)
+    const introuvable = fauxClient({}, { error: { code: 'EO002', message: 'Tome introuvable.' } })
+    expect(await creerDepotSupabase(introuvable.client, charger).reglerTomes('w1', changements)).toEqual({ ok: false, echec: 'introuvable' })
   })
 
   it('note les épisodes vus d’un média de cette œuvre seulement', async () => {
@@ -459,21 +457,6 @@ describe('écritures', () => {
     const { client, requetes } = fauxClient({ 'library_entries.update': { data: [{ work_id: 'w1' }] } })
     expect(await creerDepotSupabase(client, charger).changerMonEdition('w1', 'e2')).toEqual({ ok: true })
     expect(requetes[0].etapes[0]).toEqual(['update', { edition_id: 'e2' }])
-  })
-
-  it('change la possession d’une plage de tomes, ou de tous', async () => {
-    const plage = fauxClient({ 'volumes.update': { data: [{ number: 1 }] } })
-    expect(await creerDepotSupabase(plage.client, charger).changerPossessionTomes('w1', { de: 1, a: 8 }, 'possede')).toEqual({ ok: true })
-    expect(plage.requetes[0].etapes).toEqual([
-      ['update', { ownership: 'possede' }],
-      ['eq', 'work_id', 'w1'],
-      ['gte', 'number', 1],
-      ['lte', 'number', 8],
-      ['select', 'number'],
-    ])
-    const tous = fauxClient({ 'volumes.update': { data: [{ number: 1 }] } })
-    await creerDepotSupabase(tous.client, charger).changerPossessionTomes('w1', 'tous', 'a_acheter')
-    expect(tous.requetes[0].etapes.map(([etape]) => etape)).toEqual(['update', 'eq', 'select'])
   })
 
   it('supprime l’œuvre (ses éditions, tomes et notes partent avec elle dans la base)', async () => {

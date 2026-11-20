@@ -201,8 +201,8 @@ describe('série et média sur la fiche', () => {
     await cliquer(screen.getByRole('button', { name: 'Enregistrer' }))
     expect(ecritures(faux)).toEqual([{ action: 'progression', valeur: 6 }])
     const tomes = screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
-    expect(within(tomes).getByRole('button', { name: /^Tome 5 : lu/ })).toBeInTheDocument()
-    expect(within(tomes).getByRole('button', { name: /^Tome 6 : en cours/ })).toBeInTheDocument()
+    expect(within(tomes).getByRole('button', { name: /^Tome 5, lu/ })).toBeInTheDocument()
+    expect(within(tomes).getByRole('button', { name: /^Tome 6, en cours/ })).toBeInTheDocument()
   })
 
   it('compte les épisodes vus ; le premier fait passer l’anime « En cours »', async () => {
