@@ -1,15 +1,16 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { EchecAssistant, FicheProposee, ImageTrouvee } from '../ajout/assistant'
 import { editionConfiee, oublierEdition, type Apport, type EditionAAjouter } from '../ajout/passage'
 import { appliquerProposition, libelleSource, pourFiche, type ChampPropose, type CleProvenance, type Provenance } from '../ajout/preremplir'
 import { LANGUES, nomLangue } from '../catalogue/langues'
-import { couverturesDeLaFiche, type EchecEcriture, type OeuvreDetaillee, type Vocabulaire } from '../bibliotheque/depot'
-import { couvertureAffichee, type CibleCouverture } from '../couvertures/choix'
+import { ChercherEdition, type EditionTrouvee } from '../achat/ChercherEdition'
+import type { EchecEcriture, OeuvreDetaillee, Vocabulaire } from '../bibliotheque/depot'
+import type { CibleCouverture } from '../couvertures/choix'
 import { ApercuCouverture } from '../couvertures/ApercuCouverture'
-import { AutresCouvertures } from '../couvertures/AutresCouvertures'
-import { ChoisirImage } from '../couvertures/ChoisirImage'
-import { Couverture } from '../couvertures/Couverture'
+import { CouvertureModifiable, couvertureRangee, type ChoixCouverture } from '../couvertures/CouvertureModifiable'
+import { BarreSaisie, type Message } from '../composants/BarreSaisie'
+import { useMasquerNavigation } from '../navigation/saisie'
 import {
   ajusterTomes,
   etatDepuisOeuvre,
@@ -23,14 +24,15 @@ import {
   type EtatFormulaire,
   type Erreurs,
 } from '../bibliotheque/formulaire'
-import { FORMES, GENRES_ETIQUETTES, LONGUEURS, ROLES, TYPES_MEDIA, type GenreEtiquette, type Role, type TypeMedia } from '../bibliotheque/modele'
-import { EchecDepot, useEnregistrerOeuvre, useModifierOeuvre, useOeuvre, useRetirerCouverture, useVocabulaire } from '../bibliotheque/requetes'
+import { FORMES, GENRES_ETIQUETTES, isbnCompact, isbnValide, LONGUEURS, ROLES, TYPES_MEDIA, type GenreEtiquette, type Role, type TypeMedia } from '../bibliotheque/modele'
+import { EchecDepot, useEnregistrerOeuvre, useModifierOeuvre, useOeuvre, useVocabulaire } from '../bibliotheque/requetes'
 import { useSession } from '../session/Session'
 import { Bouton } from '../composants/Bouton'
 import { CHAMP, ChampListe, ChampLong, ChampTexte, Pastilles } from '../composants/Champs'
 import { Dialogue } from '../composants/Dialogue'
-import { IconeAjouter, IconeChevronBas, IconeFermer } from '../composants/Icones'
+import { IconeAjouter, IconeChevronBas, IconeFermer, IconeSupprimer } from '../composants/Icones'
 import { BoutonPrincipal, EtatVide, Page, TitrePage } from '../composants/Page'
+import { Repli } from '../composants/Repli'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { peutRevenir, remplacer, revenir, useRoute } from '../navigation/useRoute'
@@ -75,10 +77,12 @@ const TONALITES = [
   { valeur: '4', libelle: 'Douce' },
   { valeur: '5', libelle: 'Lumineuse' },
 ]
+// « Difficulté de lecture » (la valeur « exigence » en base) : du plus facile au plus exigeant.
+// « Modérée » plutôt que « Moyenne », pour ne pas se confondre avec la longueur.
 const EXIGENCES = [
-  { valeur: '1', libelle: 'Accessible' },
+  { valeur: '1', libelle: 'Très facile' },
   { valeur: '2', libelle: 'Facile' },
-  { valeur: '3', libelle: 'Moyenne' },
+  { valeur: '3', libelle: 'Modérée' },
   { valeur: '4', libelle: 'Soutenue' },
   { valeur: '5', libelle: 'Exigeante' },
 ]
@@ -100,6 +104,46 @@ const SANS_PROPOSITION: Record<EchecAssistant, string> = {
   indisponible: 'La proposition automatique n’est pas disponible pour le moment. La fiche se remplit très bien à la main.',
 }
 
+/** Le champ « Auteur » est toujours là, en haut : une ligne vide l'attend si l'œuvre n'en a pas (elle n'est pas envoyée). */
+function avecAuteur(etat: EtatFormulaire): EtatFormulaire {
+  return etat.auteurs.some((a) => a.role === 'auteur') ? etat : { ...etat, auteurs: [ligneAuteur(), ...etat.auteurs] }
+}
+
+const libelleDe = <T extends string>(liste: { valeur: T; libelle: string }[], valeur: T | null | undefined) => liste.find((x) => x.valeur === valeur)?.libelle ?? null
+const pluriel = (n: number, un: string, plusieurs: string) => `${n} ${n > 1 ? plusieurs : un}`
+
+/** Les résumés d'une ligne des sections repliées : ce qu'elles contiennent, sans les ouvrir. */
+function resumeDescription(etat: EtatFormulaire): string {
+  const noms = etat.etiquettes.map((e) => e.nom)
+  const etiquettes = noms.length === 0 ? 'aucune étiquette' : `${noms.slice(0, 2).join(', ')}${noms.length > 2 ? ` +${noms.length - 2}` : ''}`
+  const tonalite = libelleDe(TONALITES, etat.tonalite === null ? null : String(etat.tonalite))
+  return [etat.synopsis.trim() ? 'Résumé' : 'Sans résumé', etiquettes, tonalite?.toLocaleLowerCase('fr')].filter(Boolean).join(' · ')
+}
+function resumeDetails(etat: EtatFormulaire): string {
+  const autres = etat.auteurs.filter((a) => a.role !== 'auteur' && a.nom.trim())
+  return (
+    [
+      etat.titreOriginal.trim() && etat.titreOriginal.trim() !== etat.titreFr.trim() ? etat.titreOriginal.trim() : null,
+      etat.langueOriginale ? nomLangue(etat.langueOriginale) : null,
+      etat.annee.trim() || null,
+      libelleDe(FORMES, etat.forme)?.toLocaleLowerCase('fr'),
+      etat.estSerie ? 'série' : null,
+      autres.length ? pluriel(autres.length, 'autre personne', 'autres personnes') : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'Titre original, langue, année, forme'
+  )
+}
+function resumeMedias(etat: EtatFormulaire): string {
+  const medias = etat.medias.map((m) => libelleDe(TYPES_MEDIA, m.type)?.toLocaleLowerCase('fr') ?? 'adaptation')
+  return [etat.estSerie ? pluriel(etat.tomes.length, 'tome', 'tomes') : null, medias.length ? medias.join(', ') : 'aucune adaptation'].filter(Boolean).join(' · ')
+}
+function resumeEditions(autres: EtatFormulaire['editions']): string {
+  if (autres.length === 0) return 'Aucune autre édition notée'
+  const editeurs = [...new Set(autres.map((e) => e.publisher.trim()).filter(Boolean))]
+  return [pluriel(autres.length, 'édition', 'éditions'), editeurs.join(', ')].filter(Boolean).join(' · ')
+}
+
 /** Une édition (ou l'ISBN d'un tome) trouvée par la recherche, ajoutée à la fiche d'une œuvre que j'ai déjà. */
 function avecEditionConfiee(etat: EtatFormulaire, confiee: EditionAAjouter): EtatFormulaire {
   if (confiee.tome !== null) {
@@ -119,7 +163,9 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
   const { depot, assistant, couvertures } = useSession()
   const vocabulaire = useVocabulaire().data ?? { etiquettes: [], auteurs: [] }
   const enregistrement = useEnregistrerOeuvre()
-  const [depart] = useState(() => (initial ? etatDepuisOeuvre(initial) : etatVide()))
+  // La barre « Annuler / Enregistrer » prend la place de la navigation tant que le formulaire est là.
+  useMasquerNavigation()
+  const [depart] = useState(() => avecAuteur(initial ? etatDepuisOeuvre(initial) : etatVide()))
   const [etat, setEtat] = useState<EtatFormulaire>(() => {
     const confiee = initial ? editionConfiee(initial.id) : null
     return apport?.etat ?? (confiee ? avecEditionConfiee(depart, confiee) : depart)
@@ -227,24 +273,74 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
     oublierSource(cle)
   }
 
-  /** Une fois la fiche enregistrée : la couverture gardée est rangée, sur mon édition, sur le tome ou sur l'œuvre. */
-  async function rangerCouverture(id: string) {
-    if (!apport || !imageTrouvee || !garderCouverture) return
-    const deposee = await couvertures.deposer(imageTrouvee.image)
-    if (!deposee.ok) return
-    let cible: CibleCouverture = { type: 'oeuvre' }
-    if (apport.tome !== null) {
-      cible = { type: 'tome', numero: apport.tome }
-    } else if (cleEditionTrouvee && etat.mienne === cleEditionTrouvee) {
-      // L'identifiant de l'édition n'existe qu'une fois la fiche enregistrée.
-      const lecture = await depot.lireOeuvre(id)
-      if (lecture.ok && lecture.oeuvre.monEdition) cible = { type: 'edition', edition: lecture.oeuvre.monEdition }
-    }
-    await depot.definirCouverture(id, cible, deposee.chemin)
+  // La couverture, comme tout le reste, attend « Enregistrer » : une nouvelle image reste sur
+  // l'appareil (rien n'est envoyé si j'annule), un retrait reste à l'écran.
+  const [choixCouverture, setChoixCouverture] = useState<ChoixCouverture>({ etat: 'inchangee' })
+  const [messageTemporaire, setMessageTemporaire] = useState<Message | null>(null)
+  const effacerMessage = useCallback(() => setMessageTemporaire(null), [])
+  function changerCouverture(nouveau: ChoixCouverture) {
+    const avant = choixCouverture
+    setChoixCouverture(nouveau)
+    setMessageTemporaire({ cle: Date.now(), texte: nouveau.etat === 'nouvelle' ? 'Nouvelle couverture' : 'Couverture retirée', annuler: () => setChoixCouverture(avant),
+      nomAnnuler: nouveau.etat === 'nouvelle' ? 'Annuler : reprendre la couverture d’avant' : 'Annuler : remettre la couverture',
+    })
   }
 
+  // « Chercher cette édition » : le panneau, et une phrase une fois l'édition reportée.
+  const [chercheEdition, setChercheEdition] = useState(false)
+  const [noteEdition, setNoteEdition] = useState<string | null>(null)
+  const mienne = etat.editions.find((e) => e.cle === etat.mienne) ?? null
+
+  function appliquerEdition(trouvee: EditionTrouvee) {
+    setChercheEdition(false)
+    if (!mienne) return
+    maj({ editions: etat.editions.map((e) => (e.cle === mienne.cle ? { ...e, ...trouvee.champs } : e)) })
+    if (trouvee.image) changerCouverture({ etat: 'nouvelle', image: trouvee.image })
+    setNoteEdition(trouvee.image ? 'C’est reporté dans mon édition, avec sa couverture. J’enregistre pour le garder.' : 'C’est reporté dans mon édition. J’enregistre pour le garder.')
+  }
+
+  /**
+   * Une fois la fiche enregistrée, la couverture. Celle trouvée à l'ajout va sur mon édition, le tome
+   * ou l'œuvre. Dans « Modifier » : une image retirée l'est de partout où elle était rangée ; une
+   * nouvelle image est rangée (réduite) seulement maintenant, là où elle s'affichera.
+   */
+  async function rangerCouverture(id: string) {
+    if (apport && imageTrouvee && garderCouverture) {
+      const deposee = await couvertures.deposer(imageTrouvee.image)
+      if (deposee.ok) {
+        let cible: CibleCouverture = { type: 'oeuvre' }
+        if (apport.tome !== null) {
+          cible = { type: 'tome', numero: apport.tome }
+        } else if (cleEditionTrouvee && etat.mienne === cleEditionTrouvee) {
+          // L'identifiant de l'édition n'existe qu'une fois la fiche enregistrée.
+          const lecture = await depot.lireOeuvre(id)
+          if (lecture.ok && lecture.oeuvre.monEdition) cible = { type: 'edition', edition: lecture.oeuvre.monEdition }
+        }
+        await depot.definirCouverture(id, cible, deposee.chemin)
+      }
+    }
+    couvertureRatee.current = false
+    if (choixCouverture.etat === 'retiree' && initial) {
+      for (const cible of couvertureRangee(initial).cibles) {
+        if (!(await depot.definirCouverture(id, cible, null)).ok) couvertureRatee.current = true
+      }
+    }
+    if (choixCouverture.etat === 'nouvelle') {
+      const deposee = await couvertures.deposer(choixCouverture.image)
+      if (!deposee.ok) return void (couvertureRatee.current = true)
+      // Là où elle s'affichera : sur mon édition (telle qu'enregistrée à l'instant), sinon sur l'œuvre.
+      // Pour une série, sur la série elle-même : ses tomes se règlent un par un, dans leur panneau.
+      const lecture = await depot.lireOeuvre(id)
+      const monEdition = lecture.ok && !lecture.oeuvre.estSerie ? lecture.oeuvre.monEdition : null
+      const rangee = await depot.definirCouverture(id, monEdition ? { type: 'edition', edition: monEdition } : { type: 'oeuvre' }, deposee.chemin)
+      if (!rangee.ok) couvertureRatee.current = true
+    }
+  }
+  /** Dans « Modifier » : la fiche est enregistrée, mais pas la couverture. L'écran reste ouvert pour réessayer. */
+  const couvertureRatee = useRef(false)
+
   function quitter() {
-    if (modifie) setAbandon(true)
+    if (modifie || choixCouverture.etat !== 'inchangee') setAbandon(true)
     else revenir(retour)
   }
 
@@ -260,12 +356,20 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
           ? 'Un champ est à revoir avant d’enregistrer.'
           : 'Quelques champs sont à revoir avant d’enregistrer.',
       )
-      document.getElementById(premiere)?.focus()
+      // Un champ à revoir dans une section repliée : elle s'ouvre d'abord.
+      const champ = document.getElementById(premiere)
+      const repli = champ?.closest('details')
+      if (repli) repli.open = true
+      champ?.focus()
       return
     }
     setAnnonce(null)
     enregistrement.mutate({ fiche: versEnvoi(etat, initial?.id), apres: rangerCouverture }, {
       onSuccess: (id) => {
+        if (initial && couvertureRatee.current) {
+          setAnnonce('La fiche est enregistrée, mais pas la couverture. J’enregistre à nouveau pour réessayer.')
+          return resume.current?.focus()
+        }
         // Nouvelle œuvre : sa fiche s'ouvre à la place du formulaire, pour y choisir statut et possession.
         if (!initial || !peutRevenir()) remplacer(LIENS.oeuvre(id))
         else revenir(LIENS.oeuvre(id))
@@ -276,31 +380,53 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
 
   const message = annonce ?? (enregistrement.error ? ECHECS[enregistrement.error.echec] : null)
 
+  // L'ordre suit ce que je change le plus souvent. En modification : la couverture, mon édition, puis
+  // le titre et l'auteur. À l'ajout, le titre passe d'abord : c'est par lui qu'une œuvre commence.
+  const autresEditions = etat.editions.filter((e) => e.cle !== etat.mienne)
+  const blocEdition = (
+    <Bloc titre="Mon édition" id="editions">
+      <MonEdition
+        etat={etat}
+        maj={maj}
+        erreurs={erreurs}
+        trouvee={cleEditionTrouvee}
+        aideSource={aideSource}
+        oublierSource={oublierSource}
+        isbnDepart={depart.editions.find((e) => e.cle === etat.mienne)?.isbn ?? ''}
+        chercher={() => {
+          setNoteEdition(null)
+          setChercheEdition(true)
+        }}
+        note={noteEdition}
+      />
+    </Bloc>
+  )
+  const blocTitre = (
+    <Bloc titre="Titre et auteur">
+      <ChampTexte
+        id={idChamp.titreFr}
+        libelle="Titre"
+        aide={aideSource('titreFr')}
+        value={etat.titreFr}
+        onChange={(e) => majSource('titreFr', { titreFr: e.target.value })}
+        erreur={erreurs[idChamp.titreFr]}
+        required
+        autoComplete="off"
+      />
+      <AuteursPrincipaux etat={etat} maj={(changement) => majSource('auteurs', changement)} connus={vocabulaire.auteurs} aide={aideSource('auteurs')} />
+    </Bloc>
+  )
+
+  // Sur iPad, la couverture reste à gauche pendant que je fais défiler les champs, à droite.
+  const avecCouverture = initial !== null || apport !== null
   return (
-    <Page
-      entete={
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={quitter}
-            className="flex min-h-11 cursor-pointer items-center rounded-pilule border border-bordure bg-surface px-4 text-[0.9375rem] font-semibold text-encre"
-          >
-            Annuler
-          </button>
-          <Bouton type="submit" form={idFormulaire} occupe={enregistrement.isPending || !enLigne} className="min-h-11 px-5">
-            Enregistrer
-          </Bouton>
-        </div>
-      }
-    >
-      <form id={idFormulaire} noValidate onSubmit={enregistrer} className="flex max-w-3xl flex-col gap-12">
+    <Page>
+      <form id={idFormulaire} noValidate onSubmit={enregistrer} className={`flex flex-col gap-10 ${avecCouverture ? 'max-w-2xl tablette:max-w-none' : 'max-w-2xl'}`}>
         <div className="flex flex-col gap-3">
           <TitrePage>{titre}</TitrePage>
-          <p className="m-0 max-w-[60ch] text-discret">
-            {apport
-              ? 'Voici ce que les catalogues ont trouvé. Je relis, je corrige : rien n’est enregistré avant que je valide.'
-              : 'Ce que je ne sais pas, je le laisse vide : rien n’est jamais complété à ma place.'}
-          </p>
+          {apport && (
+            <p className="m-0 max-w-[60ch] text-discret">Voici ce que les catalogues ont trouvé. Je relis, je corrige : rien n’est enregistré avant que je valide.</p>
+          )}
           {!enLigne && (
             <p className="m-0 max-w-[60ch] rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte">
               Hors connexion : je peux préparer la fiche, et l’enregistrer au retour du réseau.
@@ -316,162 +442,169 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
           </p>
         </div>
 
-        {apport && (
-          <ApercuCouverture
-            titre={etat.titreFr}
-            cherche={refCouverture !== null && apercu.isPending}
-            trouvee={imageTrouvee}
-            adresse={adresseApercu}
-            garder={garderCouverture}
-            setGarder={setGarderCouverture}
-          />
-        )}
-
-        <Bloc titre="L’œuvre">
-          <div className="grid grid-cols-1 gap-5 tablette:grid-cols-2">
-            <ChampTexte
-              id={idChamp.titreFr}
-              libelle="Titre en français"
-              aide={aideSource('titreFr')}
-              value={etat.titreFr}
-              onChange={(e) => majSource('titreFr', { titreFr: e.target.value })}
-              erreur={erreurs[idChamp.titreFr]}
-              required
-              autoComplete="off"
-              className="tablette:col-span-2"
-            />
-            <ChampTexte
-              libelle="Titre original"
-              aide={aideSource('titreOriginal', 'S’il diffère du titre français.')}
-              value={etat.titreOriginal}
-              onChange={(e) => majSource('titreOriginal', { titreOriginal: e.target.value })}
-              autoComplete="off"
-            />
-            <ChampListe
-              libelle="Langue d’origine"
-              aide={aideSource('langueOriginale')}
-              value={etat.langueOriginale}
-              onChange={(e) => majSource('langueOriginale', { langueOriginale: e.target.value })}
-              options={optionsLangues(etat.langueOriginale)}
-            />
-            <ChampListe
-              libelle="Forme"
-              value={etat.forme}
-              onChange={(e) => maj({ forme: e.target.value as EtatFormulaire['forme'] })}
-              options={FORMES.map((f) => ({ valeur: f.valeur, libelle: f.libelle }))}
-            />
-            <ChampTexte
-              id={idChamp.annee}
-              libelle="Première parution"
-              aide={aideSource('annee', 'L’année, si je la connais.')}
-              inputMode="numeric"
-              value={etat.annee}
-              onChange={(e) => majSource('annee', { annee: e.target.value })}
-              erreur={erreurs[idChamp.annee]}
-              autoComplete="off"
-            />
-          </div>
-          <Bascule
-            libelle="C’est une série en plusieurs tomes"
-            aide="Un manga, par exemple : la possession se suit alors tome par tome."
-            coche={etat.estSerie}
-            onChange={(estSerie) => maj({ estSerie })}
-          />
-        </Bloc>
-
-        <Bloc titre="Auteurs">
-          <Auteurs etat={etat} maj={(changement) => majSource('auteurs', changement)} connus={vocabulaire.auteurs} aide={aideSource('auteurs')} />
-        </Bloc>
-
-        <Bloc titre="En quelques mots">
-          {/* Élément toujours présent : son contenu change, son état est porté par data-etat (étape 9). */}
-          <p role="status" data-etat={messageIA ? 'ouvert' : 'ferme'} className="m-0 max-w-[60ch] text-[0.9375rem] text-discret empty:hidden">
-            {messageIA ?? ''}
-          </p>
-          <ChampLong
-            libelle="Résumé"
-            aide={
-              propose('synopsis') && etat.synopsis === proposition.data?.synopsis
-                ? 'Proposé par l’IA d’après les catalogues : à relire et à corriger.'
-                : 'Écrit avec mes mots, sans rien dévoiler de la fin.'
-            }
-            value={etat.synopsis}
-            onChange={(e) => maj({ synopsis: e.target.value })}
-          />
-        </Bloc>
-
-        <Bloc titre="Étiquettes" aide={propose('etiquettes') ? 'Proposées par l’IA dans mon vocabulaire : je retire ce qui ne convient pas.' : undefined}>
-          {GENRES_ETIQUETTES.map((g) => (
-            <Etiquettes key={g.valeur} genre={g.valeur} libelle={g.pluriel} etat={etat} maj={maj} vocabulaire={vocabulaire} />
-          ))}
-          {themesNouveaux.length > 0 && (
-            <ThemesNouveaux
-              themes={themesNouveaux}
-              ajouter={(nom) => {
-                if (!etat.etiquettes.some((e) => e.genre === 'theme' && e.nom === nom)) maj({ etiquettes: [...etat.etiquettes, { genre: 'theme', nom }] })
-                setThemesNouveaux((avant) => avant.filter((theme) => theme !== nom))
-              }}
-            />
+        <div className={`flex flex-col gap-10 ${avecCouverture ? 'tablette:grid tablette:grid-cols-[14.5rem_minmax(0,40rem)] tablette:items-start tablette:gap-x-14' : ''}`}>
+          {initial ? (
+            <div className="tablette:sticky tablette:top-[calc(env(safe-area-inset-top)+2rem)]">
+              <CouvertureModifiable oeuvre={initial} titre={etat.titreFr} enLigne={enLigne} choix={choixCouverture} changer={changerCouverture} />
+            </div>
+          ) : (
+            apport && (
+              <ApercuCouverture
+                titre={etat.titreFr}
+                cherche={refCouverture !== null && apercu.isPending}
+                trouvee={imageTrouvee}
+                adresse={adresseApercu}
+                garder={garderCouverture}
+                setGarder={setGarderCouverture}
+              />
+            )
           )}
-        </Bloc>
 
-        <Bloc
-          titre="Le caractère du livre"
-          aide={propose('tonalite') || propose('exigence') || propose('longueur') ? 'Proposé par l’IA : à ajuster.' : undefined}
-        >
-          <Pastilles
-            legende="Tonalité"
-            options={[INCONNU, ...TONALITES]}
-            valeur={etat.tonalite === null ? '' : String(etat.tonalite)}
-            onChange={(v) => maj({ tonalite: v ? Number(v) : null })}
-          />
-          <Pastilles
-            legende="Exigence"
-            options={[INCONNU, ...EXIGENCES]}
-            valeur={etat.exigence === null ? '' : String(etat.exigence)}
-            onChange={(v) => maj({ exigence: v ? Number(v) : null })}
-          />
-          <Pastilles
-            legende="Longueur"
-            options={[INCONNU, ...LONGUEURS.map((l) => ({ valeur: l.valeur, libelle: l.libelle }))]}
-            valeur={etat.longueur ?? ''}
-            onChange={(v) => maj({ longueur: (v || null) as EtatFormulaire['longueur'] })}
-          />
-        </Bloc>
+          <div className="flex min-w-0 flex-col gap-10">
+            {initial ? (
+              <>
+                {blocEdition}
+                {blocTitre}
+              </>
+            ) : (
+              <>
+                {blocTitre}
+                {blocEdition}
+              </>
+            )}
 
-        <Bloc titre="Éditions" id="editions">
-          <Editions
-            etat={etat}
-            maj={maj}
-            erreurs={erreurs}
-            trouvee={cleEditionTrouvee}
-            aideSource={aideSource}
-            oublierSource={oublierSource}
-          />
-        </Bloc>
+            <div className="flex flex-col">
+              <Repli titre="Description et étiquettes" resume={resumeDescription(etat)} ouvertAuDepart={pourIA !== null}>
+                {/* Élément toujours présent : son contenu change, son état est porté par data-etat (étape 9). */}
+                <p role="status" data-etat={messageIA ? 'ouvert' : 'ferme'} className="m-0 max-w-[60ch] text-[0.9375rem] text-discret empty:hidden">
+                  {messageIA ?? ''}
+                </p>
+                <ChampLong
+                  libelle="Résumé"
+                  aide={
+                    propose('synopsis') && etat.synopsis === proposition.data?.synopsis
+                      ? 'Proposé par l’IA d’après les catalogues : à relire et à corriger.'
+                      : initial
+                        ? undefined
+                        : 'Écrit avec mes mots, sans rien dévoiler de la fin.'
+                  }
+                  value={etat.synopsis}
+                  onChange={(e) => maj({ synopsis: e.target.value })}
+                />
+                {propose('etiquettes') && <p className="m-0 text-sm text-discret">Étiquettes proposées par l’IA dans mon vocabulaire : je retire ce qui ne convient pas.</p>}
+                {GENRES_ETIQUETTES.map((g) => (
+                  <Etiquettes key={g.valeur} genre={g.valeur} libelle={g.pluriel} etat={etat} maj={maj} vocabulaire={vocabulaire} />
+                ))}
+                {themesNouveaux.length > 0 && (
+                  <ThemesNouveaux
+                    themes={themesNouveaux}
+                    ajouter={(nom) => {
+                      if (!etat.etiquettes.some((e) => e.genre === 'theme' && e.nom === nom)) maj({ etiquettes: [...etat.etiquettes, { genre: 'theme', nom }] })
+                      setThemesNouveaux((avant) => avant.filter((theme) => theme !== nom))
+                    }}
+                  />
+                )}
+                {(propose('tonalite') || propose('exigence') || propose('longueur')) && <p className="m-0 text-sm text-discret">Tonalité, difficulté et longueur proposées par l’IA : à ajuster.</p>}
+                <Pastilles
+                  legende="Tonalité"
+                  options={[INCONNU, ...TONALITES]}
+                  valeur={etat.tonalite === null ? '' : String(etat.tonalite)}
+                  onChange={(v) => maj({ tonalite: v ? Number(v) : null })}
+                />
+                <Pastilles
+                  legende="Difficulté de lecture"
+                  options={[INCONNU, ...EXIGENCES]}
+                  valeur={etat.exigence === null ? '' : String(etat.exigence)}
+                  onChange={(v) => maj({ exigence: v ? Number(v) : null })}
+                />
+                <Pastilles
+                  legende="Longueur"
+                  options={[INCONNU, ...LONGUEURS.map((l) => ({ valeur: l.valeur, libelle: l.libelle }))]}
+                  valeur={etat.longueur ?? ''}
+                  onChange={(v) => maj({ longueur: (v || null) as EtatFormulaire['longueur'] })}
+                />
+              </Repli>
 
-        {etat.estSerie && (
-          <Bloc titre="Tomes" aide={provenance.tomes ? `Le tome ${apport?.tome} est celui de mon ISBN, d’après ${libelleSource(provenance.tomes)}.` : undefined}>
-            <Tomes etat={etat} maj={maj} erreurs={erreurs} initial={initial} />
-          </Bloc>
-        )}
+              <Repli titre="Détails de l’œuvre" resume={resumeDetails(etat)}>
+                <div className="grid grid-cols-2 gap-4">
+                  <ChampTexte
+                    libelle="Titre original"
+                    aide={aideSource('titreOriginal')}
+                    value={etat.titreOriginal}
+                    onChange={(e) => majSource('titreOriginal', { titreOriginal: e.target.value })}
+                    autoComplete="off"
+                    className="col-span-2"
+                  />
+                  <ChampListe
+                    libelle="Langue d’origine"
+                    aide={aideSource('langueOriginale')}
+                    value={etat.langueOriginale}
+                    onChange={(e) => majSource('langueOriginale', { langueOriginale: e.target.value })}
+                    options={optionsLangues(etat.langueOriginale)}
+                  />
+                  <ChampTexte
+                    id={idChamp.annee}
+                    libelle="Parution"
+                    aide={aideSource('annee')}
+                    inputMode="numeric"
+                    value={etat.annee}
+                    onChange={(e) => majSource('annee', { annee: e.target.value })}
+                    erreur={erreurs[idChamp.annee]}
+                    autoComplete="off"
+                  />
+                  <ChampListe
+                    libelle="Type d’œuvre"
+                    value={etat.forme}
+                    onChange={(e) => maj({ forme: e.target.value as EtatFormulaire['forme'] })}
+                    options={FORMES.map((f) => ({ valeur: f.valeur, libelle: f.libelle }))}
+                    className="col-span-2"
+                  />
+                </div>
+                <Bascule libelle="C’est une série en plusieurs tomes" coche={etat.estSerie} onChange={(estSerie) => maj({ estSerie })} />
+                <AutresPersonnes etat={etat} maj={(changement) => majSource('auteurs', changement)} connus={vocabulaire.auteurs} />
+              </Repli>
 
-        <Bloc titre="À l’écran" aide="Une adaptation en anime, en film ou en série.">
-          <Medias etat={etat} maj={maj} erreurs={erreurs} />
-        </Bloc>
+              <Repli titre={etat.estSerie ? 'Tomes et médias' : 'À l’écran'} resume={resumeMedias(etat)}>
+                {etat.estSerie && (
+                  <>
+                    {provenance.tomes && <p className="m-0 text-sm text-discret">{`Le tome ${apport?.tome} est celui de mon ISBN, d’après ${libelleSource(provenance.tomes)}.`}</p>}
+                    <Tomes etat={etat} maj={maj} erreurs={erreurs} initial={initial} />
+                  </>
+                )}
+                <Medias etat={etat} maj={maj} erreurs={erreurs} />
+              </Repli>
 
-        <div className="flex flex-wrap gap-3 border-t border-bordure pt-8">
-          <Bouton type="submit" occupe={enregistrement.isPending || !enLigne}>
-            {enregistrement.isPending ? 'Enregistrement…' : 'Enregistrer'}
-          </Bouton>
-          <Bouton variante="secondaire" onClick={quitter}>
-            Annuler
-          </Bouton>
+              <Repli titre="Autres éditions" resume={resumeEditions(autresEditions)}>
+                <AutresEditions etat={etat} maj={maj} erreurs={erreurs} />
+              </Repli>
+            </div>
+
+            {/* Tout en bas, séparée du reste : la suppression, toujours après confirmation. */}
+            {initial && <Suppression oeuvre={initial} enLigne={enLigne} />}
+          </div>
         </div>
       </form>
 
-      {initial && <CouvertureRangee oeuvre={initial} enLigne={enLigne} />}
-      {initial && <Suppression oeuvre={initial} enLigne={enLigne} />}
+      <BarreSaisie
+        formulaire={idFormulaire}
+        occupe={enregistrement.isPending || !enLigne}
+        enregistrement={enregistrement.isPending}
+        annuler={quitter}
+        message={messageTemporaire}
+        effacerMessage={effacerMessage}
+      />
+
+      {mienne && (
+        <ChercherEdition
+          ouvert={chercheEdition}
+          isbn={mienne.isbn}
+          idOeuvre={initial?.id ?? null}
+          titres={[etat.titreFr, etat.titreOriginal].filter(Boolean)}
+          actuelle={mienne}
+          fermer={() => setChercheEdition(false)}
+          appliquer={appliquerEdition}
+        />
+      )}
 
       <Dialogue
         ouvert={abandon}
@@ -484,7 +617,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
           revenir(retour)
         }}
       >
-        <p className="m-0">Ce que j’ai saisi ici ne sera pas enregistré.</p>
+        <p className="m-0">{initial ? 'Rien de ce que j’ai changé ne sera enregistré, couverture comprise.' : 'Ce que j’ai saisi ici ne sera pas enregistré.'}</p>
       </Dialogue>
     </Page>
   )
@@ -507,14 +640,21 @@ function Suppression({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: bo
   const nom = oeuvre.titreFr
 
   return (
-    <section aria-label="Supprimer l’œuvre" className="flex max-w-3xl flex-col gap-2 border-t border-bordure pt-8">
+    <section aria-label="Supprimer l’œuvre" className="mt-6 flex flex-col items-center gap-2 border-t border-bordure pt-10">
+      {/* Fond rouge doux : l'accent doux de la palette, avec le texte accentué (contraste AA en clair et en sombre). */}
       <button
         type="button"
         aria-disabled={!enLigne || undefined}
         onClick={() => enLigne && setOuvert(true)}
-        className="flex min-h-11 cursor-pointer items-center self-start border-0 bg-transparent p-0 text-[0.9375rem] font-bold text-accent-texte underline decoration-1 underline-offset-4 aria-disabled:cursor-default aria-disabled:opacity-60"
+        className="flex min-h-12 cursor-pointer items-center justify-center rounded-pilule border-0 bg-accent-doux px-5 py-2.5 text-center text-[0.9375rem] font-bold text-accent-texte transition-transform duration-200 active:scale-[0.98] aria-disabled:cursor-default aria-disabled:opacity-60"
       >
-        Supprimer cette œuvre de ma bibliothèque
+        {/* L'icône suit le texte : sur un iPhone étroit, le libellé passe sur deux lignes sans laisser l'icône à l'écart. */}
+        <span className="text-balance">
+          <span className="mr-2 inline-block align-[-0.25em]">
+            <IconeSupprimer taille={19} />
+          </span>
+          Supprimer cette œuvre de ma bibliothèque
+        </span>
       </button>
       <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
         {suppression.error ? ECHECS_SUPPRESSION[suppression.error.echec] : ''}
@@ -573,123 +713,42 @@ function ThemesNouveaux({ themes, ajouter }: { themes: string[]; ajouter: (nom: 
   )
 }
 
-const ECHECS_COUVERTURE: Record<string, string> = {
-  reseau: 'Pas de connexion à internet : la couverture n’a pas été retirée.',
-  introuvable: 'Cette œuvre n’est plus dans ma bibliothèque.',
-  invalide: 'La couverture n’a pas pu être retirée.',
-  inconnu: 'La couverture n’a pas pu être retirée. Je réessaie dans un instant.',
-}
-
-/**
- * Dans « Modifier » : la couverture, toujours là. Je peux choisir une image (photo de mon exemplaire
- * ou fichier), et retirer celle qui s'affiche si ce n'est pas la bonne : la couverture d'Ichnos
- * reprend alors sa place. Chaque geste est immédiat, hors du bouton « Enregistrer ».
- */
-function CouvertureRangee({ oeuvre, enLigne }: { oeuvre: OeuvreDetaillee; enLigne: boolean }) {
-  const retrait = useRetirerCouverture(oeuvre.id)
-  // Une image choisie ou gardée vient d'être rangée : la section le dit (VoiceOver l'annonce).
-  const [rangee, setRangee] = useState(false)
-  const chemin = couvertureAffichee(couverturesDeLaFiche(oeuvre))
-  // Tous les endroits de cette fiche où ce chemin est rangé.
-  const cibles: CibleCouverture[] = chemin
-    ? [
-        ...(oeuvre.couverture === chemin ? [{ type: 'oeuvre' as const }] : []),
-        ...oeuvre.editions.filter((e) => e.couverture === chemin).map((e) => ({ type: 'edition' as const, edition: e.id })),
-        ...oeuvre.tomes.filter((t) => t.couverture === chemin).map((t) => ({ type: 'tome' as const, numero: t.numero })),
-      ]
-    : []
-  // Une image choisie va là où elle s'affiche : sur mon édition si j'en ai une, sinon sur l'œuvre.
-  // Pour une série, sur la série elle-même : ses tomes se règlent un par un, dans leur panneau.
-  const cible: CibleCouverture = !oeuvre.estSerie && oeuvre.monEdition ? { type: 'edition', edition: oeuvre.monEdition } : { type: 'oeuvre' }
-  const phrase = !enLigne
-    ? 'Je pourrai changer la couverture au retour du réseau.'
-    : oeuvre.estSerie
-      ? 'Pour une série, cette image s’affiche tant qu’aucun tome n’a sa couverture. Chaque tome se règle dans son panneau, sur la fiche.'
-      : chemin
-        ? 'Si je la retire, celle d’Ichnos reprendra sa place.'
-        : 'Une photo de mon exemplaire, ou la couverture d’une autre édition.'
-  return (
-    <section aria-labelledby="couverture-rangee" className="flex max-w-3xl flex-col gap-4 border-t border-bordure pt-8">
-      <h2 id="couverture-rangee" className="m-0 font-titre text-2xl">
-        Couverture
-      </h2>
-      <div className="flex items-center gap-5">
-        <Couverture titre={oeuvre.titreFr} graine={oeuvre.id} chemin={chemin} className="w-24 shrink-0" />
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
-          <p role="status" data-etat={rangee ? 'ouvert' : 'ferme'} className="m-0 text-[0.9375rem] font-semibold empty:hidden">
-            {rangee ? 'La nouvelle couverture est en place.' : ''}
-          </p>
-          <p className="m-0 max-w-[48ch] text-sm text-discret">{phrase}</p>
-          {chemin && (
-            <button
-              type="button"
-              aria-disabled={!enLigne || retrait.isPending || undefined}
-              onClick={() => {
-                if (!enLigne || retrait.isPending) return
-                setRangee(false)
-                retrait.mutate(cibles)
-              }}
-              className={LIEN}
-            >
-              Retirer cette couverture
-            </button>
-          )}
-          {retrait.error && (
-            <p role="alert" className="m-0 text-sm font-semibold text-accent-texte">
-              {ECHECS_COUVERTURE[retrait.error.echec]}
-            </p>
-          )}
-        </div>
-      </div>
-      {/* Sous la couverture : sur iPhone, les deux boutons ne tiennent pas à côté d'elle sans se couper. */}
-      <div className="flex flex-wrap items-start gap-2.5">
-        <ChoisirImage oeuvre={oeuvre.id} cible={cible} enLigne={enLigne} surRangee={() => setRangee(true)} />
-        <AutresCouvertures oeuvre={oeuvre} cible={cible} enLigne={enLigne} surRangee={() => setRangee(true)} />
-      </div>
-    </section>
-  )
-}
-
 type PropsBloc = { etat: EtatFormulaire; maj: (changement: Partial<EtatFormulaire>) => void }
 
-function Bloc({ titre, aide, id, children }: { titre: string; aide?: string; id?: string; children: ReactNode }) {
+function Bloc({ titre, id, children }: { titre: string; id?: string; children: ReactNode }) {
   const idTitre = useId()
   return (
-    <section id={id} aria-labelledby={idTitre} className="flex scroll-mt-6 flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <h2 id={idTitre} className="m-0 font-titre text-2xl">
-          {titre}
-        </h2>
-        {aide && <p className="m-0 text-sm text-discret">{aide}</p>}
-      </div>
+    <section id={id} aria-labelledby={idTitre} className="flex scroll-mt-6 flex-col gap-4">
+      <h2 id={idTitre} className="m-0 font-titre text-[1.375rem] leading-tight">
+        {titre}
+      </h2>
       {children}
     </section>
   )
 }
 
+/** Case à cocher : toute la ligne (case et libellé) répond au toucher, sur au moins 44 px de haut. */
 function Bascule({ libelle, aide, coche, onChange }: { libelle: string; aide?: string; coche: boolean; onChange: (coche: boolean) => void }) {
   const id = useId()
   return (
-    <div className="flex items-start gap-3">
+    <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
       <input
         id={id}
         type="checkbox"
         checked={coche}
         onChange={(e) => onChange(e.target.checked)}
         aria-describedby={aide ? `${id}-aide` : undefined}
-        className="mt-0.5 size-6 shrink-0 cursor-pointer accent-[var(--accent)]"
+        className="size-6 shrink-0 cursor-pointer accent-[var(--accent)]"
       />
-      <div className="flex flex-col gap-0.5">
-        <label htmlFor={id} className="cursor-pointer text-[0.9375rem] font-bold">
-          {libelle}
-        </label>
+      <span className="flex flex-col gap-0.5">
+        <span className="text-[0.9375rem] font-bold">{libelle}</span>
         {aide && (
           <span id={`${id}-aide`} className="text-sm text-discret">
             {aide}
           </span>
         )}
-      </div>
-    </div>
+      </span>
+    </label>
   )
 }
 
@@ -707,23 +766,20 @@ function BoutonRetirer({ nom, onClick }: { nom: string; onClick: () => void }) {
   )
 }
 
+/** Ajouter une ligne (personne, édition, adaptation) : un simple lien, pour ce que je fais rarement. */
 function BoutonAjouterLigne({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex min-h-11 cursor-pointer items-center gap-2 self-start rounded-pilule border border-dashed border-bordure bg-transparent px-4 text-[0.9375rem] font-bold text-accent-texte"
-    >
+    <button type="button" onClick={onClick} className={`${LIEN} gap-1.5 self-start no-underline`}>
       <IconeAjouter taille={18} />
-      {children}
+      <span className="underline decoration-1 underline-offset-4">{children}</span>
     </button>
   )
 }
 
-function Auteurs({ etat, maj, connus, aide }: PropsBloc & { connus: string[]; aide?: string }) {
+/** En haut : le ou les auteurs, sans le choix du rôle. Les autres personnes sont dans « Détails de l'œuvre ». */
+function AuteursPrincipaux({ etat, maj, connus, aide }: PropsBloc & { connus: string[]; aide?: string }) {
   const idListe = useId()
-  const changer = (cle: string, changement: { nom?: string; role?: Role }) =>
-    maj({ auteurs: etat.auteurs.map((a) => (a.cle === cle ? { ...a, ...changement } : a)) })
+  const auteurs = etat.auteurs.filter((a) => a.role === 'auteur')
   return (
     <>
       <datalist id={idListe}>
@@ -731,33 +787,234 @@ function Auteurs({ etat, maj, connus, aide }: PropsBloc & { connus: string[]; ai
           <option key={nom} value={nom} />
         ))}
       </datalist>
-      <ul className="m-0 flex list-none flex-col gap-4 p-0">
-        {etat.auteurs.map((auteur, rang) => (
-          <li key={auteur.cle} className="flex items-end gap-3">
-            <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 min-[30rem]:grid-cols-[minmax(0,1fr)_11rem]">
-              <ChampTexte
-                libelle={`Nom${etat.auteurs.length > 1 ? ` (${rang + 1})` : ''}`}
-                aide={rang === 0 ? aide : undefined}
-                list={idListe}
-                value={auteur.nom}
-                onChange={(e) => changer(auteur.cle, { nom: e.target.value })}
-                autoComplete="off"
-              />
-              <ChampListe
-                libelle="Rôle"
-                value={auteur.role}
-                onChange={(e) => changer(auteur.cle, { role: e.target.value as Role })}
-                options={ROLES.map((r) => ({ valeur: r.valeur, libelle: r.libelle }))}
-              />
-            </div>
+      {auteurs.map((auteur, rang) => (
+        <div key={auteur.cle} className="flex items-end gap-3">
+          <ChampTexte
+            libelle={auteurs.length > 1 ? `Auteur ${rang + 1}` : 'Auteur'}
+            aide={rang === 0 ? aide : undefined}
+            list={idListe}
+            value={auteur.nom}
+            onChange={(e) => maj({ auteurs: etat.auteurs.map((a) => (a.cle === auteur.cle ? { ...a, nom: e.target.value } : a)) })}
+            autoComplete="off"
+            className="min-w-0 flex-1"
+          />
+          {auteurs.length > 1 && (
             <BoutonRetirer
-              nom={auteur.nom.trim() ? `Retirer ${auteur.nom.trim()}` : 'Retirer cette ligne'}
+              nom={auteur.nom.trim() ? `Retirer ${auteur.nom.trim()}` : 'Retirer cet auteur'}
               onClick={() => maj({ auteurs: etat.auteurs.filter((a) => a.cle !== auteur.cle) })}
             />
-          </li>
+          )}
+        </div>
+      ))}
+    </>
+  )
+}
+
+/** Dans « Détails de l'œuvre » : traduction, illustrations, ou un second auteur, avec leur rôle. */
+function AutresPersonnes({ etat, maj, connus }: PropsBloc & { connus: string[] }) {
+  const idListe = useId()
+  const autres = etat.auteurs.filter((a) => a.role !== 'auteur')
+  const changer = (cle: string, changement: { nom?: string; role?: Role }) =>
+    maj({ auteurs: etat.auteurs.map((a) => (a.cle === cle ? { ...a, ...changement } : a)) })
+  return (
+    <div className="flex flex-col gap-3">
+      <datalist id={idListe}>
+        {connus.map((nom) => (
+          <option key={nom} value={nom} />
         ))}
-      </ul>
-      <BoutonAjouterLigne onClick={() => maj({ auteurs: [...etat.auteurs, ligneAuteur()] })}>Ajouter une personne</BoutonAjouterLigne>
+      </datalist>
+      {autres.length > 0 && (
+        <ul aria-label="Autres personnes" className="m-0 flex list-none flex-col gap-4 p-0">
+          {autres.map((personne) => (
+            <li key={personne.cle} className="flex items-end gap-3">
+              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_9.5rem] gap-3">
+                <ChampTexte libelle="Nom" list={idListe} value={personne.nom} onChange={(e) => changer(personne.cle, { nom: e.target.value })} autoComplete="off" />
+                <ChampListe
+                  libelle="Rôle"
+                  value={personne.role}
+                  onChange={(e) => changer(personne.cle, { role: e.target.value as Role })}
+                  options={ROLES.map((r) => ({ valeur: r.valeur, libelle: r.libelle }))}
+                />
+              </div>
+              <BoutonRetirer
+                nom={personne.nom.trim() ? `Retirer ${personne.nom.trim()}` : 'Retirer cette ligne'}
+                onClick={() => maj({ auteurs: etat.auteurs.filter((a) => a.cle !== personne.cle) })}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      <BoutonAjouterLigne onClick={() => maj({ auteurs: [...etat.auteurs, ligneAuteur('', 'traducteur')] })}>Ajouter une personne</BoutonAjouterLigne>
+    </div>
+  )
+}
+
+type ChangerEdition = (cle: string, changement: Partial<EtatFormulaire['editions'][number]>, source?: CleProvenance) => void
+
+/** Les champs d'une édition, deux par deux dès l'iPhone : ils sont courts. */
+function ChampsEdition({
+  edition,
+  changer,
+  erreurs,
+  aide,
+  apresIsbn,
+}: {
+  edition: EtatFormulaire['editions'][number]
+  changer: ChangerEdition
+  erreurs: Erreurs
+  aide: (source: CleProvenance) => string | undefined
+  /** Sous l'ISBN : « Chercher cette édition », pour mon édition. */
+  apresIsbn?: ReactNode
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="col-span-2 flex flex-col gap-2">
+        <ChampTexte
+          id={idChamp.isbnEdition(edition.cle)}
+          libelle="ISBN"
+          inputMode="numeric"
+          value={edition.isbn}
+          onChange={(e) => changer(edition.cle, { isbn: e.target.value })}
+          erreur={erreurs[idChamp.isbnEdition(edition.cle)]}
+          autoComplete="off"
+          enterKeyHint="done"
+        />
+        {apresIsbn}
+      </div>
+      <ChampTexte
+        libelle="Éditeur"
+        aide={aide('editeur')}
+        value={edition.publisher}
+        onChange={(e) => changer(edition.cle, { publisher: e.target.value }, 'editeur')}
+        autoComplete="off"
+        className="col-span-2"
+      />
+      <ChampTexte
+        id={idChamp.pagesEdition(edition.cle)}
+        libelle="Pages"
+        aide={aide('pages')}
+        inputMode="numeric"
+        value={edition.pageCount}
+        onChange={(e) => changer(edition.cle, { pageCount: e.target.value }, 'pages')}
+        erreur={erreurs[idChamp.pagesEdition(edition.cle)]}
+        autoComplete="off"
+      />
+      <ChampListe
+        libelle="Langue"
+        aide={aide('langue')}
+        value={edition.language}
+        onChange={(e) => changer(edition.cle, { language: e.target.value }, 'langue')}
+        options={optionsLangues(edition.language)}
+      />
+      <ChampTexte
+        libelle="Collection"
+        value={edition.format}
+        onChange={(e) => changer(edition.cle, { format: e.target.value })}
+        autoComplete="off"
+      />
+      <ChampTexte
+        libelle="Traduction"
+        aide={aide('traducteur')}
+        value={edition.translator}
+        onChange={(e) => changer(edition.cle, { translator: e.target.value }, 'traducteur')}
+        autoComplete="off"
+      />
+    </div>
+  )
+}
+
+/** Mon édition, celle de mon exemplaire : ce que je modifie le plus souvent après la couverture. */
+function MonEdition({
+  etat,
+  maj,
+  erreurs,
+  trouvee,
+  aideSource,
+  oublierSource,
+  isbnDepart,
+  chercher,
+  note,
+}: PropsBloc & {
+  erreurs: Erreurs
+  /** Clé de l'édition remplie par la recherche : ses champs disent d'où ils viennent. */
+  trouvee: string | null
+  aideSource: (cle: CleProvenance, parDefaut?: string) => string | undefined
+  oublierSource: (cle: CleProvenance) => void
+  /** L'ISBN de mon édition à l'ouverture : « Chercher cette édition » n'est proposé que s'il change. */
+  isbnDepart: string
+  chercher: () => void
+  note: string | null
+}) {
+  const mienne = etat.editions.find((e) => e.cle === etat.mienne) ?? null
+  if (!mienne) {
+    return (
+      <>
+        <p className="m-0 text-[0.9375rem] text-discret">
+          {etat.editions.length > 0 ? 'Aucune de mes éditions notées n’est marquée comme la mienne.' : 'Je n’ai pas encore noté mon édition.'}
+        </p>
+        <BoutonAjouterLigne
+          onClick={() => {
+            const nouvelle = ligneEdition()
+            maj({ editions: [...etat.editions, nouvelle], mienne: nouvelle.cle })
+          }}
+        >
+          Noter mon édition
+        </BoutonAjouterLigne>
+      </>
+    )
+  }
+  const changer: ChangerEdition = (cle, changement, source) => {
+    maj({ editions: etat.editions.map((e) => (e.cle === cle ? { ...e, ...changement } : e)) })
+    if (source && cle === trouvee) oublierSource(source)
+  }
+  const compact = isbnCompact(mienne.isbn)
+  const proposer = /^97[89]\d{10}$/.test(compact) && isbnValide(compact) && compact !== isbnCompact(isbnDepart)
+  return (
+    <>
+      <ChampsEdition
+        edition={mienne}
+        changer={changer}
+        erreurs={erreurs}
+        aide={(source) => (mienne.cle === trouvee ? aideSource(source) : undefined)}
+        apresIsbn={
+          proposer && (
+            <Bouton variante="secondaire" aria-haspopup="dialog" onClick={chercher} className="min-h-11 self-start px-5">
+              Chercher cette édition
+            </Bouton>
+          )
+        }
+      />
+      <p role="status" className="m-0 text-sm text-discret empty:hidden">
+        {note ?? ''}
+      </p>
+    </>
+  )
+}
+
+/** Les éditions que j'ai notées en plus de la mienne : l'une d'elles peut devenir la mienne. */
+function AutresEditions({ etat, maj, erreurs }: PropsBloc & { erreurs: Erreurs }) {
+  const autres = etat.editions.filter((e) => e.cle !== etat.mienne)
+  const changer: ChangerEdition = (cle, changement) => maj({ editions: etat.editions.map((e) => (e.cle === cle ? { ...e, ...changement } : e)) })
+  return (
+    <>
+      {autres.length > 0 && (
+        <ul className="m-0 flex list-none flex-col p-0">
+          {autres.map((edition, rang) => (
+            <li key={edition.cle} className="flex flex-col gap-4 border-b border-bordure pb-6 not-first:pt-6">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="m-0 text-[0.9375rem] font-bold">{edition.publisher.trim() || `Édition ${rang + 1}`}</h3>
+                <BoutonRetirer
+                  nom={`Retirer l’édition ${edition.publisher.trim() || rang + 1}`}
+                  onClick={() => maj({ editions: etat.editions.filter((e) => e.cle !== edition.cle) })}
+                />
+              </div>
+              <ChampsEdition edition={edition} changer={changer} erreurs={erreurs} aide={() => undefined} />
+              <Bascule libelle="C’est mon édition" coche={false} onChange={(coche) => coche && maj({ mienne: edition.cle })} />
+            </li>
+          ))}
+        </ul>
+      )}
+      <BoutonAjouterLigne onClick={() => maj({ editions: [...etat.editions, ligneEdition()], mienne: etat.mienne })}>Ajouter une édition</BoutonAjouterLigne>
     </>
   )
 }
@@ -838,115 +1095,6 @@ function Etiquettes({
         </Bouton>
       </div>
     </div>
-  )
-}
-
-function Editions({
-  etat,
-  maj,
-  erreurs,
-  trouvee,
-  aideSource,
-  oublierSource,
-}: PropsBloc & {
-  erreurs: Erreurs
-  /** Clé de l'édition remplie par la recherche : ses champs disent d'où ils viennent. */
-  trouvee: string | null
-  aideSource: (cle: CleProvenance, parDefaut?: string) => string | undefined
-  oublierSource: (cle: CleProvenance) => void
-}) {
-  const changer = (cle: string, changement: Partial<EtatFormulaire['editions'][number]>, source?: CleProvenance) => {
-    maj({ editions: etat.editions.map((e) => (e.cle === cle ? { ...e, ...changement } : e)) })
-    if (source && cle === trouvee) oublierSource(source)
-  }
-  const aide = (cle: string, source: CleProvenance, parDefaut?: string) => (cle === trouvee ? aideSource(source, parDefaut) : parDefaut)
-  return (
-    <>
-      {etat.editions.length === 0 && <p className="m-0 text-discret">Aucune édition notée pour l’instant.</p>}
-      <ul className="m-0 flex list-none flex-col gap-5 p-0">
-        {etat.editions.map((edition, rang) => (
-          <li key={edition.cle} className="flex flex-col gap-5 rounded-panneau border border-bordure bg-surface p-5 shadow-douce">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="m-0 font-titre text-xl">{etat.editions.length > 1 ? `Édition ${rang + 1}` : 'Édition'}</h3>
-              <BoutonRetirer
-                nom={`Retirer l’édition ${edition.publisher.trim() || rang + 1}`}
-                onClick={() =>
-                  maj({
-                    editions: etat.editions.filter((e) => e.cle !== edition.cle),
-                    mienne: etat.mienne === edition.cle ? null : etat.mienne,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-5 tablette:grid-cols-2">
-              <ChampTexte
-                libelle="Éditeur"
-                aide={aide(edition.cle, 'editeur')}
-                value={edition.publisher}
-                onChange={(e) => changer(edition.cle, { publisher: e.target.value }, 'editeur')}
-                autoComplete="off"
-              />
-              <ChampTexte
-                libelle="Collection ou format"
-                aide="Folio, poche, broché…"
-                value={edition.format}
-                onChange={(e) => changer(edition.cle, { format: e.target.value })}
-                autoComplete="off"
-              />
-              <ChampListe
-                libelle="Langue de l’édition"
-                aide={aide(edition.cle, 'langue')}
-                value={edition.language}
-                onChange={(e) => changer(edition.cle, { language: e.target.value }, 'langue')}
-                options={optionsLangues(edition.language)}
-              />
-              <ChampTexte
-                libelle="Traduction"
-                aide={aide(edition.cle, 'traducteur')}
-                value={edition.translator}
-                onChange={(e) => changer(edition.cle, { translator: e.target.value }, 'traducteur')}
-                autoComplete="off"
-              />
-              <ChampTexte
-                id={idChamp.isbnEdition(edition.cle)}
-                libelle="ISBN"
-                aide="Au dos du livre, près du code-barres."
-                inputMode="numeric"
-                value={edition.isbn}
-                onChange={(e) => changer(edition.cle, { isbn: e.target.value })}
-                erreur={erreurs[idChamp.isbnEdition(edition.cle)]}
-                autoComplete="off"
-              />
-              <ChampTexte
-                id={idChamp.pagesEdition(edition.cle)}
-                libelle="Nombre de pages"
-                aide={aide(edition.cle, 'pages', 'Celui de mon exemplaire.')}
-                inputMode="numeric"
-                value={edition.pageCount}
-                onChange={(e) => changer(edition.cle, { pageCount: e.target.value }, 'pages')}
-                erreur={erreurs[idChamp.pagesEdition(edition.cle)]}
-                autoComplete="off"
-              />
-            </div>
-            <Bascule
-              libelle="C’est mon édition"
-              aide="Si elle est en anglais, le titre original passe en premier."
-              coche={etat.mienne === edition.cle}
-              onChange={(coche) => maj({ mienne: coche ? edition.cle : null })}
-            />
-          </li>
-        ))}
-      </ul>
-      <BoutonAjouterLigne
-        onClick={() => {
-          const nouvelle = ligneEdition()
-          // La première édition notée devient la mienne : je peux le défaire.
-          maj({ editions: [...etat.editions, nouvelle], mienne: etat.editions.length === 0 ? nouvelle.cle : etat.mienne })
-        }}
-      >
-        Ajouter une édition
-      </BoutonAjouterLigne>
-    </>
   )
 }
 

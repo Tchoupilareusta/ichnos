@@ -66,11 +66,16 @@ const attendre = () => act(async () => void (await new Promise((suite) => setTim
 const section = () => within(screen.getByRole('region', { name: 'Couverture' }))
 const panneau = () => within(screen.getByRole('dialog', { name: 'Chercher d’autres couvertures' }))
 const choix = () => within(panneau().getByRole('list', { name: 'Couvertures proposées' })).getAllByRole('button')
+const enregistrer = async () => {
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' })))
+  await attendre()
+}
 const rangees = (depot: ReturnType<typeof depotFictif>) =>
   depot.appels.ecritures.filter((e) => e.action === 'couverture').map((e) => [e.id, (e.valeur as { cible: unknown }).cible])
 
 async function chercherAutres() {
-  await act(async () => fireEvent.click(section().getByRole('button', { name: 'Chercher d’autres couvertures' })))
+  fireEvent.click(section().getByRole('button', { name: 'Changer la couverture' }))
+  await act(async () => fireEvent.click(screen.getByRole('menuitem', { name: 'Chercher d’autres couvertures' })))
   await attendre()
   await attendre()
 }
@@ -91,7 +96,8 @@ describe('« Chercher d’autres couvertures »', () => {
 
   it('se trouve dans « Modifier », pour un livre comme pour une série, mais pas dans le panneau d’un tome', async () => {
     await ouvrir('#/oeuvre/vag/modifier')
-    expect(section().getByRole('button', { name: 'Chercher d’autres couvertures' })).toHaveAttribute('aria-haspopup', 'dialog')
+    fireEvent.click(section().getByRole('button', { name: 'Changer la couverture' }))
+    expect(screen.getByRole('menuitem', { name: 'Chercher d’autres couvertures' })).toBeInTheDocument()
     window.location.hash = '#/oeuvre/vag'
     await act(async () => window.dispatchEvent(new HashChangeEvent('hashchange')))
     fireEvent.click(within(screen.getByRole('list', { name: 'Tomes de Vagabond' })).getByRole('button', { name: /^Tome 1 / }))
@@ -205,11 +211,14 @@ describe('« Chercher d’autres couvertures »', () => {
 
     await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Garder cette couverture' })))
     await attendre()
+    // Affichée tout de suite, avec sa croix ; rien n'est envoyé avant « Enregistrer ».
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(section().getByRole('button', { name: 'Retirer la couverture' })).toBeInTheDocument()
+    expect(couvertures.deposees).toHaveLength(0)
+    await enregistrer()
     expect(couvertures.deposees).toHaveLength(1)
     // Rangée là où elle s'affiche : sur mon édition.
     expect(rangees(depot)).toEqual([['etr', { type: 'edition', edition: 'e1' }]])
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(section().getByRole('status')).toHaveTextContent('La nouvelle couverture est en place.')
   })
 
   it('pour une série, range la couverture gardée sur la série elle-même', async () => {
@@ -219,6 +228,7 @@ describe('« Chercher d’autres couvertures »', () => {
     fireEvent.click(choix()[0])
     await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Garder cette couverture' })))
     await attendre()
+    await enregistrer()
     expect(rangees(depot)).toEqual([['vag', { type: 'oeuvre' }]])
   })
 
@@ -245,21 +255,11 @@ describe('« Chercher d’autres couvertures »', () => {
     expect(panneau().getByRole('alert')).toHaveTextContent(/La recherche automatique ne répond pas pour le moment/)
   })
 
-  it('dit calmement quand la couverture n’a pas pu être rangée, et garde le panneau ouvert', async () => {
-    const faux = trouve([proposition(1)])
-    await ouvrir('#/oeuvre/etr/modifier', { assistant: faux.assistant, couvertures: couverturesFictives({ depot: { ok: false, echec: 'reseau' } }) })
-    await chercherAutres()
-    fireEvent.click(choix()[0])
-    await act(async () => fireEvent.click(panneau().getByRole('button', { name: 'Garder cette couverture' })))
-    await attendre()
-    expect(panneau().getByRole('alert')).toHaveTextContent('Pas de connexion à internet : la couverture n’a pas été rangée.')
-  })
-
-  it('hors connexion, le bouton est grisé', async () => {
+  it('hors connexion, le menu est grisé', async () => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
     const faux = trouve([proposition(1)])
     await ouvrir('#/oeuvre/etr/modifier', { assistant: faux.assistant })
-    const bouton = section().getByRole('button', { name: 'Chercher d’autres couvertures' })
+    const bouton = section().getByRole('button', { name: 'Changer la couverture' })
     expect(bouton).toHaveAttribute('aria-disabled', 'true')
     await act(async () => fireEvent.click(bouton))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

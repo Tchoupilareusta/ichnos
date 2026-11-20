@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type FormEvent, type Ref } from 'react'
 import type { EchecAssistant, ImageTrouvee, PropositionCouverture } from '../ajout/assistant'
 import type { OeuvreDetaillee } from '../bibliotheque/depot'
 import { isbnValide } from '../bibliotheque/modele'
 import { useRangerCouverture } from '../bibliotheque/requetes'
 import { Bouton } from '../composants/Bouton'
 import { ChampTexte } from '../composants/Champs'
-import { Feuille } from '../composants/Feuille'
+import { ActionsFeuille, Feuille } from '../composants/Feuille'
 import { IconeChevronBas, IconeCoche } from '../composants/Icones'
 import { useSession } from '../session/Session'
 import type { CibleCouverture } from './choix'
@@ -48,6 +48,9 @@ export function AutresCouvertures({
   cible,
   enLigne,
   surRangee,
+  ref,
+  sansBouton = false,
+  surImage,
 }: {
   oeuvre: OeuvreDetaillee
   /** Où ranger la couverture gardée : là où elle s'affiche. */
@@ -55,6 +58,12 @@ export function AutresCouvertures({
   enLigne: boolean
   /** La couverture gardée est rangée. */
   surRangee: () => void
+  /** Pour l'ouvrir depuis un menu (« Changer la couverture »). */
+  ref?: Ref<{ ouvrir: () => void }>
+  /** Le bouton est remplacé par le menu de l'appelant. */
+  sansBouton?: boolean
+  /** Donné (dans « Modifier ») : l'image gardée est rendue à l'appelant, qui la rangera à l'enregistrement. */
+  surImage?: (image: Blob) => void
 }) {
   const { assistant } = useSession()
   const rangement = useRangerCouverture(oeuvre.id)
@@ -143,6 +152,8 @@ export function AutresCouvertures({
     void chercher(depart)
   }
 
+  useImperativeHandle(ref, () => ({ ouvrir }))
+
   function fermer() {
     tour.current += 1
     oublierImages()
@@ -157,6 +168,10 @@ export function AutresCouvertures({
     const retenue = proposees.find((p) => p.cle === choisie)
     if (!retenue || retenue.etat !== 'prete' || rangement.isPending) return
     setMessage(null)
+    if (surImage) {
+      surImage(retenue.trouvee.image)
+      return fermer()
+    }
     rangement.mutate(
       { image: retenue.trouvee.image, cible },
       {
@@ -175,9 +190,11 @@ export function AutresCouvertures({
 
   return (
     <>
-      <Bouton variante="secondaire" aria-haspopup="dialog" occupe={!enLigne} onClick={ouvrir}>
-        Chercher d’autres couvertures
-      </Bouton>
+      {!sansBouton && (
+        <Bouton variante="secondaire" aria-haspopup="dialog" occupe={!enLigne} onClick={ouvrir}>
+          Chercher d’autres couvertures
+        </Bouton>
+      )}
       <Feuille
         ouvert={ouvert}
         titre="Chercher d’autres couvertures"
@@ -207,7 +224,7 @@ export function AutresCouvertures({
             >
               <ChampTexte libelle="Titre" erreur={erreurTitre} autoComplete="off" enterKeyHint="search" value={titre} onChange={(e) => setTitre(e.target.value)} />
               <ChampTexte libelle="Auteur" aide="Facultatif : il départage les homonymes." autoComplete="off" enterKeyHint="search" value={auteur} onChange={(e) => setAuteur(e.target.value)} />
-              <Bouton type="submit" variante="secondaire" occupe={recherche === 'en_cours'} className="self-start">
+              <Bouton type="submit" variante="secondaire" occupe={recherche === 'en_cours'}>
                 Chercher
               </Bouton>
             </form>
@@ -257,14 +274,14 @@ export function AutresCouvertures({
                   )
                 })}
               </ul>
-              <div className="flex flex-wrap gap-3">
+              <ActionsFeuille>
                 <Bouton occupe={choisie === null || rangement.isPending} onClick={garder}>
                   {rangement.isPending ? 'Je range l’image…' : 'Garder cette couverture'}
                 </Bouton>
                 <Bouton variante="secondaire" onClick={fermer}>
                   Aucune ne convient
                 </Bouton>
-              </div>
+              </ActionsFeuille>
             </>
           )}
 

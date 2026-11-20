@@ -1,5 +1,6 @@
 import type { Ecran } from './routes'
 import { LIENS } from './routes'
+import { useEnSaisie } from './saisie'
 import { IconeAccueil, IconeAjouter, IconeBibliotheque, IconeDecouvrir, IconeReglages } from '../composants/Icones'
 
 const ONGLETS = [
@@ -8,8 +9,9 @@ const ONGLETS = [
   { ecran: 'decouvrir', libelle: 'Découvrir', Icone: IconeDecouvrir },
 ] as const
 
-/** Barre du bas (iPhone), en forme de pilule flottante comme dans les maquettes. */
+/** Barre du bas (iPhone), en forme de pilule flottante comme dans les maquettes. Masquée pendant une saisie. */
 export function BarreDuBas({ ecran }: { ecran: Ecran }) {
+  if (useEnSaisie()) return null
   return (
     <nav
       aria-label="Navigation principale"
@@ -48,8 +50,9 @@ export function BarreDuBas({ ecran }: { ecran: Ecran }) {
   )
 }
 
-/** Barre latérale (iPad et ordinateur, à partir de 768 px). */
+/** Barre latérale (iPad et ordinateur, à partir de 768 px). Masquée pendant une saisie. */
 export function BarreLaterale({ ecran }: { ecran: Ecran }) {
+  if (useEnSaisie()) return null
   return (
     <nav
       aria-label="Navigation principale"

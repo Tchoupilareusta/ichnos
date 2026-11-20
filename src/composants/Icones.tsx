@@ -109,6 +109,13 @@ export const IconeMoins = (p: Props) => (
   </Svg>
 )
 
+/** La poubelle de « Supprimer cette œuvre de ma bibliothèque ». */
+export const IconeSupprimer = (p: Props) => (
+  <Svg {...p}>
+    <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9l1-12.5M10 11v5.5M14 11v5.5" />
+  </Svg>
+)
+
 /** Le signet du bouton « Où j'en suis » (maquette Accueil). */
 export const IconeSignet = (p: Props) => (
   <Svg {...p} epaisseur={2}>

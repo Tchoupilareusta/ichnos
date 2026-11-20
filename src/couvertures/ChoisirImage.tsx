@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type PointerEvent as PointeurReact } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type PointerEvent as PointeurReact, type Ref } from 'react'
 import { useRangerCouverture } from '../bibliotheque/requetes'
 import { Bouton } from '../composants/Bouton'
-import { Feuille } from '../composants/Feuille'
+import { ActionsFeuille, Feuille } from '../composants/Feuille'
 import type { CibleCouverture } from './choix'
 import { cadreEntier, COINS, deplacerCoin, lireImage, recadrer, verifierFichier, type Cadre, type Coin, type EchecPhoto, type ImageLue } from './photo'
 
@@ -17,6 +17,9 @@ export const ECHECS_RANGEMENT: Record<string, string> = {
   invalide: 'La couverture n’a pas pu être rangée.',
   inconnu: 'La couverture n’a pas pu être rangée. Je réessaie dans un instant.',
 }
+
+export type SourceImage = 'photo' | 'phototheque'
+export type OuvrirImage = { ouvrir: (source?: SourceImage) => void }
 
 /** Où se trouve un coin du cadre, en pourcentage de l'image affichée. */
 function positionDe(coin: Coin, cadre: Cadre, image: ImageLue) {
@@ -36,12 +39,21 @@ export function ChoisirImage({
   cible,
   enLigne,
   surRangee,
+  ref,
+  sansBouton = false,
+  surImage,
 }: {
   oeuvre: string
   cible: CibleCouverture
   enLigne: boolean
   /** L'image est rangée. Donné, c'est l'appelant qui le dit à l'écran ; sinon, le composant le dit lui-même. */
   surRangee?: () => void
+  /** Pour l'ouvrir depuis un menu (« Prendre une photo », « Choisir dans mes photos »). */
+  ref?: Ref<OuvrirImage>
+  /** Le bouton « Choisir une image » est remplacé par un menu de l'appelant. */
+  sansBouton?: boolean
+  /** Donné (dans « Modifier ») : l'image gardée est rendue à l'appelant, qui la rangera à l'enregistrement. Rien n'est rangé ici. */
+  surImage?: (image: Blob) => void
 }) {
   const rangement = useRangerCouverture(oeuvre)
   const refChamp = useRef<HTMLInputElement>(null)
@@ -79,6 +91,16 @@ export function ChoisirImage({
     setImage(null)
   }
 
+  /** « photo » ouvre directement l'appareil photo ; « phototheque » laisse l'iPhone proposer ses photos. */
+  function ouvrir(source: SourceImage = 'phototheque') {
+    const champ = refChamp.current
+    if (!champ || !enLigne || lecture) return
+    if (source === 'photo') champ.setAttribute('capture', 'environment')
+    else champ.removeAttribute('capture')
+    champ.click()
+  }
+  useImperativeHandle(ref, () => ({ ouvrir }))
+
   async function garder() {
     if (!image || preparation || rangement.isPending) return
     setErreurPanneau(null)
@@ -86,6 +108,10 @@ export function ChoisirImage({
     const recadree = await recadrer(image, cadre)
     setPreparation(false)
     if (!recadree) return setErreurPanneau('L’image n’a pas pu être préparée. J’en essaie une autre.')
+    if (surImage) {
+      surImage(recadree)
+      return fermer()
+    }
     rangement.mutate(
       { image: recadree, cible },
       {
@@ -133,9 +159,15 @@ export function ChoisirImage({
           void surFichier(fichier)
         }}
       />
-      <Bouton variante="secondaire" occupe={!enLigne || lecture} onClick={() => refChamp.current?.click()}>
-        {lecture ? 'Je lis l’image…' : 'Choisir une image'}
-      </Bouton>
+      {sansBouton ? (
+        <p role="status" className="m-0 text-sm text-discret empty:hidden">
+          {lecture ? 'Je lis l’image…' : ''}
+        </p>
+      ) : (
+        <Bouton variante="secondaire" occupe={!enLigne || lecture} onClick={() => ouvrir()}>
+          {lecture ? 'Je lis l’image…' : 'Choisir une image'}
+        </Bouton>
+      )}
       <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
         {erreur ?? ''}
       </p>
@@ -190,14 +222,14 @@ export function ChoisirImage({
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <ActionsFeuille>
               <Bouton occupe={occupe} onClick={garder}>
                 {occupe ? 'Je range l’image…' : 'Garder cette image'}
               </Bouton>
               <Bouton variante="secondaire" onClick={() => setCadre(cadreEntier(image.largeur, image.hauteur))}>
                 Image entière
               </Bouton>
-            </div>
+            </ActionsFeuille>
             <p role="alert" className="m-0 rounded-carte bg-accent-doux px-5 py-4 text-[0.9375rem] font-semibold text-accent-texte empty:hidden">
               {erreurPanneau ?? ''}
             </p>

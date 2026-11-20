@@ -183,7 +183,7 @@ describe('« Je l’ai acheté » : un livre', () => {
     const { depot, couvertures } = await ouvrirFiche('etr')
     await ouvrirAchat()
     await saisirIsbn(ISBN)
-    fireEvent.click(panneau().getByRole('button', { name: 'Ne pas garder cette couverture' }))
+    fireEvent.click(panneau().getByRole('button', { name: 'Ne pas la garder' }))
     await valider()
     expect(couvertures.deposees).toHaveLength(0)
     expect(achats(depot)[0].valeur).toEqual({ isbn: ISBN, publisher: 'Gallimard', language: 'fr', page_count: 186 })

@@ -75,28 +75,45 @@ beforeEach(() => {
   Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true })
 })
 
+const menu = (nom: string) => {
+  fireEvent.click(section().getByRole('button', { name: 'Changer la couverture' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: nom }))
+}
+const enregistrer = async () => {
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' })))
+  await attendre()
+}
+
 describe('« Modifier » : la section Couverture', () => {
-  it('est toujours là, même sans couverture, avec « Choisir une image »', async () => {
+  it('est toujours là, même sans couverture, avec « Changer la couverture »', async () => {
     await ouvrir('#/oeuvre/conte/modifier')
-    expect(section().getByRole('heading', { level: 2, name: 'Couverture' })).toBeInTheDocument()
-    expect(section().getByRole('button', { name: 'Choisir une image' })).toBeInTheDocument()
+    expect(section().getByRole('button', { name: 'Changer la couverture' })).toBeInTheDocument()
     // Rien à retirer tant qu'il n'y a que la couverture d'Ichnos.
-    expect(section().queryByRole('button', { name: 'Retirer cette couverture' })).not.toBeInTheDocument()
+    expect(section().queryByRole('button', { name: 'Retirer la couverture' })).not.toBeInTheDocument()
   })
 
-  it('ouvre le choix de l’iPhone : photothèque, appareil photo ou fichiers (sans imposer l’appareil photo)', async () => {
+  it('« Choisir dans mes photos » laisse l’iPhone proposer photothèque, appareil photo ou fichiers', async () => {
     await ouvrir('#/oeuvre/conte/modifier')
     const champ = champFichier()
     expect(champ).toHaveAttribute('accept', 'image/*')
-    expect(champ).not.toHaveAttribute('capture')
     const clics = vi.spyOn(champ, 'click').mockImplementation(() => {})
-    fireEvent.click(section().getByRole('button', { name: 'Choisir une image' }))
+    menu('Choisir dans mes photos')
     expect(clics).toHaveBeenCalledTimes(1)
+    expect(champ).not.toHaveAttribute('capture')
+  })
+
+  it('« Prendre une photo » ouvre directement l’appareil photo', async () => {
+    await ouvrir('#/oeuvre/conte/modifier')
+    const champ = champFichier()
+    const clics = vi.spyOn(champ, 'click').mockImplementation(() => {})
+    menu('Prendre une photo')
+    expect(clics).toHaveBeenCalledTimes(1)
+    expect(champ).toHaveAttribute('capture', 'environment')
   })
 
   it('n’existe pas pendant l’ajout d’une œuvre nouvelle', async () => {
     await ouvrir('#/ajouter?mode=manuel')
-    expect(screen.queryByRole('button', { name: 'Choisir une image' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Changer la couverture' })).not.toBeInTheDocument()
   })
 })
 
@@ -113,32 +130,46 @@ describe('choisir une image', () => {
     expect(depot.appels.ecritures).toHaveLength(0)
   })
 
-  it('garde l’image entière par défaut, et la range sur mon édition : c’est elle qui s’affiche', async () => {
+  it('garde l’image entière par défaut : affichée tout de suite, rangée sur mon édition seulement avec « Enregistrer »', async () => {
     const { depot, couvertures } = await ouvrir('#/oeuvre/momo/modifier')
     await choisir(photo())
     await garder()
     expect(recadrages).toEqual([{ x: 0, y: 0, largeur: 3000, hauteur: 4000 }])
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // À l'écran, avec sa croix ; rien n'est encore envoyé.
+    expect(section().getByRole('button', { name: 'Retirer la couverture' })).toBeInTheDocument()
+    expect(couvertures.deposees).toHaveLength(0)
+    expect(rangees(depot)).toEqual([])
+
+    await enregistrer()
     expect(couvertures.deposees).toHaveLength(1)
     expect(couvertures.deposees[0].image.type).toBe('image/jpeg')
     expect(rangees(depot)).toEqual([['momo', { type: 'edition', edition: 'e1' }]])
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(section().getByRole('status')).toHaveTextContent('La nouvelle couverture est en place.')
-    // Une couverture est là : je peux maintenant la retirer.
-    expect(await section().findByRole('button', { name: 'Retirer cette couverture' })).toBeInTheDocument()
+  })
+
+  it('une image gardée puis abandonnée n’est jamais envoyée', async () => {
+    const { couvertures } = await ouvrir('#/oeuvre/momo/modifier')
+    await choisir(photo())
+    await garder()
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+    await act(async () => fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Abandonner' })))
+    expect(couvertures.deposees).toHaveLength(0)
   })
 
   it('sans édition à moi, la range sur l’œuvre', async () => {
     const { depot } = await ouvrir('#/oeuvre/conte/modifier')
     await choisir(photo())
     await garder()
+    await enregistrer()
     expect(rangees(depot)).toEqual([['conte', { type: 'oeuvre' }]])
   })
 
   it('pour une série, la range sur la série elle-même, et dit quand elle s’affiche', async () => {
     const { depot } = await ouvrir('#/oeuvre/vin/modifier')
-    expect(section().getByText(/s’affiche tant qu’aucun tome n’a sa couverture/)).toBeInTheDocument()
+    expect(section().getByText(/s’affiche tant qu’aucun tome n’a la sienne/)).toBeInTheDocument()
     await choisir(photo())
     await garder()
+    await enregistrer()
     expect(rangees(depot)).toEqual([['vin', { type: 'oeuvre' }]])
   })
 
@@ -217,21 +248,24 @@ describe('choisir une image', () => {
     expect(couvertures.deposees).toHaveLength(0)
   })
 
-  it('dit calmement quand la couverture n’a pas pu être rangée, et garde le panneau ouvert', async () => {
+  it('si la couverture n’a pas pu être rangée, « Modifier » reste ouvert et le dit', async () => {
     const { depot } = await ouvrir('#/oeuvre/momo/modifier', { couvertures: couverturesFictives({ depot: { ok: false, echec: 'reseau' } }) })
     await choisir(photo())
     await garder()
-    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('Pas de connexion à internet : la couverture n’a pas été rangée.')
-    expect(depot.appels.ecritures).toHaveLength(0)
+    await enregistrer()
+    expect(rangees(depot)).toEqual([])
+    expect(screen.getAllByRole('alert').some((a) => /La fiche est enregistrée, mais pas la couverture/.test(a.textContent ?? ''))).toBe(true)
+    expect(window.location.hash).toBe('#/oeuvre/momo/modifier')
   })
 
-  it('hors connexion, le bouton est grisé, avec un mot d’explication', async () => {
+  it('hors connexion, le menu est grisé, avec un mot d’explication', async () => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false })
     await ouvrir('#/oeuvre/conte/modifier')
-    const bouton = section().getByRole('button', { name: 'Choisir une image' })
+    const bouton = section().getByRole('button', { name: 'Changer la couverture' })
     expect(bouton).toHaveAttribute('aria-disabled', 'true')
     const clics = vi.spyOn(champFichier(), 'click').mockImplementation(() => {})
     fireEvent.click(bouton)
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(clics).not.toHaveBeenCalled()
     expect(section().getByText(/Je pourrai changer la couverture au retour du réseau/)).toBeInTheDocument()
   })
