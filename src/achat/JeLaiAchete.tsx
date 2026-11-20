@@ -9,7 +9,7 @@ import { nomLangue } from '../catalogue/langues'
 import { Bouton } from '../composants/Bouton'
 import { ChampIsbn, Isbn } from '../composants/Isbn'
 import { ActionsFeuille, Feuille } from '../composants/Feuille'
-import { ApercuCouverture } from '../couvertures/ApercuCouverture'
+import { ApercuCouverture, type CouvertureChoisie } from '../couvertures/ApercuCouverture'
 import { LIENS } from '../navigation/routes'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { useSession } from '../session/Session'
@@ -82,6 +82,8 @@ export function JeLaiAchete({
   const [recherche, setRecherche] = useState(false)
   const [image, setImage] = useState<Image>({ etat: 'aucune' })
   const [garder, setGarder] = useState(true)
+  /** Sans couverture trouvée : la photo de mon exemplaire, ou une autre édition, que j'apporte moi-même. */
+  const [choisie, setChoisie] = useState<CouvertureChoisie | null>(null)
   const [envoi, setEnvoi] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const refIsbn = useRef<HTMLInputElement>(null)
@@ -98,6 +100,7 @@ export function JeLaiAchete({
     setRecherche(false)
     setImage({ etat: 'aucune' })
     setGarder(true)
+    setChoisie(null)
     setEnvoi(false)
     setMessage(null)
   }, [ouvert, tome])
@@ -126,6 +129,7 @@ export function JeLaiAchete({
     setRecherche(true)
     setImage({ etat: 'aucune' })
     setGarder(true)
+    setChoisie(null)
     try {
       // D'abord ma bibliothèque : cet ISBN est-il déjà rangé ailleurs ?
       const deja = await depot.trouverParIsbn(isbn)
@@ -179,8 +183,9 @@ export function JeLaiAchete({
     setMessage(null)
     // La couverture gardée est rangée d'abord : la base ne reçoit que son chemin.
     let chemin: string | null = null
-    if (trouvee && garder) {
-      const deposee = await couvertures.deposer(trouvee.image)
+    const aRanger = choisie?.image ?? (trouvee && garder ? trouvee.image : null)
+    if (aRanger) {
+      const deposee = await couvertures.deposer(aRanger)
       if (deposee.ok) chemin = deposee.chemin
     }
     const resultat = await depot.noterAchat(oeuvre.id, preparerAchat({ isbn: etape.isbn, notice: etape.notice, tome, couverture: chemin }))
@@ -209,6 +214,26 @@ export function JeLaiAchete({
   const tomeTrouve = notice?.tome?.valeur ?? null
   const autreLivre = titreTrouve !== null && !titreRessemble(titreTrouve, [oeuvre.titreFr, oeuvre.titreOriginal])
   const autreTome = tome !== null && tomeTrouve !== null && tomeTrouve !== tome
+  // Sans couverture trouvée : la photo de mon exemplaire, et d'autres couvertures pour un livre (jamais pour un
+  // tome, ni quand la recherche ne répond pas).
+  const sans =
+    etape.nom === 'exemplaire'
+      ? {
+          choisie,
+          surChoix: setChoisie,
+          enLigne,
+          autres:
+            tome === null && (etape.catalogues === 'connu' || etape.catalogues === 'inconnu')
+              ? {
+                  titre: oeuvre.titreFr,
+                  auteur: oeuvre.auteurs.find((a) => a.role === 'auteur')?.nom ?? '',
+                  langue: notice?.langue?.valeur === 'en' ? ('en' as const) : ('fr' as const),
+                  isbn: etape.isbn,
+                  editeur: notice?.editeur?.valeur ?? null,
+                }
+              : null,
+        }
+      : undefined
   const lignes = notice
     ? ([
         ['Éditeur', notice.editeur?.valeur, notice.editeur?.source],
@@ -276,10 +301,15 @@ export function JeLaiAchete({
                   adresse={adresse}
                   garder={garder}
                   setGarder={setGarder}
+                  sans={sans}
                 />
               </>
             ) : (
-              <p className="m-0 text-[1.0625rem] leading-relaxed">{SANS_CATALOGUE[etape.catalogues]}</p>
+              <>
+                <p className="m-0 text-[1.0625rem] leading-relaxed">{SANS_CATALOGUE[etape.catalogues]}</p>
+                {/* Aucune couverture n'a pu être cherchée : la photo de mon exemplaire reste possible. */}
+                <ApercuCouverture titre={titre} cherche={false} trouvee={null} adresse={null} garder={garder} setGarder={setGarder} sans={sans} />
+              </>
             )}
             <p className="m-0 text-sm text-discret">
               ISBN <Isbn valeur={etape.isbn} />

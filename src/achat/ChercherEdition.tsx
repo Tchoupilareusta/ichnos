@@ -7,8 +7,9 @@ import { nomLangue } from '../catalogue/langues'
 import { Bouton } from '../composants/Bouton'
 import { ActionsFeuille, Feuille } from '../composants/Feuille'
 import { Isbn } from '../composants/Isbn'
-import { ApercuCouverture } from '../couvertures/ApercuCouverture'
+import { ApercuCouverture, type CouvertureChoisie } from '../couvertures/ApercuCouverture'
 import { LIENS } from '../navigation/routes'
+import { useEnLigne } from '../navigation/useEnLigne'
 import { useSession } from '../session/Session'
 import { titreRessemble } from './achat'
 
@@ -45,6 +46,7 @@ export function ChercherEdition({
   isbn,
   idOeuvre,
   titres,
+  auteur,
   actuelle,
   fermer,
   appliquer,
@@ -55,6 +57,8 @@ export function ChercherEdition({
   idOeuvre: string | null
   /** Ses titres français et original, pour signaler un livre qui semble être un autre. */
   titres: string[]
+  /** Son premier auteur, pour chercher d'autres couvertures quand cette édition n'en a pas. */
+  auteur: string
   actuelle: LigneEdition
   fermer: () => void
   appliquer: (trouvee: EditionTrouvee) => void
@@ -63,6 +67,9 @@ export function ChercherEdition({
   const [etat, setEtat] = useState<Etat>({ nom: 'recherche' })
   const [image, setImage] = useState<{ cherche: boolean; trouvee: ImageTrouvee | null }>({ cherche: false, trouvee: null })
   const [garder, setGarder] = useState(true)
+  /** Sans couverture trouvée : la photo de mon exemplaire, ou une autre édition, que j'apporte moi-même. */
+  const [choisie, setChoisie] = useState<CouvertureChoisie | null>(null)
+  const enLigne = useEnLigne()
   const tour = useRef(0)
 
   useEffect(() => {
@@ -73,6 +80,7 @@ export function ChercherEdition({
     setEtat({ nom: 'recherche' })
     setImage({ cherche: false, trouvee: null })
     setGarder(true)
+    setChoisie(null)
     void (async () => {
       // D'abord ma bibliothèque : cet ISBN est-il déjà celui d'une autre de mes œuvres ?
       const deja = await depot.trouverParIsbn(compact)
@@ -123,7 +131,7 @@ export function ChercherEdition({
         },
       ].filter((ligne) => ligne.trouve !== null)
     : []
-  const change = lignes.some((ligne) => ligne.trouve !== ligne.avant) || (image.trouvee !== null && garder)
+  const change = lignes.some((ligne) => ligne.trouve !== ligne.avant) || (image.trouvee !== null && garder) || choisie !== null
 
   function valider() {
     if (!notice) return
@@ -132,7 +140,7 @@ export function ChercherEdition({
     if (notice.traducteur) champs.translator = notice.traducteur.valeur
     if (notice.pages) champs.pageCount = String(notice.pages.valeur)
     if (notice.langue) champs.language = notice.langue.valeur
-    appliquer({ champs, image: image.trouvee && garder ? image.trouvee.image : null })
+    appliquer({ champs, image: choisie?.image ?? (image.trouvee && garder ? image.trouvee.image : null) })
   }
 
   return (
@@ -168,7 +176,26 @@ export function ChercherEdition({
             ) : (
               <p className="m-0 text-[0.9375rem] text-discret">Les catalogues ne disent rien de plus sur cette édition.</p>
             )}
-            <ApercuCouverture titre={titres[0] ?? ''} cherche={image.cherche} trouvee={image.trouvee} adresse={adresse} garder={garder} setGarder={setGarder} />
+            <ApercuCouverture
+              titre={titres[0] ?? ''}
+              cherche={image.cherche}
+              trouvee={image.trouvee}
+              adresse={adresse}
+              garder={garder}
+              setGarder={setGarder}
+              sans={{
+                choisie,
+                surChoix: setChoisie,
+                enLigne,
+                autres: {
+                  titre: titres[0] ?? '',
+                  auteur,
+                  langue: notice?.langue?.valeur === 'en' ? 'en' : 'fr',
+                  isbn: isbnCompact(isbn),
+                  editeur: notice?.editeur?.valeur ?? null,
+                },
+              }}
+            />
             <ActionsFeuille>
               <Bouton occupe={image.cherche || !change} onClick={valider}>
                 Appliquer à mon édition

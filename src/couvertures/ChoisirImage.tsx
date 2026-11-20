@@ -286,9 +286,11 @@ export function ChoisirImage({
           <ConseilPhoto />
         </>
       )}
-      <p role="alert" className="m-0 text-sm font-semibold text-accent-texte empty:hidden">
-        {erreur ?? ''}
-      </p>
+      {erreur && (
+        <p role="alert" className="m-0 text-sm font-semibold text-accent-texte">
+          {erreur}
+        </p>
+      )}
       {!surRangee && !surImage && (
         <p role="status" data-etat={fait ? 'ouvert' : 'ferme'} className="m-0 text-sm text-discret empty:hidden">
           {fait ? 'La nouvelle couverture est en place.' : ''}

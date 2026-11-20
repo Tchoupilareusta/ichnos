@@ -7,7 +7,7 @@ import { LANGUES, nomLangue } from '../catalogue/langues'
 import { ChercherEdition, type EditionTrouvee } from '../achat/ChercherEdition'
 import type { EchecEcriture, OeuvreDetaillee, Vocabulaire } from '../bibliotheque/depot'
 import type { CibleCouverture } from '../couvertures/choix'
-import { ApercuCouverture } from '../couvertures/ApercuCouverture'
+import { ApercuCouverture, type CouvertureChoisie } from '../couvertures/ApercuCouverture'
 import { CouvertureModifiable, couvertureRangee, type ChoixCouverture } from '../couvertures/CouvertureModifiable'
 import { BarreSaisie, type Message } from '../composants/BarreSaisie'
 import { useMasquerNavigation } from '../navigation/saisie'
@@ -211,6 +211,8 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
   const adresseApercu = useMemo(() => (imageTrouvee ? URL.createObjectURL(imageTrouvee.image) : null), [imageTrouvee])
   useEffect(() => () => void (adresseApercu && URL.revokeObjectURL(adresseApercu)), [adresseApercu])
   const [garderCouverture, setGarderCouverture] = useState(true)
+  /** Sans couverture trouvée pour mon ISBN : la photo de mon exemplaire, ou une autre édition, que j'apporte moi-même. */
+  const [couvertureChoisie, setCouvertureChoisie] = useState<CouvertureChoisie | null>(null)
 
   // La proposition de l'IA : demandée une seule fois, à partir de ce que les catalogues ont trouvé.
   const pourIA = useMemo(() => (apport ? pourFiche(apport.etat, apport.descriptions) : null), [apport])
@@ -306,8 +308,9 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
    * nouvelle image est rangée (réduite) seulement maintenant, là où elle s'affichera.
    */
   async function rangerCouverture(id: string) {
-    if (apport && imageTrouvee && garderCouverture) {
-      const deposee = await couvertures.deposer(imageTrouvee.image)
+    const trouveeGardee = apport ? (couvertureChoisie?.image ?? (imageTrouvee && garderCouverture ? imageTrouvee.image : null)) : null
+    if (apport && trouveeGardee) {
+      const deposee = await couvertures.deposer(trouveeGardee)
       if (deposee.ok) {
         let cible: CibleCouverture = { type: 'oeuvre' }
         if (apport.tome !== null) {
@@ -341,7 +344,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
   const couvertureRatee = useRef(false)
 
   function quitter() {
-    if (modifie || choixCouverture.etat !== 'inchangee') setAbandon(true)
+    if (modifie || choixCouverture.etat !== 'inchangee' || couvertureChoisie !== null) setAbandon(true)
     else revenir(retour)
   }
 
@@ -457,6 +460,26 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
                 adresse={adresseApercu}
                 garder={garderCouverture}
                 setGarder={setGarderCouverture}
+                // Avec mon exemplaire en main (ajout par ISBN) : sa photo, ou une autre édition pour une œuvre.
+                sans={
+                  apport.tome !== null || apport.etat.editions[0]?.isbn
+                    ? {
+                        choisie: couvertureChoisie,
+                        surChoix: setCouvertureChoisie,
+                        enLigne,
+                        autres:
+                          apport.tome === null
+                            ? {
+                                titre: etat.titreFr,
+                                auteur: etat.auteurs.find((a) => a.role === 'auteur')?.nom ?? '',
+                                langue: mienne?.language === 'en' ? 'en' : 'fr',
+                                isbn: mienne?.isbn ? isbnCompact(mienne.isbn) : null,
+                                editeur: mienne?.publisher || null,
+                              }
+                            : null,
+                      }
+                    : undefined
+                }
               />
             )
           )}
@@ -601,6 +624,7 @@ export function Formulaire({ initial, apport = null }: { initial: OeuvreDetaille
           isbn={mienne.isbn}
           idOeuvre={initial?.id ?? null}
           titres={[etat.titreFr, etat.titreOriginal].filter(Boolean)}
+          auteur={etat.auteurs.find((a) => a.role === 'auteur')?.nom ?? ''}
           actuelle={mienne}
           fermer={() => setChercheEdition(false)}
           appliquer={appliquerEdition}

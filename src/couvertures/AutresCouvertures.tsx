@@ -38,13 +38,31 @@ function decrire(proposee: Extract<Proposee, { etat: 'prete' }>) {
   }
 }
 
+/** De quoi chercher : le titre et le premier auteur, et ce qu'on sait de mon édition, pour le tri. */
+export type RechercheCouvertures = { titre: string; auteur: string; langue: 'fr' | 'en'; isbn: string | null; editeur: string | null }
+
+/** La recherche d'une œuvre de ma bibliothèque : son titre, son premier auteur, mon édition. */
+export function rechercheDeLOeuvre(oeuvre: OeuvreDetaillee): RechercheCouvertures {
+  const edition = oeuvre.editions.find((e) => e.id === oeuvre.monEdition) ?? null
+  return {
+    titre: oeuvre.titreFr,
+    auteur: oeuvre.auteurs.find((a) => a.role === 'auteur')?.nom ?? '',
+    // La langue de mon édition : anglais si je lis en anglais, français sinon.
+    langue: edition?.language === 'en' ? 'en' : 'fr',
+    isbn: edition?.isbn ?? null,
+    editeur: edition?.publisher ?? null,
+  }
+}
+
 /**
- * « Chercher d'autres couvertures » (dans « Modifier ») : des éditions de la même œuvre qui ont une
- * image, chez Google Books et Open Library. Je touche celle qui me plaît, puis « Garder cette
- * couverture ». Rien n'est gardé sans mon choix ; aucune IA.
+ * « Chercher d'autres couvertures » : des éditions de la même œuvre qui ont une image, chez Google
+ * Books et Open Library. Je touche celle qui me plaît, puis « Garder cette couverture ». Rien
+ * n'est gardé sans mon choix ; aucune IA. Dans « Modifier », pour une œuvre de ma bibliothèque ;
+ * à l'ajout et à l'achat, quand aucune couverture n'est trouvée, avec le titre et l'auteur connus.
  */
 export function AutresCouvertures({
-  oeuvre,
+  recherche: depart,
+  idOeuvre = '',
   cible,
   enLigne,
   surRangee,
@@ -52,22 +70,22 @@ export function AutresCouvertures({
   sansBouton = false,
   surImage,
 }: {
-  oeuvre: OeuvreDetaillee
-  /** Où ranger la couverture gardée : là où elle s'affiche. */
-  cible: CibleCouverture
+  recherche: RechercheCouvertures
+  /** L'œuvre et l'endroit où ranger la couverture gardée : là où elle s'affiche. Inutiles avec `surImage`. */
+  idOeuvre?: string
+  cible?: CibleCouverture
   enLigne: boolean
   /** La couverture gardée est rangée. */
-  surRangee: () => void
+  surRangee?: () => void
   /** Pour l'ouvrir depuis un menu (« Changer la couverture »). */
   ref?: Ref<{ ouvrir: () => void }>
   /** Le bouton est remplacé par le menu de l'appelant. */
   sansBouton?: boolean
-  /** Donné (dans « Modifier ») : l'image gardée est rendue à l'appelant, qui la rangera à l'enregistrement. */
+  /** Donné : l'image gardée est rendue à l'appelant, qui la rangera au bon moment. Rien n'est rangé ici. */
   surImage?: (image: Blob) => void
 }) {
   const { assistant } = useSession()
-  const rangement = useRangerCouverture(oeuvre.id)
-  const edition = oeuvre.editions.find((e) => e.id === oeuvre.monEdition) ?? null
+  const rangement = useRangerCouverture(idOeuvre)
   const [ouvert, setOuvert] = useState(false)
   const [titre, setTitre] = useState('')
   const [auteur, setAuteur] = useState('')
@@ -106,13 +124,12 @@ export function AutresCouvertures({
     setProposees([])
     setRecherche('en_cours')
 
-    const isbn = edition?.isbn && /^97[89]\d{10}$/.test(edition.isbn) && isbnValide(edition.isbn) ? edition.isbn : null
-    const editeur = edition?.publisher?.trim().slice(0, 120) || null
+    const isbn = depart.isbn && /^97[89]\d{10}$/.test(depart.isbn) && isbnValide(depart.isbn) ? depart.isbn : null
+    const editeur = depart.editeur?.trim().slice(0, 120) || null
     const reponse = await assistant.autresCouvertures({
       titre: leTitre.slice(0, 200),
       ...(recherchee.auteur.trim() ? { auteur: recherchee.auteur.trim().slice(0, 120) } : {}),
-      // La langue de mon édition : anglais si je lis en anglais, français sinon.
-      langue: edition?.language === 'en' ? 'en' : 'fr',
+      langue: depart.langue,
       ...(isbn ? { isbn } : {}),
       ...(editeur ? { editeur } : {}),
     })
@@ -145,11 +162,10 @@ export function AutresCouvertures({
   function ouvrir() {
     if (!enLigne) return
     // La recherche part préremplie : le titre et le premier auteur. Je peux la corriger et la relancer.
-    const depart = { titre: oeuvre.titreFr, auteur: oeuvre.auteurs.find((a) => a.role === 'auteur')?.nom ?? '' }
     setTitre(depart.titre)
     setAuteur(depart.auteur)
     setOuvert(true)
-    void chercher(depart)
+    void chercher({ titre: depart.titre, auteur: depart.auteur })
   }
 
   useImperativeHandle(ref, () => ({ ouvrir }))
@@ -172,11 +188,12 @@ export function AutresCouvertures({
       surImage(retenue.trouvee.image)
       return fermer()
     }
+    if (!cible) return
     rangement.mutate(
       { image: retenue.trouvee.image, cible },
       {
         onSuccess: () => {
-          surRangee()
+          surRangee?.()
           fermer()
         },
         onError: (echec) => setMessage(ECHECS_RANGEMENT[echec.echec] ?? ECHECS_RANGEMENT.inconnu),
@@ -260,7 +277,7 @@ export function AutresCouvertures({
                         onClick={() => setChoisie(proposee.cle)}
                         className="relative flex w-full cursor-pointer flex-col gap-2 rounded-carte border-2 border-transparent bg-transparent p-2 text-left text-encre aria-pressed:border-accent-texte aria-pressed:bg-accent-doux"
                       >
-                        <Couverture titre={oeuvre.titreFr} graine="apercu" apercu={proposee.adresse} className="w-full" />
+                        <Couverture titre={titre.trim() || depart.titre} graine="apercu" apercu={proposee.adresse} className="w-full" />
                         {retenue && (
                           <span aria-hidden="true" className="absolute top-3.5 right-3.5 flex size-7 items-center justify-center rounded-pilule bg-accent text-sur-accent shadow-douce">
                             <IconeCoche taille={16} />
