@@ -222,7 +222,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
           auteur={auteurs.join(', ') || null}
           graine={oeuvre.id}
           chemin={couvertureAffichee(couverturesDeLaFiche(oeuvre))}
-          className="w-[12.25rem] shadow-forte tablette:w-[14rem] min-[72rem]:w-full"
+          className="w-[12.25rem] tablette:w-[14rem] min-[72rem]:w-full"
         />
       </div>
 

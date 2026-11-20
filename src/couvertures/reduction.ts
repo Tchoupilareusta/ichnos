@@ -7,6 +7,7 @@
 // 588 pixels sur un iPhone (×3) ; une couverture ordinaire réduite à 1200 px de haut en garde 750 à 800.
 
 import { LARGEUR_PETITE } from '../ajout/assistant'
+import { estMarquee, marquer } from './marque'
 import { cadreEntier, COTE_MAX_SORTIE, decoderPhoto, enJpeg, tailleSortie, type PhotoDecodee, type ToilePhoto } from './photo'
 
 /**
@@ -36,6 +37,7 @@ type Outils = { decoder: (image: Blob) => Promise<PhotoDecodee>; creerToile: () 
  * L'image telle qu'elle sera rangée. Trop grande : réduite à 1200 px, en JPEG. De bonne taille
  * mais lourde : recompressée, et gardée seulement si elle en sort plus légère. Déjà petite et
  * légère : rendue telle quelle. Ne lève jamais d'erreur : en cas d'échec, l'image d'origine.
+ * Une couverture que j'ai cadrée moi-même garde sa marque (marque.ts), qu'une recompression effacerait.
  */
 export async function reduireImage(image: Blob, outils: Partial<Outils> = {}): Promise<Blob> {
   try {
@@ -46,7 +48,8 @@ export async function reduireImage(image: Blob, outils: Partial<Outils> = {}): P
       if (!tropGrande && image.size <= POIDS_SANS_RETOUCHE) return image
       const reduite = await enJpeg(photo.image, cadreEntier(photo.largeur, photo.hauteur), outils.creerToile)
       if (!reduite) return image
-      return tropGrande || reduite.size < image.size ? reduite : image
+      if (!tropGrande && reduite.size >= image.size) return image
+      return (await estMarquee(image)) ? await marquer(reduite) : reduite
     } finally {
       photo.liberer?.()
     }
