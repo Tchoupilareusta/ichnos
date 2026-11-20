@@ -9,7 +9,7 @@ export function Decouvrir() {
           Mon envie du moment
         </h2>
         <EtatVide>
-          Dès que ma bibliothèque aura quelques œuvres à découvrir, je trouverai ici des idées selon mon humeur.
+          Dès que ma bibliothèque aura quelques œuvres à découvrir, des idées selon mon humeur apparaîtront ici.
         </EtatVide>
       </section>
     </Page>

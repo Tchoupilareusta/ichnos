@@ -27,13 +27,13 @@ import { useSession } from '../session/Session'
 
 const ERREUR_LECTURE: Record<EchecLecture, string> = {
   reseau: 'Pas de connexion à internet : ma bibliothèque s’affichera au retour du réseau.',
-  inconnu: 'Ma bibliothèque n’a pas pu s’ouvrir. Je réessaie dans un instant.',
+  inconnu: 'Ma bibliothèque n’a pas pu s’ouvrir. Réessayer dans un instant.',
 }
 
 const ERREUR_INSTALLATION: Record<EchecInstallation, string> = {
   reseau: 'Pas de connexion à internet : l’installation attendra le retour du réseau.',
   deja: 'Ma bibliothèque contient déjà des œuvres : le catalogue n’a pas été installé une seconde fois.',
-  inconnu: 'L’installation n’a pas abouti, et rien n’a été enregistré. Je réessaie dans un instant.',
+  inconnu: 'L’installation n’a pas abouti, et rien n’a été enregistré. Réessayer dans un instant.',
 }
 
 export function Bibliotheque() {
@@ -104,7 +104,7 @@ export function Bibliotheque() {
             </div>
           }
         >
-          Ma bibliothèque est encore vide. Je peux y installer le catalogue de départ, ou ajouter mes livres un à un.
+          Ma bibliothèque est encore vide. Y installer le catalogue de départ, ou ajouter mes livres un à un.
         </EtatVide>
       )}
 

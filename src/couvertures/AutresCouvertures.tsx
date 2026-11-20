@@ -18,10 +18,10 @@ const IMAGES_A_LA_FOIS = 3
 
 const ECHECS: Record<EchecAssistant, string> = {
   reseau: 'Pas de connexion à internet : la recherche attendra le retour du réseau.',
-  limite: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard, ou je choisis une image moi-même.',
-  non_configure: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard, ou je choisis une image moi-même.',
-  ia: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard, ou je choisis une image moi-même.',
-  indisponible: 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard, ou je choisis une image moi-même.',
+  limite: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard, ou choisir une image dans mes photos.',
+  non_configure: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard, ou choisir une image dans mes photos.',
+  ia: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard, ou choisir une image dans mes photos.',
+  indisponible: 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard, ou choisir une image dans mes photos.',
 }
 
 /** Une proposition et son image : en attente, arrivée, ou absente (elle disparaît alors de la liste). */
@@ -114,7 +114,7 @@ export function AutresCouvertures({
 
   async function chercher(recherchee: { titre: string; auteur: string }) {
     const leTitre = recherchee.titre.trim()
-    if (!leTitre) return setErreurTitre('Il me faut au moins le titre.')
+    if (!leTitre) return setErreurTitre('Le titre, au moins, est attendu.')
     const ceTour = ++tour.current
     const actuel = () => tour.current === ceTour
     oublierImages()
@@ -249,7 +249,7 @@ export function AutresCouvertures({
 
           <p role="status" className="m-0 text-[0.9375rem] text-discret empty:hidden">
             {recherche === 'en_cours'
-              ? 'Je cherche dans les catalogues…'
+              ? 'Recherche dans les catalogues…'
               : enAttente
                 ? 'Les images arrivent…'
                 : pretes.length > 0
@@ -258,7 +258,7 @@ export function AutresCouvertures({
           </p>
           {rienTrouve && (
             <p className="m-0 text-[1.0625rem] leading-relaxed">
-              Aucune autre couverture trouvée pour cette recherche. Je peux la corriger, ou choisir une image moi-même.
+              Aucune autre couverture trouvée pour cette recherche. La corriger, ou choisir une image dans mes photos.
             </p>
           )}
 
@@ -293,7 +293,7 @@ export function AutresCouvertures({
               </ul>
               <ActionsFeuille>
                 <Bouton occupe={choisie === null || rangement.isPending} onClick={garder}>
-                  {rangement.isPending ? 'Je range l’image…' : 'Garder cette couverture'}
+                  {rangement.isPending ? 'Rangement de l’image…' : 'Garder cette couverture'}
                 </Bouton>
                 <Bouton variante="secondaire" onClick={fermer}>
                   Aucune ne convient

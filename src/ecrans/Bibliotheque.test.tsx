@@ -73,7 +73,7 @@ describe('bibliothèque vide', () => {
 
   it.each([
     ['reseau', 'Pas de connexion à internet : l’installation attendra le retour du réseau.'],
-    ['inconnu', 'L’installation n’a pas abouti, et rien n’a été enregistré. Je réessaie dans un instant.'],
+    ['inconnu', 'L’installation n’a pas abouti, et rien n’a été enregistré. Réessayer dans un instant.'],
   ] as const)('dit ce qui s’est passé quand l’installation échoue (%s)', async (echec, message) => {
     const faux = depotFictif({ installation: { ok: false, echec } })
     await ouvrir(faux)

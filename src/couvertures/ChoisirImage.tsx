@@ -10,16 +10,16 @@ import type { Quad } from './redressement/geometrie.ts'
 import type { Redressee } from './redressement/index.ts'
 
 const ECHECS_PHOTO: Record<EchecPhoto, string> = {
-  pas_image: 'Ce fichier n’est pas une image. Je choisis une photo ou une image.',
-  trop_lourd: 'Cette image est trop lourde (plus de 30 Mo). J’en choisis une plus légère.',
-  illisible: 'Cette image n’a pas pu être lue. J’en essaie une autre.',
+  pas_image: 'Ce fichier n’est pas une image. Choisir une photo ou une image.',
+  trop_lourd: 'Cette image est trop lourde (plus de 30 Mo). En choisir une plus légère.',
+  illisible: 'Cette image n’a pas pu être lue. En essayer une autre.',
 }
 
 export const ECHECS_RANGEMENT: Record<string, string> = {
   reseau: 'Pas de connexion à internet : la couverture n’a pas été rangée.',
   introuvable: 'Cette œuvre n’est plus dans ma bibliothèque : la couverture n’a pas été rangée.',
   invalide: 'La couverture n’a pas pu être rangée.',
-  inconnu: 'La couverture n’a pas pu être rangée. Je réessaie dans un instant.',
+  inconnu: 'La couverture n’a pas pu être rangée. Réessayer dans un instant.',
 }
 
 export type SourceImage = 'photo' | 'phototheque'
@@ -29,9 +29,9 @@ export type OuvrirImage = { ouvrir: (source?: SourceImage) => void }
 const NOMS_DES_COINS = ['Coin en haut à gauche', 'Coin en haut à droite', 'Coin en bas à droite', 'Coin en bas à gauche']
 
 const DETECTION = {
-  en_cours: 'Je cherche les coins du livre…',
-  trouve: 'Les coins sont placés sur le livre. Je les ajuste si besoin.',
-  non_trouve: 'Je n’ai pas trouvé le livre : je place les coins moi-même.',
+  en_cours: 'Recherche des coins du livre…',
+  trouve: 'Les coins sont placés sur le livre. Les ajuster si besoin.',
+  non_trouve: 'Livre introuvable sur la photo : placer les coins à la main.',
 }
 
 /** La loupe : un disque de 104 px qui montre la photo agrandie deux fois et demie, centrée sur le coin. */
@@ -191,7 +191,7 @@ export function ChoisirImage({
       produite = null
     }
     setPreparation(false)
-    if (!produite) return setErreurPanneau('L’image n’a pas pu être redressée. Je replace les coins, ou je reprends la photo.')
+    if (!produite) return setErreurPanneau('L’image n’a pas pu être redressée. Replacer les coins, ou reprendre la photo.')
     setRedressee(produite)
   }
 
@@ -283,12 +283,12 @@ export function ChoisirImage({
       />
       {sansBouton ? (
         <p role="status" className="m-0 text-sm text-discret empty:hidden">
-          {lecture ? 'Je lis l’image…' : ''}
+          {lecture ? 'Lecture de l’image…' : ''}
         </p>
       ) : (
         <>
           <Bouton variante="secondaire" occupe={!enLigne || lecture} onClick={() => ouvrir()}>
-            {lecture ? 'Je lis l’image…' : 'Choisir une image'}
+            {lecture ? 'Lecture de l’image…' : 'Choisir une image'}
           </Bouton>
           <ConseilPhoto />
         </>
@@ -307,7 +307,7 @@ export function ChoisirImage({
       <Feuille ouvert={image !== null} titre={redressee ? 'Vérifier la couverture' : 'Redresser la photo'} fermer={fermer}>
         {image && !redressee && (
           <div data-etat="coins" className="flex flex-col gap-5">
-            <p className="m-0 text-[0.9375rem] text-discret">Je place les quatre coins sur ceux de la couverture.</p>
+            <p className="m-0 text-[0.9375rem] text-discret">Placer les quatre coins sur ceux de la couverture.</p>
             {/* La marge laisse la place aux poignées, qui débordent de moitié autour de la photo. */}
             <div className="flex justify-center p-[1.375rem]">
               <div ref={refZone} data-testid="zone-redressement" className="relative inline-block touch-none select-none">
@@ -365,14 +365,14 @@ export function ChoisirImage({
               </div>
             </div>
             <p id={idAide} className="sr-only">
-              Je le déplace avec les flèches du clavier ; plus vite avec la touche Majuscule.
+              Le déplacer avec les flèches du clavier ; plus vite avec la touche Majuscule.
             </p>
             <p role="status" aria-label="Détection du livre" className="m-0 -mt-2 text-center text-sm text-discret">
               {DETECTION[detection]}
             </p>
             <ActionsFeuille>
               <Bouton occupe={occupe} onClick={redresser}>
-                {preparation ? 'Je redresse l’image…' : 'Redresser'}
+                {preparation ? 'Redressement de l’image…' : 'Redresser'}
               </Bouton>
               <Bouton variante="secondaire" onClick={() => setCoins(coinsDeLaPhoto(image))}>
                 Image entière
@@ -416,12 +416,12 @@ export function ChoisirImage({
                 />
               </label>
               <p id={`${idAide}-lumiere`} className="m-0 text-sm text-discret">
-                La lumière a été légèrement corrigée. Je peux retrouver la photo telle qu’elle a été prise.
+                La lumière a été légèrement corrigée. « Couleurs d’origine » rend la photo telle qu’elle a été prise.
               </p>
             </div>
             <ActionsFeuille>
               <Bouton occupe={rangement.isPending} onClick={valider}>
-                {rangement.isPending ? 'Je range l’image…' : 'Valider'}
+                {rangement.isPending ? 'Rangement de l’image…' : 'Valider'}
               </Bouton>
               <Bouton variante="secondaire" onClick={() => setRedressee(null)}>
                 Revoir les coins

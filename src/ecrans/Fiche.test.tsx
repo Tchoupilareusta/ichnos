@@ -353,7 +353,7 @@ describe('hors connexion', () => {
     expect(statut).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(statut)
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
-    expect(screen.getByText('Je pourrai changer le statut et la possession au retour du réseau.')).toBeInTheDocument()
+    expect(screen.getByText('Le statut et la possession pourront changer au retour du réseau.')).toBeInTheDocument()
   })
 })
 

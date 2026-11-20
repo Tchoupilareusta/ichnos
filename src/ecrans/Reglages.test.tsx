@@ -107,8 +107,8 @@ describe('Réglages : couvertures manquantes', () => {
     await laisserPasser(500)
     expect(assistant.appels.couverture).toHaveLength(1)
     // Le détail défile à l'écran sans être annoncé à chaque œuvre : VoiceOver n'entend que le début et la fin.
-    expect(section().getByText(/Je cherche : Momo/)).toBeInTheDocument()
-    expect(section().getByText(/Je cherche : Momo/)).not.toHaveAttribute('role')
+    expect(section().getByText(/Recherche : Momo/)).toBeInTheDocument()
+    expect(section().getByText(/Recherche : Momo/)).not.toHaveAttribute('role')
     expect(section().getByRole('status')).toHaveTextContent('Recherche en cours')
     await laisserPasser(1500)
     expect(assistant.appels.couverture).toHaveLength(2)
@@ -207,7 +207,7 @@ describe('Réglages : remplacer les couvertures de petite taille', () => {
     await remplacer()
     await laisserPasser(500)
     expect(assistant.appels.couverture).toHaveLength(1)
-    expect(section().getByText(/Je cherche plus grand : Momo/)).toBeInTheDocument()
+    expect(section().getByText(/Recherche d’une plus grande image : Momo/)).toBeInTheDocument()
     // Une seule recherche à la fois : l'autre bouton attend.
     expect(section().queryByRole('button', { name: 'Chercher les couvertures manquantes' })).toHaveAttribute('aria-disabled', 'true')
     await act(async () => fireEvent.click(section().getByRole('button', { name: 'Arrêter' })))

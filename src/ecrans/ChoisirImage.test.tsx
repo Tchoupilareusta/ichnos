@@ -155,7 +155,7 @@ describe('choisir une image', () => {
     const { depot, couvertures } = await ouvrir('#/oeuvre/momo/modifier')
     await choisir(photo())
     const panneau = within(screen.getByRole('dialog', { name: 'Redresser la photo' }))
-    expect(panneau.getByText(/Je place les quatre coins/)).toBeInTheDocument()
+    expect(panneau.getByText(/Placer les quatre coins/)).toBeInTheDocument()
     expect(panneau.getByRole('img', { name: 'La photo choisie' })).toBeInTheDocument()
     // Les boutons du panneau : l'action principale en haut, les autres en dessous.
     expect(panneau.getAllByRole('button').map((b) => b.textContent).slice(-3)).toEqual(['Redresser', 'Image entière', 'Reprendre la photo'])
@@ -167,7 +167,7 @@ describe('choisir une image', () => {
     monde.trouves = LIVRE
     await ouvrir('#/oeuvre/momo/modifier')
     await choisir(photo())
-    expect(screen.getByRole('status', { name: 'Détection du livre' })).toHaveTextContent('Les coins sont placés sur le livre. Je les ajuste si besoin.')
+    expect(screen.getByRole('status', { name: 'Détection du livre' })).toHaveTextContent('Les coins sont placés sur le livre. Les ajuster si besoin.')
     await cliquer('Redresser')
     expect(redressements).toEqual([LIVRE])
   })
@@ -175,7 +175,7 @@ describe('choisir une image', () => {
   it('si le livre n’est pas trouvé, part de la photo entière et le dit calmement', async () => {
     await ouvrir('#/oeuvre/momo/modifier')
     await choisir(photo())
-    expect(screen.getByRole('status', { name: 'Détection du livre' })).toHaveTextContent('Je n’ai pas trouvé le livre : je place les coins moi-même.')
+    expect(screen.getByRole('status', { name: 'Détection du livre' })).toHaveTextContent('Livre introuvable sur la photo : placer les coins à la main.')
     await cliquer('Redresser')
     expect(redressements).toEqual([ENTIERE])
   })
@@ -372,7 +372,7 @@ describe('choisir une image', () => {
     await choisir(photo())
     await cliquer('Redresser')
     const panneau = within(screen.getByRole('dialog', { name: 'Redresser la photo' }))
-    expect(panneau.getByRole('alert')).toHaveTextContent('L’image n’a pas pu être redressée. Je replace les coins, ou je reprends la photo.')
+    expect(panneau.getByRole('alert')).toHaveTextContent('L’image n’a pas pu être redressée. Replacer les coins, ou reprendre la photo.')
   })
 
   it('garde le conseil de lumière à portée, replié, près de « Reprendre la photo »', async () => {
@@ -423,7 +423,7 @@ describe('choisir une image', () => {
     fireEvent.click(bouton)
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(clics).not.toHaveBeenCalled()
-    expect(section().getByText(/Je pourrai changer la couverture au retour du réseau/)).toBeInTheDocument()
+    expect(section().getByText(/La couverture pourra changer au retour du réseau/)).toBeInTheDocument()
   })
 })
 

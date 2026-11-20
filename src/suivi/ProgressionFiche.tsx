@@ -218,7 +218,7 @@ export function ProgressionFiche({
         </div>
       )}
 
-      {!enLigne && <p className="m-0 text-sm text-discret">Je pourrai noter où j’en suis au retour du réseau.</p>}
+      {!enLigne && <p className="m-0 text-sm text-discret">La progression pourra être notée au retour du réseau.</p>}
 
       {(oeuvre.statut === 'en_cours' || oeuvre.statut === 'en_pause') && (
         <div
@@ -228,7 +228,7 @@ export function ProgressionFiche({
           {fin && (
             <>
               <p className="m-0 text-[1.0625rem] text-encre">
-                {oeuvre.estSerie ? 'J’ai lu tous les tomes. J’ai terminé cette série ?' : 'J’ai atteint la fin. J’ai terminé ce livre ?'}
+                {oeuvre.estSerie ? 'Tous les tomes sont lus. Marquer la série comme terminée ?' : 'La fin est atteinte. Marquer ce livre comme terminé ?'}
               </p>
               <Bouton occupe={!enLigne} onClick={terminer}>
                 {oeuvre.estSerie ? 'Oui, j’ai terminé la série' : 'Oui, je l’ai terminé'}
@@ -357,7 +357,7 @@ function ReglagesUnite({
           const valeur = brut === '' ? null : Number(brut)
           if (valeur !== null && (!Number.isInteger(valeur) || valeur <= 0)) return setErreur('Un nombre entier, ou rien.')
           if (valeur !== null && !change && position !== null && valeur < position)
-            return setErreur(`Au moins ${position} : j’en suis déjà là.`)
+            return setErreur(`Au moins ${position} : la lecture en est déjà là.`)
           enregistrer(choix, valeur)
         }}
       >
@@ -382,7 +382,7 @@ function ReglagesUnite({
             autoComplete="off"
             value={texte}
             onChange={(e) => setTexte(e.target.value)}
-            aide={choix === 'page' && pagesEdition !== null ? `Mon édition compte ${pagesEdition} pages.` : 'Vide si je ne le connais pas.'}
+            aide={choix === 'page' && pagesEdition !== null ? `Mon édition compte ${pagesEdition} pages.` : 'Vide s’il est inconnu.'}
             erreur={erreur}
           />
         )}

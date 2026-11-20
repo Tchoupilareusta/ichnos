@@ -125,7 +125,7 @@ describe('« Je l’ai acheté » : un livre', () => {
     await saisirIsbn('9782070360025')
     expect(panneau().getByLabelText('ISBN à 13 chiffres de mon exemplaire')).toHaveAccessibleDescription(/Cet ISBN ne semble pas juste/)
     await saisirIsbn('2070360024')
-    expect(panneau().getByLabelText('ISBN à 13 chiffres de mon exemplaire')).toHaveAccessibleDescription(/Il me faut l’ISBN à 13 chiffres/)
+    expect(panneau().getByLabelText('ISBN à 13 chiffres de mon exemplaire')).toHaveAccessibleDescription(/L’ISBN à 13 chiffres est attendu/)
     expect(assistant.appels.chercherIsbn).toHaveLength(0)
     expect(achats(depot)).toHaveLength(0)
   })
@@ -175,12 +175,12 @@ describe('« Je l’ai acheté » : un livre', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Possession : Je l’ai. Changer' })).toBeInTheDocument()
     expect(screen.getByText(/Gallimard · français · 186 pages/)).toBeInTheDocument()
-    expect(screen.getByText('C’est noté : j’ai « L’Étranger », avec l’ISBN de mon exemplaire.')).toHaveAttribute('role', 'status')
+    expect(screen.getByText('Achat de « L’Étranger » noté, avec l’ISBN de mon exemplaire.')).toHaveAttribute('role', 'status')
     // Le statut de lecture n'a pas bougé, et l'action n'a plus lieu d'être.
     expect(screen.getByRole('button', { name: /Statut de lecture : Envie de lire/ })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Je l’ai acheté' })).not.toBeInTheDocument()
     // Le bouton qui avait ouvert le panneau n'existe plus : le focus va sur la confirmation, pas au début de la page.
-    expect(document.activeElement).toBe(screen.getByText(/^C’est noté/))
+    expect(document.activeElement).toBe(screen.getByText(/^Achat de « L’Étranger » noté/))
   })
 
   it('me laisse ne pas garder la couverture trouvée', async () => {
@@ -223,7 +223,7 @@ describe('« Je l’ai acheté » : un livre', () => {
     const { depot } = await ouvrirFiche('etr', { assistant: trouve(autre) })
     await ouvrirAchat()
     await saisirIsbn(ISBN)
-    expect(panneau().getByText('Ce livre semble être « La Chute ». Je vérifie l’ISBN.')).toBeInTheDocument()
+    expect(panneau().getByText('Ce livre semble être « La Chute ». Vérifier l’ISBN.')).toBeInTheDocument()
     await valider()
     expect(achats(depot)).toHaveLength(1)
   })
@@ -327,7 +327,7 @@ describe('« Je l’ai acheté » : un tome', () => {
     expect(achats(depot)).toEqual([{ action: 'achat', id: 'vin', valeur: { isbn: '9791032705544', tome: 2, couverture: couvertures.deposees[0].chemin } }])
     const tomes = within(screen.getByRole('list', { name: 'Tomes de Vinland Saga' }))
     expect(await tomes.findByRole('button', { name: 'Tome 2, en cours, je l’ai' })).toBeInTheDocument()
-    expect(screen.getByText('C’est noté : j’ai le tome 2 de « Vinland Saga », avec l’ISBN de mon exemplaire.')).toHaveAttribute('role', 'status')
+    expect(screen.getByText('Achat du tome 2 de « Vinland Saga » noté, avec l’ISBN de mon exemplaire.')).toHaveAttribute('role', 'status')
   })
 
   it('accepte l’ISBN que le tome porte déjà', async () => {
@@ -352,7 +352,7 @@ describe('« Je l’ai acheté » : un tome', () => {
     await ouvrirFiche('vin', { assistant: trouve(tome5) })
     await ouvrirAchatDuTome(3)
     await saisirIsbn('9791032705544')
-    expect(panneau().getByText('Ce livre semble être le tome 5. Je vérifie l’ISBN.')).toBeInTheDocument()
+    expect(panneau().getByText('Ce livre semble être le tome 5. Vérifier l’ISBN.')).toBeInTheDocument()
     expect(panneau().getByRole('button', { name: 'C’est mon exemplaire' })).toBeInTheDocument()
   })
 })

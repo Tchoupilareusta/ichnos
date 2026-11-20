@@ -38,20 +38,20 @@ function phraseRemplacement(ligne: Remplacement): string {
 }
 
 function conclusion(avancement: Avancement): string | null {
-  if (avancement.arret === 'arrete') return 'Recherche arrêtée. Ce qui a été trouvé est rangé ; je la relance quand je veux.'
+  if (avancement.arret === 'arrete') return 'Recherche arrêtée. Ce qui a été trouvé est rangé ; la relancer à tout moment.'
   if (avancement.arret === 'reseau')
     return 'Plus de connexion : la recherche s’est interrompue. Relancée au retour du réseau, elle reprendra où elle s’est arrêtée.'
   if (avancement.arret === 'indisponible')
-    return 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard : ce qui a été trouvé est rangé.'
+    return 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard : ce qui a été trouvé est rangé.'
   if (!avancement.termine) return null
   return avancement.resultats.length === 0 ? 'Tout a déjà sa couverture.' : 'Recherche terminée.'
 }
 
 function conclusionRemplacement(avancement: AvancementRemplacement): string | null {
-  if (avancement.arret === 'arrete') return 'Remplacement arrêté. Ce qui a été remplacé le reste ; je le relance quand je veux.'
-  if (avancement.arret === 'reseau') return 'Plus de connexion : le remplacement s’est interrompu. Je le relance au retour du réseau.'
+  if (avancement.arret === 'arrete') return 'Remplacement arrêté. Ce qui a été remplacé le reste ; le relancer à tout moment.'
+  if (avancement.arret === 'reseau') return 'Plus de connexion : le remplacement s’est interrompu. Le relancer au retour du réseau.'
   if (avancement.arret === 'indisponible')
-    return 'La recherche automatique ne répond pas pour le moment. Je réessaie plus tard : ce qui a été remplacé le reste.'
+    return 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard : ce qui a été remplacé le reste.'
   if (!avancement.termine) return null
   return avancement.lignes.length === 0 ? 'Aucune couverture de petite taille.' : 'Remplacement terminé.'
 }
@@ -139,10 +139,10 @@ export function CouverturesManquantes() {
       {!enLigne && !enCours && <p className="m-0 text-sm text-discret">Hors connexion : la recherche attendra le retour du réseau.</p>}
       {/* Le détail défile sans être annoncé : la zone d'annonce, plus bas, ne dit que le début et la fin. */}
       {enCours === 'recherche' && (
-        <p className="m-0 text-[0.9375rem] text-discret">{cherche ? `Je cherche : ${cherche}…` : 'Je regarde ce qui manque…'}</p>
+        <p className="m-0 text-[0.9375rem] text-discret">{cherche ? `Recherche : ${cherche}…` : 'Recherche de ce qui manque…'}</p>
       )}
       {enCours === 'remplacement' && (
-        <p className="m-0 text-[0.9375rem] text-discret">{cherche ? `Je cherche plus grand : ${cherche}…` : 'Je mesure mes couvertures…'}</p>
+        <p className="m-0 text-[0.9375rem] text-discret">{cherche ? `Recherche d’une plus grande image : ${cherche}…` : 'Mesure de mes couvertures…'}</p>
       )}
       {bilan?.action === 'recherche' && bilan.avancement.resultats.length > 0 && (
         <ul aria-label="Ce que la recherche a donné" className="m-0 flex w-full list-none flex-col gap-2 p-0">

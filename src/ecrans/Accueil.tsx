@@ -56,7 +56,7 @@ function EnCeMoment() {
 
       {requete.isPending && (
         <p role="status" className="m-0 text-discret">
-          Je retrouve mes lectures…
+          Chargement de mes lectures…
         </p>
       )}
 
@@ -71,7 +71,7 @@ function EnCeMoment() {
           <span role="alert">
             {requete.error.echec === 'reseau'
               ? 'Pas de connexion à internet : mes lectures en cours s’afficheront au retour du réseau.'
-              : 'Mes lectures en cours n’ont pas pu s’afficher. Je réessaie dans un instant.'}
+              : 'Mes lectures en cours n’ont pas pu s’afficher. Réessayer dans un instant.'}
           </span>
         </EtatVide>
       )}
@@ -102,7 +102,7 @@ function EnCeMoment() {
       )}
 
       {lectures && lectures.length > 0 && !enLigne && (
-        <p className="m-0 text-sm text-discret">Je pourrai noter où j’en suis au retour du réseau.</p>
+        <p className="m-0 text-sm text-discret">La progression pourra être notée au retour du réseau.</p>
       )}
 
       <p role="status" className="sr-only">

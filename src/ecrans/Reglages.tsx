@@ -69,7 +69,7 @@ function MonCompte() {
     setErreur(
       resultat.echec === 'reseau'
         ? 'Pas de connexion à internet : la déconnexion attendra le retour du réseau.'
-        : 'La déconnexion n’a pas abouti. Je réessaie dans un instant.',
+        : 'La déconnexion n’a pas abouti. Réessayer dans un instant.',
     )
   }
 

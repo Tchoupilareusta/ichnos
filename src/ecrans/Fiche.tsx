@@ -115,7 +115,7 @@ function ErreurFiche({ erreur, reessayer }: { erreur: EchecDepot; reessayer: () 
       <span role="alert">
         {erreur.echec === 'reseau'
           ? 'Pas de connexion à internet : cette fiche s’affichera au retour du réseau.'
-          : 'Cette fiche n’a pas pu s’ouvrir. Je réessaie dans un instant.'}
+          : 'Cette fiche n’a pas pu s’ouvrir. Réessayer dans un instant.'}
       </span>
     </EtatVide>
   )
@@ -134,7 +134,7 @@ const MESSAGES_ECRITURE: Record<string, string> = {
   reseau: 'Pas de connexion à internet : ce changement n’a pas été enregistré.',
   introuvable: 'Cette œuvre n’est plus dans ma bibliothèque : rien n’a été changé.',
   invalide: 'Ce changement n’a pas été accepté : rien n’a été modifié.',
-  inconnu: 'Ce changement n’a pas pu être enregistré. Je réessaie dans un instant.',
+  inconnu: 'Ce changement n’a pas pu être enregistré. Réessayer dans un instant.',
 }
 
 function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
@@ -302,7 +302,7 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
           )}
           {!enLigne && (
             <p className="m-0 max-w-[30ch] text-sm text-discret min-[72rem]:max-w-none">
-              Je pourrai changer le statut et la possession au retour du réseau.
+              Le statut et la possession pourront changer au retour du réseau.
             </p>
           )}
           {/* Toujours présent : son contenu change quand un achat est noté (VoiceOver l'annonce). */}
@@ -379,8 +379,8 @@ function ContenuFiche({ oeuvre }: { oeuvre: OeuvreDetaillee }) {
         surAchat={() => {
           setAnnonce(
             achat.tome === null
-              ? `C’est noté : j’ai « ${principal} », avec l’ISBN de mon exemplaire.`
-              : `C’est noté : j’ai le tome ${achat.tome} de « ${principal} », avec l’ISBN de mon exemplaire.`,
+              ? `Achat de « ${principal} » noté, avec l’ISBN de mon exemplaire.`
+              : `Achat du tome ${achat.tome} de « ${principal} » noté, avec l’ISBN de mon exemplaire.`,
           )
           setAchat((avant) => ({ ...avant, ouvert: false }))
         }}
@@ -406,7 +406,7 @@ function Resume({ oeuvre, edition }: { oeuvre: OeuvreDetaillee; edition: Edition
       {oeuvre.synopsis ? (
         <p className="m-0 text-[1.0625rem] leading-relaxed whitespace-pre-line">{oeuvre.synopsis}</p>
       ) : (
-        <p className="m-0 text-discret">Je n’ai pas encore écrit de résumé pour cette œuvre.</p>
+        <p className="m-0 text-discret">Pas encore de résumé pour cette œuvre.</p>
       )}
       <p className="m-0 mt-1 text-[0.9375rem] text-pretty text-discret">{details.join(' · ')}</p>
     </Section>
@@ -472,7 +472,7 @@ function MonEdition({
     >
       {edition ? (
         <>
-          <p className="m-0 text-[1.0625rem] [overflow-wrap:anywhere]">{ligne || 'Je n’ai rien noté sur cette édition.'}</p>
+          <p className="m-0 text-[1.0625rem] [overflow-wrap:anywhere]">{ligne || 'Rien de noté sur cette édition.'}</p>
           {precisions.length > 0 && (
             <details className="group -mt-1">
               <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 text-[0.9375rem] font-semibold text-discret [&::-webkit-details-marker]:hidden">
@@ -493,7 +493,7 @@ function MonEdition({
           )}
         </>
       ) : (
-        <p className="m-0 text-discret">Je n’ai pas encore choisi l’édition que je lis.</p>
+        <p className="m-0 text-discret">Mon édition n’est pas encore choisie.</p>
       )}
     </Section>
   )
@@ -596,7 +596,7 @@ function UnMedia({
       </div>
       {auBout && media.statut !== 'termine' && (
         <div data-etat="visible" className="flex flex-wrap items-center gap-3 rounded-carte bg-accent-doux p-4">
-          <p className="m-0 text-[1.0625rem]">J’ai vu le dernier épisode. Vu ?</p>
+          <p className="m-0 text-[1.0625rem]">Dernier épisode atteint. Passer à « Vu » ?</p>
           <Bouton occupe={!enLigne} onClick={() => changer({ statut: 'termine' })}>
             Oui, vu
           </Bouton>

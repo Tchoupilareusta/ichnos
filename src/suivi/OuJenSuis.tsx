@@ -12,7 +12,7 @@ const MESSAGES: Record<string, string> = {
   reseau: 'Pas de connexion à internet : rien n’a été enregistré.',
   introuvable: 'Ce livre n’est plus dans ma bibliothèque : rien n’a été enregistré.',
   invalide: 'Ce nombre n’a pas été accepté : rien n’a été enregistré.',
-  inconnu: 'Rien n’a pu être enregistré. Je réessaie dans un instant.',
+  inconnu: 'Rien n’a pu être enregistré. Réessayer dans un instant.',
 }
 
 const BOUTON_ROND =
@@ -208,7 +208,7 @@ export function OuJenSuis({
               void agir(async () => {
                 if (!(await enregistrerPosition())) return
                 await modifier.statut.mutateAsync('en_pause')
-                annoncer(`${lecture.titre} est en pause. Je le retrouverai dans ma bibliothèque.`)
+                annoncer(`${lecture.titre} est en pause, toujours dans ma bibliothèque.`)
                 fermer()
               })
             }
@@ -217,7 +217,7 @@ export function OuJenSuis({
             Le mettre en pause
           </button>
         </div>
-        {!enLigne && <p className="m-0 text-center text-sm text-discret">Je pourrai noter où j’en suis au retour du réseau.</p>}
+        {!enLigne && <p className="m-0 text-center text-sm text-discret">La progression pourra être notée au retour du réseau.</p>}
       </form>
     </Feuille>
   )
