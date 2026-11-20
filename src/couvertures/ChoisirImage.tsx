@@ -106,7 +106,7 @@ export function ChoisirImage({
   const [fait, setFait] = useState(false)
   /** Le coin que je fais glisser : d'où le geste est parti, où était le coin, et la taille de la photo à l'écran. */
   const glisse = useRef<{ coin: number; x: number; y: number; depart: Quad } | null>(null)
-  const [loupe, setLoupe] = useState<{ coin: number; largeur: number; hauteur: number } | null>(null)
+  const [loupe, setLoupe] = useState<{ coin: number; largeur: number; hauteur: number; place: number } | null>(null)
   /** Change à chaque photo et à chaque fermeture : une détection arrivée trop tard est ignorée. */
   const tour = useRef(0)
 
@@ -225,7 +225,12 @@ export function ChoisirImage({
 
   function debutGlisse(coin: number, evenement: PointeurReact<HTMLButtonElement>) {
     evenement.preventDefault()
-    evenement.currentTarget.setPointerCapture?.(evenement.pointerId)
+    try {
+      // Le geste reste attaché à la poignée, même si le doigt en sort.
+      evenement.currentTarget.setPointerCapture?.(evenement.pointerId)
+    } catch {
+      // Pointeur déjà relâché : le geste se poursuit tant qu'il reste sur la poignée.
+    }
     glisse.current = { coin, x: evenement.clientX, y: evenement.clientY, depart: coins }
   }
   function mouvement(evenement: PointeurReact<HTMLButtonElement>) {
@@ -236,7 +241,9 @@ export function ChoisirImage({
     const dx = ((evenement.clientX - depart.x) * image.largeur) / zone.width
     const dy = ((evenement.clientY - depart.y) * image.hauteur) / zone.height
     setCoins(deplacer(depart.depart, depart.coin, dx, dy, image))
-    setLoupe({ coin: depart.coin, largeur: zone.width, hauteur: zone.height })
+    // La place au-dessus de la photo, jusqu'au haut du panneau : la loupe peut y déborder.
+    const panneau = refZone.current?.closest('dialog')?.getBoundingClientRect().top ?? 0
+    setLoupe({ coin: depart.coin, largeur: zone.width, hauteur: zone.height, place: zone.top - panneau })
   }
   const finGlisse = () => {
     glisse.current = null
@@ -255,7 +262,7 @@ export function ChoisirImage({
 
   const occupe = preparation || rangement.isPending
   const trace = coins.map((coin) => `${coin.x} ${coin.y}`).join(' L')
-  // La loupe : centrée sur le coin, au-dessus du doigt (en dessous quand le coin est tout en haut).
+  // La loupe : centrée sur le coin, au-dessus du doigt qui le cache (en dessous seulement si elle sortait du panneau).
   const viseur = loupe && image ? { x: (coins[loupe.coin].x / image.largeur) * loupe.largeur, y: (coins[loupe.coin].y / image.hauteur) * loupe.hauteur } : null
 
   return (
@@ -343,7 +350,7 @@ export function ChoisirImage({
                       width: LOUPE,
                       height: LOUPE,
                       left: borner(viseur.x - LOUPE / 2, -22, loupe.largeur - LOUPE + 22),
-                      top: viseur.y < LOUPE + AU_DESSUS - 22 ? viseur.y + AU_DESSUS - LOUPE / 2 : viseur.y - AU_DESSUS - LOUPE / 2,
+                      top: loupe.place + viseur.y - AU_DESSUS - LOUPE / 2 < 8 ? viseur.y + AU_DESSUS - LOUPE / 2 : viseur.y - AU_DESSUS - LOUPE / 2,
                       backgroundImage: `url(${image.apercu})`,
                       backgroundRepeat: 'no-repeat',
                       backgroundSize: `${loupe.largeur * AGRANDISSEMENT}px ${loupe.hauteur * AGRANDISSEMENT}px`,
@@ -405,7 +412,7 @@ export function ChoisirImage({
                 />
                 <span
                   aria-hidden="true"
-                  className="relative h-8 w-[3.25rem] shrink-0 rounded-pilule border border-bordure bg-piste transition-colors duration-200 peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-accent-texte after:absolute after:top-[3px] after:left-[3px] after:size-6 after:rounded-pilule after:bg-surface after:shadow-douce after:transition-transform after:duration-200 peer-checked:after:translate-x-5"
+                  className="relative h-8 w-[3.25rem] shrink-0 rounded-pilule border border-bordure bg-piste transition-colors duration-200 peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-accent-texte after:absolute after:top-[3px] after:left-[3px] after:size-6 after:rounded-pilule after:bg-discret after:transition-transform after:duration-200 peer-checked:after:translate-x-5 peer-checked:after:bg-sur-accent"
                 />
               </label>
               <p id={`${idAide}-lumiere`} className="m-0 text-sm text-discret">

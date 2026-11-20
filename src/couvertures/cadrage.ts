@@ -19,6 +19,8 @@ const ECART_MARQUEE = 0.01
 
 /** Un côté n'est rogné seul que si sa bande fait moins de 4 % de la dimension. */
 const BANDE_SEULE = 0.04
+/** Une bande plus large n'est rognée que si le côté opposé en a une aussi, d'au moins 1 % : un simple liseré ne compte pas. */
+const BANDE_OPPOSEE = 0.01
 /** Une zone unie qui atteint 15 % de la dimension n'est pas une marge de scan : c'est le fond de la couverture. */
 const BANDE_MAX = 0.15
 /** Une ligne est unie si 98 % de ses points sont à 20 nuances près (sur 255, par canal) de la couleur du bord. */
@@ -80,11 +82,13 @@ export function bandesUnies(pixels: ArrayLike<number>, largeur: number, hauteur:
 
 /**
  * Ce qui reste de l'image une fois les marges rognées. Un côté n'est rogné que si sa bande est
- * mince (moins de 4 %), ou si le côté opposé a lui aussi une bande : c'est alors un cadre de scan.
+ * mince (moins de 4 %), ou si le côté opposé a lui aussi une vraie bande (au moins 1 %) : c'est
+ * alors un cadre de scan.
  * Une bande large d'un seul côté (le blanc du haut d'un Folio) fait partie du dessin : elle reste.
  */
 export function zoneRognee(bandes: Bandes, largeur: number, hauteur: number): Zone {
-  const rogner = (bande: number, opposee: number, dimension: number) => (bande > 0 && (bande < dimension * BANDE_SEULE || opposee > 0) ? bande : 0)
+  const rogner = (bande: number, opposee: number, dimension: number) =>
+    bande > 0 && (bande < dimension * BANDE_SEULE || opposee >= dimension * BANDE_OPPOSEE) ? bande : 0
   const haut = rogner(bandes.haut, bandes.bas, hauteur)
   const bas = rogner(bandes.bas, bandes.haut, hauteur)
   const gauche = rogner(bandes.gauche, bandes.droite, largeur)

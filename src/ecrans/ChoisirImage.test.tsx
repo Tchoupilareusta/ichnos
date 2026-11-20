@@ -318,6 +318,16 @@ describe('choisir une image', () => {
     expect(loupe.style.backgroundImage).toContain('blob:photo')
     expect(loupe.style.backgroundSize).toBe('750px 1000px')
     expect(loupe.style.backgroundPosition).toBe('-98px -798px')
+    // Au-dessus du doigt, qui cache le coin : son centre est 84 px plus haut.
+    expect(loupe.style.top).toBe('204px')
+    // Tout en haut du panneau, la place manque : elle passe en dessous.
+    fireEvent.pointerMove(poignee, { pointerId: 1, clientX: 60, clientY: 20 })
+    expect(screen.getByTestId('loupe').style.top).toBe('52px')
+    // Quand le panneau laisse de la place au-dessus de la photo (ici 200 px), elle y déborde plutôt que de passer sous le doigt.
+    const fenetre = screen.getByRole('dialog', { name: 'Redresser la photo' })
+    fenetre.getBoundingClientRect = () => ({ left: 0, top: -200, width: 393, height: 800, right: 393, bottom: 600, x: 0, y: -200, toJSON: () => ({}) })
+    fireEvent.pointerMove(poignee, { pointerId: 1, clientX: 60, clientY: 21 })
+    expect(screen.getByTestId('loupe').style.top).toBe('-115px')
     fireEvent.pointerUp(poignee, { pointerId: 1, clientX: 60, clientY: 340 })
     expect(screen.queryByTestId('loupe')).not.toBeInTheDocument()
   })

@@ -72,6 +72,13 @@ describe('zoneRognee', () => {
     expect(sur({ gauche: 10, droite: 5 })).toEqual({ x: 0.1, y: 0, largeur: 0.85, hauteur: 1 })
   })
 
+  it('un simple liseré en face ne fait pas un cadre de scan : il faut une bande d’au moins 1 %', () => {
+    // Le blanc du haut d'un Folio (5,5 %), et une seule ligne unie en bas (0,5 %) : le haut reste.
+    expect(sur({ haut: 11, bas: 1 })).toEqual({ x: 0, y: 0, largeur: 1, hauteur: 0.995 })
+    // Avec 1 % en face, c'est un cadre de scan.
+    expect(sur({ haut: 11, bas: 2 })).toEqual({ x: 0, y: 0.055, largeur: 1, hauteur: 0.935 })
+  })
+
   it('juge chaque paire de côtés à part', () => {
     // Haut large et seul : gardé. Gauche et droite : rognés.
     expect(sur({ haut: 20, gauche: 2, droite: 2 })).toEqual({ x: 0.02, y: 0, largeur: 0.96, hauteur: 1 })
