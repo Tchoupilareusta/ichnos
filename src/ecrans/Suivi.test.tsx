@@ -200,8 +200,11 @@ describe('série et média sur la fiche', () => {
     fireEvent.change(screen.getByLabelText('J’en suis au tome'), { target: { value: '6' } })
     await cliquer(screen.getByRole('button', { name: 'Enregistrer' }))
     expect(ecritures(faux)).toEqual([{ action: 'progression', valeur: 6 }])
+    // Les tomes changent quand TanStack Query publie la nouvelle fiche : il le fait par un
+    // setTimeout(0), dont l'ordre avec le rendu de React (setImmediate) dépend de la charge de la
+    // machine. Attendre l'affichage, au lieu de le supposer immédiat (le test tombait une fois sur six).
     const tomes = screen.getByRole('list', { name: 'Tomes de Vinland Saga' })
-    expect(within(tomes).getByRole('button', { name: /^Tome 5, lu/ })).toBeInTheDocument()
+    expect(await within(tomes).findByRole('button', { name: /^Tome 5, lu/ })).toBeInTheDocument()
     expect(within(tomes).getByRole('button', { name: /^Tome 6, en cours/ })).toBeInTheDocument()
   })
 

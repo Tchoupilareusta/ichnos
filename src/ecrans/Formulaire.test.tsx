@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { App } from '../App'
 import type { Assistant } from '../ajout/assistant'
 import { assistantFictif, imageFictive, noticeFictive, reponseIsbnFictive } from '../ajout/assistant.fictif'
@@ -101,7 +101,8 @@ describe('ajout d’une œuvre', () => {
     await ouvrir(faux, '#/ajouter?mode=manuel')
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Momo' } })
     await enregistrer()
-    expect(screen.getAllByRole('alert').some((a) => /rien n’a été enregistré/.test(a.textContent ?? ''))).toBe(true)
+    // Le refus passe par TanStack Query (publication par setTimeout) : attendre le message.
+    await waitFor(() => expect(screen.getAllByRole('alert').some((a) => /rien n’a été enregistré/.test(a.textContent ?? ''))).toBe(true))
     expect(screen.getByLabelText('Titre')).toHaveValue('Momo')
     expect(window.location.hash).toBe('#/ajouter?mode=manuel')
   })
