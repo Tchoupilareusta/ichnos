@@ -101,7 +101,7 @@ function UneIdeePourLaSuite() {
       </h2>
       <CarteIdee proposition={proposition} grande>
         {resultat.suite && (
-          <Bouton variante="secondaire" onClick={uneAutre} className="min-h-11 self-start px-5">
+          <Bouton variante="secondaire" onClick={uneAutre} className="min-h-11 self-start px-[18px]">
             Une autre idée
           </Bouton>
         )}

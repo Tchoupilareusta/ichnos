@@ -325,7 +325,7 @@ function SelecteurEnvie({ envie }: { envie: Envie }) {
 }
 
 const CLASSE_BOUTON_CARTE =
-  'flex min-h-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-60 aria-disabled:active:scale-100'
+  'flex min-h-11 min-w-0 cursor-pointer items-center justify-center rounded-pilule py-1.5 text-center text-[min(0.9375rem,17px)] leading-tight transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-60 aria-disabled:active:scale-100'
 
 /**
  * Une idée et ses deux boutons. « Commencer » (ou « Reprendre » pour un livre en pause) est en
@@ -369,7 +369,7 @@ function CarteDecouvrir({
             <IconeStatut statut="en_cours" />
           </span>
           <span className="flex min-w-0 flex-col">
-            <span className="leading-tight font-bold [overflow-wrap:anywhere]">{oeuvre.titre}</span>
+            <span className="coupure-francaise leading-tight font-bold">{oeuvre.titre}</span>
             <span className="text-sm text-discret">En cours.</span>
           </span>
         </p>
@@ -386,14 +386,14 @@ function CarteDecouvrir({
 
   return (
     <CarteIdee proposition={proposition}>
-      <div className="mt-auto flex flex-wrap items-center gap-2 @3xl/idees:flex-col @3xl/idees:items-stretch">
+      <div className="mt-auto flex items-stretch gap-2 @3xl/idees:flex-col">
         <button
           type="button"
           aria-label={`${verbe} ${oeuvre.titre}`}
           aria-haspopup="dialog"
           aria-disabled={!enLigne || undefined}
           onClick={() => enLigne && setConfirmer(true)}
-          className={`${CLASSE_BOUTON_CARTE} border-0 bg-accent-doux px-5 font-bold text-accent-texte`}
+          className={`${CLASSE_BOUTON_CARTE} border-0 bg-accent-doux px-[18px] font-bold text-accent-texte`}
         >
           {verbe}
         </button>
@@ -402,7 +402,7 @@ function CarteDecouvrir({
           aria-label={`Pas maintenant pour ${oeuvre.titre}`}
           aria-disabled={!enLigne || undefined}
           onClick={() => enLigne && pasMaintenant()}
-          className={`${CLASSE_BOUTON_CARTE} border border-bordure bg-transparent px-4 font-semibold text-discret`}
+          className={`${CLASSE_BOUTON_CARTE} border border-bordure bg-transparent px-[14px] font-semibold text-discret`}
         >
           Pas maintenant
         </button>
