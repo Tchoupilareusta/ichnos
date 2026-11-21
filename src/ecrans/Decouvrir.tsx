@@ -329,7 +329,7 @@ const CLASSE_BOUTON_CARTE =
 
 /**
  * Une idée et ses deux boutons. « Commencer » (ou « Reprendre » pour un livre en pause) est en
- * avant, sur l'accent doux ; « Pas maintenant » reste discret, juste un contour. Une fois commencée,
+ * avant, sur le fond d'action (jeton « action », au moins 3:1 sur la carte dans les deux thèmes) ; « Pas maintenant » reste discret, juste un contour. Une fois commencée,
  * la carte laisse place à une ligne calme, à la même place.
  */
 function CarteDecouvrir({
@@ -393,7 +393,7 @@ function CarteDecouvrir({
           aria-haspopup="dialog"
           aria-disabled={!enLigne || undefined}
           onClick={() => enLigne && setConfirmer(true)}
-          className={`${CLASSE_BOUTON_CARTE} border-0 bg-accent-doux px-[18px] font-bold text-accent-texte`}
+          className={`${CLASSE_BOUTON_CARTE} border-0 bg-action px-[18px] font-bold text-sur-action`}
         >
           {verbe}
         </button>

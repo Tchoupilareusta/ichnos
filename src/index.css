@@ -36,6 +36,8 @@
   --contour: #8f8172;
   --piste: #e6dacb;
   --barre: #550000;
+  --action: #550000;
+  --sur-action: #fbf8f3;
   --surlignage: #ebd3cd;
   --ombre: rgba(60, 35, 25, 0.08);
   --ombre-forte: rgba(60, 35, 25, 0.14);
@@ -56,6 +58,8 @@
     --contour: #6e6862;
     --piste: #3a3734;
     --barre: #c46a6a;
+    --action: #c46a6a;
+    --sur-action: #151413;
     --surlignage: #4a2524;
     --ombre: rgba(0, 0, 0, 0.35);
     --ombre-forte: rgba(0, 0, 0, 0.5);
@@ -76,6 +80,8 @@
   --contour: #6e6862;
   --piste: #3a3734;
   --barre: #c46a6a;
+  --action: #c46a6a;
+  --sur-action: #151413;
   --surlignage: #4a2524;
   --ombre: rgba(0, 0, 0, 0.35);
   --ombre-forte: rgba(0, 0, 0, 0.5);
@@ -97,6 +103,12 @@
   --color-contour: var(--contour);
   --color-piste: var(--piste);
   --color-barre: var(--barre);
+  /* L'action principale d'une carte (« Commencer ») : un fond qui se détache de la surface de la carte
+     d'au moins 3:1 dans les deux thèmes, avec un texte AA. Clair : le maroon (14,3:1). Sombre : #8D3131
+     n'atteindrait que 1,9:1 sur la carte ; c'est #C46A6A (celui de la barre de progression), avec
+     l'encre du fond : 4,1:1 sur la carte, 4,9:1 pour le texte. */
+  --color-action: var(--action);
+  --color-sur-action: var(--sur-action);
   --color-surlignage: var(--surlignage);
   /* Anneau d'un tome sélectionné : l'accent en clair, #C46A6A en sombre (contraste d'au moins 3:1 sur le fond). */
   --color-anneau: var(--barre);
