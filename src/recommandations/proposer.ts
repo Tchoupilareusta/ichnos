@@ -148,6 +148,10 @@ export function proposer(idees: Idees, demande: Demande): Resultat {
   return { propositions, situation, suite }
 }
 
+/** Une ou deux idées en tout pour cette envie. L'écran s'en sert aussi quand une page déjà affichée a perdu une carte. */
+export const messagePeu = (combien: number) =>
+  combien === 1 ? 'Une seule idée pour cette envie, pour l’instant.' : 'Deux idées seulement pour cette envie, pour l’instant.'
+
 /** La phrase calme qui accompagne un résultat, ou null quand il n'y a rien à dire. Jamais un chiffre de trop, jamais une pression. */
 export function messageDe(resultat: Resultat): string | null {
   switch (resultat.situation) {
@@ -162,7 +166,7 @@ export function messageDe(resultat: Resultat): string | null {
     case 'tout_vu':
       return 'Toutes les idées pour cette envie ont été vues.'
     case 'peu':
-      return resultat.propositions.length === 1 ? 'Une seule idée pour cette envie, pour l’instant.' : 'Deux idées seulement pour cette envie, pour l’instant.'
+      return messagePeu(resultat.propositions.length)
     case 'normal':
       return resultat.suite === 'debut' ? 'Toutes les idées pour cette envie ont été vues.' : null
   }
