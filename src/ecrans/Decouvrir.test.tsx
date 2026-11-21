@@ -131,12 +131,27 @@ describe('Découvrir : les idées', () => {
     fireEvent.click(screen.getByRole('button', { name: `Commencer ${premier}` }))
     fireEvent.click(within(screen.getByRole('dialog', { name: `Commencer ${premier} ?` })).getByRole('button', { name: 'Oui, commencer' }))
     await waitFor(() => expect(faux.appels.ecritures).toEqual([{ action: 'statut', id: expect.any(String), valeur: 'en_cours' }]))
-    expect(await screen.findByText('· En cours.')).toBeInTheDocument()
+    expect(await screen.findByText('En cours.')).toBeInTheDocument()
     // La ligne reste à sa place même une fois les idées relues : l'œuvre n'est plus candidate.
     await waitFor(() => expect(faux.oeuvres().find((o) => o.titreFr === premier)?.statut).toBe('en_cours'))
-    expect(screen.getByText('· En cours.')).toBeInTheDocument()
+    expect(screen.getByText('En cours.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: `Commencer ${premier}` })).not.toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: `Voir la fiche de ${premier}` })).toHaveLength(1)
+  })
+
+  it('garde la phrase des cartes voisines quand une idée est commencée', async () => {
+    const faux = ouvrir()
+    await waitFor(() => expect(cartes()).toHaveLength(3))
+    const phrases = () => cartes().map((lien) => lien.querySelector('[id$="-phrase"]')?.textContent)
+    const [premier] = titres()
+    const avant = phrases().slice(1)
+    fireEvent.click(screen.getByRole('button', { name: `Commencer ${premier}` }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: `Commencer ${premier} ?` })).getByRole('button', { name: 'Oui, commencer' }))
+    await waitFor(() => expect(faux.oeuvres().find((o) => o.titreFr === premier)?.statut).toBe('en_cours'))
+    await screen.findByText('En cours.')
+    // Laisser les idées se relire avec la nouvelle « dernière lecture ».
+    await act(() => new Promise((fin) => setTimeout(fin, 50)))
+    expect(phrases().slice(1)).toEqual(avant)
   })
 
   it('dit « Reprendre » pour un livre en pause, jamais en premier', async () => {

@@ -49,6 +49,9 @@ export function Decouvrir() {
   // L'idée à montrer et à qui donner le focus après « Pas maintenant » ou « Annuler ».
   const [aMontrer, setAMontrer] = useState<{ id: string | null } | null>(null)
   const refMessage = useRef<HTMLDivElement>(null)
+  // La phrase de chaque carte est gardée telle qu'à son arrivée : commencer une idée (qui devient
+  // une « dernière lecture ») ne réécrit pas sous mes yeux la phrase des cartes voisines.
+  const phrases = useRef(new Map<string, string>())
   const idees = requete.data
 
   // La page affichée, recalculée à chaque relecture des données mais sans bouger.
@@ -63,7 +66,9 @@ export function Decouvrir() {
         const commencee = commencees.get(id)
         if (commencee) return [{ id, proposition: commencee, commencee: true }]
         const proposition = r.propositions.find((p) => p.oeuvre.id === id)
-        return proposition ? [{ id, proposition, commencee: false }] : []
+        if (!proposition) return []
+        if (!phrases.current.has(id)) phrases.current.set(id, proposition.phrase)
+        return [{ id, proposition: { ...proposition, phrase: phrases.current.get(id) ?? proposition.phrase }, commencee: false }]
       })
     }
     if (cases.length === 0) {
@@ -172,6 +177,7 @@ export function Decouvrir() {
     if (!resultat) return
     setMessage(null)
     setCommencees(new Map())
+    phrases.current.clear()
     annoncerLaPage.current = true
     if (resultat.suite === 'debut') setVues([])
     else setVues([...vues, ...cases.map((c) => c.id)])
@@ -319,7 +325,7 @@ function SelecteurEnvie({ envie }: { envie: Envie }) {
 }
 
 const CLASSE_BOUTON_CARTE =
-  'flex min-h-11 cursor-pointer items-center rounded-pilule text-[0.9375rem] transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-60 aria-disabled:active:scale-100'
+  'flex min-h-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-60 aria-disabled:active:scale-100'
 
 /**
  * Une idée et ses deux boutons. « Commencer » (ou « Reprendre » pour un livre en pause) est en
@@ -362,9 +368,9 @@ function CarteDecouvrir({
           <span aria-hidden="true" className="flex shrink-0 text-accent-texte">
             <IconeStatut statut="en_cours" />
           </span>
-          <span className="min-w-0">
-            <span className="font-bold [overflow-wrap:anywhere]">{oeuvre.titre}</span>
-            <span className="text-discret"> · En cours.</span>
+          <span className="flex min-w-0 flex-col">
+            <span className="leading-tight font-bold [overflow-wrap:anywhere]">{oeuvre.titre}</span>
+            <span className="text-sm text-discret">En cours.</span>
           </span>
         </p>
         <a
@@ -380,7 +386,7 @@ function CarteDecouvrir({
 
   return (
     <CarteIdee proposition={proposition}>
-      <div className="mt-auto flex flex-wrap items-center gap-2">
+      <div className="mt-auto flex flex-wrap items-center gap-2 @3xl/idees:flex-col @3xl/idees:items-stretch">
         <button
           type="button"
           aria-label={`${verbe} ${oeuvre.titre}`}
