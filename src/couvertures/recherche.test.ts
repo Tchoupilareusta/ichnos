@@ -1,6 +1,6 @@
 import { assistantFictif, imageFictive } from '../ajout/assistant.fictif'
 import { depotFictif, oeuvreFictive } from '../bibliotheque/depot.fictif'
-import { chercherCouverturesManquantes, remplacerPetitesCouvertures, type Avancement, type AvancementRemplacement } from './recherche'
+import { chercherCouverturesManquantes, remplacerPetitesCouvertures, retirerFaussesCouvertures, type Avancement, type AvancementRemplacement, type AvancementRetrait } from './recherche'
 import { couverturesFictives } from './stockage.fictif'
 
 const IMAGE = imageFictive()
@@ -347,5 +347,129 @@ describe('remplacement des couvertures de petite taille', () => {
     await fin
     expect(assistant.appels.proposerFiche).toHaveLength(0)
     expect(assistant.appels.chercherIsbn).toHaveLength(0)
+  })
+})
+
+describe('retrait des fausses couvertures', () => {
+  const MOI = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const chemin = (nom: string) => `${MOI}/${nom.padEnd(32, '0')}.jpg`
+  const avecCouverture = (id: string, isbn: string | null, nom: string) => ({ ...edition(id, isbn), couverture: chemin(nom) })
+
+  /**
+   * La Bibliothèque de minuit et La Ferme des animaux portent « image not available » ; la même
+   * fausse image est rangée sur l'œuvre « Sans ISBN » et sur un tome de Vinland Saga. L'Homme qui
+   * plantait des arbres a sa vraie couverture blanche ; le tome 2 a une image qu'on ne sait pas lire.
+   */
+  const BIBLIOTHEQUE_FAUSSES = () =>
+    depotFictif({
+      oeuvres: [
+        oeuvreFictive({ id: 'minuit', titreFr: 'La Bibliothèque de minuit', editions: [avecCouverture('e1', '9782253936367', 'faux')], monEdition: 'e1' }),
+        oeuvreFictive({ id: 'ferme', titreFr: 'La Ferme des animaux', editions: [avecCouverture('e2', '9780140817690', 'fauxbis')], monEdition: 'e2' }),
+        oeuvreFictive({ id: 'homme', titreFr: 'L’Homme qui plantait des arbres', editions: [avecCouverture('e3', '9782070744619', 'gallimard')], monEdition: 'e3' }),
+        oeuvreFictive({ id: 'sans', titreFr: 'Sans ISBN', couverture: chemin('faux') }),
+        oeuvreFictive({
+          id: 'vinland',
+          titreFr: 'Vinland Saga',
+          estSerie: true,
+          tomes: [{ ...tome(1, '9782351423554'), couverture: chemin('faux') }, { ...tome(2, '9782351423561'), couverture: chemin('illisible') }],
+        }),
+      ],
+    })
+
+  function retirer(options: { assistant?: ReturnType<typeof assistantFictif>; continuer?: () => boolean; depot?: ReturnType<typeof depotFictif> } = {}) {
+    const depot = options.depot ?? BIBLIOTHEQUE_FAUSSES()
+    // La Ferme des animaux retrouve une vraie couverture ; les autres éditions n'en ont pas.
+    const assistant =
+      options.assistant ?? assistantFictif({ couverture: (demande) => ('isbn' in demande && demande.isbn === '9780140817690' ? IMAGE : { ok: true, valeur: null }) })
+    const couvertures = couverturesFictives()
+    const regardees: string[] = []
+    const pauses: number[] = []
+    const etapes: AvancementRetrait[] = []
+    const fin = retirerFaussesCouvertures({
+      depot: depot.depot,
+      assistant: assistant.assistant,
+      couvertures: couvertures.couvertures,
+      // La fausse adresse porte le chemin : l'image « lue » porte son nom.
+      lire: async (adresse) => (adresse.includes('/illisible') ? null : new Blob([adresse])),
+      estFausse: async (image) => {
+        const nom = await image.text()
+        regardees.push(nom)
+        return nom.includes('/faux')
+      },
+      attendre: async () => void pauses.push(assistant.appels.couverture.length),
+      continuer: options.continuer ?? (() => true),
+      surAvancement: (avancement) => etapes.push(avancement),
+    })
+    return { fin, depot, assistant, couvertures, regardees, pauses, etapes }
+  }
+
+  const couvertureDe = (depot: ReturnType<typeof depotFictif>, id: string) => {
+    const o = depot.oeuvres().find((x) => x.id === id)!
+    return { oeuvre: o.couverture, editions: o.editions.map((e) => e.couverture ?? null), tomes: o.tomes.map((t) => t.couverture ?? null) }
+  }
+
+  it('remplace une fausse couverture par une vraie de la même édition, ou la retire pour la couverture d’Ichnos', async () => {
+    const { fin, depot, couvertures } = retirer()
+    const bilan = await fin
+    expect(bilan.termine).toBe(true)
+    expect(bilan.lignes).toEqual([
+      { oeuvre: 'minuit', titre: 'La Bibliothèque de minuit', tome: null, issue: 'retiree' },
+      { oeuvre: 'ferme', titre: 'La Ferme des animaux', tome: null, issue: 'remplacee' },
+      { oeuvre: 'sans', titre: 'Sans ISBN', tome: null, issue: 'retiree' },
+      { oeuvre: 'vinland', titre: 'Vinland Saga', tome: 1, issue: 'retiree' },
+    ])
+    expect(couvertureDe(depot, 'minuit').editions).toEqual([null])
+    expect(couvertureDe(depot, 'ferme').editions).toEqual([couvertures.deposees[0].chemin])
+    expect(couvertureDe(depot, 'sans').oeuvre).toBeNull()
+    expect(couvertureDe(depot, 'vinland').tomes).toEqual([null, chemin('illisible')])
+  })
+
+  it('garde les vraies couvertures, même blanches et sobres, et celles qu’elle ne sait pas lire', async () => {
+    const { fin, depot } = retirer()
+    await fin
+    expect(couvertureDe(depot, 'homme').editions).toEqual([chemin('gallimard')])
+    expect(depot.appels.ecritures.map((e) => e.id)).not.toContain('homme')
+  })
+
+  it('ne redemande une couverture que par l’ISBN connu, et regarde une seule fois une image rangée deux fois', async () => {
+    const { fin, assistant, regardees } = retirer()
+    await fin
+    expect(assistant.appels.couverture).toEqual([{ isbn: '9782253936367' }, { isbn: '9780140817690' }, { isbn: '9782351423554' }])
+    expect(regardees.filter((nom) => nom.includes('/faux0'))).toHaveLength(1)
+  })
+
+  it('garde le rythme des autres recherches : une pause après chaque demande', async () => {
+    const { fin, pauses } = retirer()
+    await fin
+    expect(pauses).toEqual([1, 2, 3])
+  })
+
+  it('s’arrête quand je le demande, et garde ce qui est déjà fait', async () => {
+    let tours = 0
+    const { fin } = retirer({ continuer: () => ++tours <= 1 })
+    const bilan = await fin
+    expect(bilan.arret).toBe('arrete')
+    expect(bilan.lignes).toHaveLength(1)
+  })
+
+  it('s’interrompt calmement si le réseau lâche, sans rien retirer de plus', async () => {
+    const assistant = assistantFictif({ couverture: { ok: false, echec: 'reseau' } })
+    const { fin, depot } = retirer({ assistant })
+    const bilan = await fin
+    expect(bilan.arret).toBe('reseau')
+    expect(depot.appels.ecritures).toEqual([])
+  })
+
+  it('n’utilise jamais l’IA', async () => {
+    const { fin, assistant } = retirer()
+    await fin
+    expect(assistant.appels.proposerFiche).toEqual([])
+  })
+
+  it('n’a rien à faire quand aucune couverture n’est fausse', async () => {
+    const depot = depotFictif({ oeuvres: [oeuvreFictive({ id: 'homme', titreFr: 'L’Homme qui plantait des arbres', editions: [avecCouverture('e3', '9782070744619', 'gallimard')] })] })
+    const { fin } = retirer({ depot })
+    const bilan = await fin
+    expect(bilan).toMatchObject({ termine: true, lignes: [] })
   })
 })

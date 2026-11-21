@@ -3,7 +3,7 @@
 // et c'est la fonction qui interroge les catalogues et l'IA.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { estPresqueUniforme } from '../couvertures/uniformite'
+import { estFausseCouverture } from '../couvertures/uniformite'
 import type {
   FicheProposee,
   OeuvrePourFiche,
@@ -118,10 +118,10 @@ function propositionLue(valeur: unknown): PropositionCouverture | null {
 
 /**
  * `ecarter` : reconnaît sur l'appareil une image qui n'est pas une couverture (page blanche, toile
- * unie : estPresqueUniforme). Elle est alors traitée comme « pas de couverture », pour toutes les
+ * unie, image « image not available » : estFausseCouverture). Elle est alors traitée comme « pas de couverture », pour toutes les
  * recherches (ajout, achat, autres couvertures, couvertures manquantes ou de petite taille).
  */
-export function creerAssistantSupabase(client: ClientFonctions, ecarter: (image: Blob) => Promise<boolean> = estPresqueUniforme): Assistant {
+export function creerAssistantSupabase(client: ClientFonctions, ecarter: (image: Blob) => Promise<boolean> = estFausseCouverture): Assistant {
   /** Un appel à la fonction. `lire` vérifie la forme de la réponse : null si elle est inattendue. */
   async function appeler<T>(corps: Record<string, unknown>, lire: (donnees: Record<string, unknown>) => T | undefined): Promise<Reponse<T>> {
     try {
@@ -162,7 +162,7 @@ export function creerAssistantSupabase(client: ClientFonctions, ecarter: (image:
           return undefined
         }
       })
-      // Une page blanche ou une toile unie : « pas de couverture », comme les images grises de Google.
+      // Une page blanche, une toile unie ou l’image « image not available » : « pas de couverture ».
       if (reponse.ok && reponse.valeur && (await ecarter(reponse.valeur.image))) return { ok: true, valeur: null }
       return reponse
     },

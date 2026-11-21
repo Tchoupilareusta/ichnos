@@ -14,6 +14,12 @@ vi.mock('../couvertures/mesure', () => ({
   },
 }))
 
+// jsdom ne sait pas non plus regarder une image : une couverture rangée dont le nom commence par « 0575f » est fausse.
+vi.mock('../couvertures/uniformite', async (original) => ({
+  ...(await original<typeof import('../couvertures/uniformite')>()),
+  estFausseCouverture: async (image: Blob) => (await image.text()).includes('/0575f'),
+}))
+
 const IMAGE = imageFictive()
 const edition = (id: string, isbn: string | null) => ({ id, isbn, publisher: null, language: null, format: null, translator: null, pageCount: null })
 const tome = (numero: number, isbn: string | null) => ({ numero, titre: null, isbn, possession: 'non_possede' as const, lecture: 'a_lire' as const })
@@ -224,6 +230,54 @@ describe('Réglages : remplacer les couvertures de petite taille', () => {
     await remplacer()
     await laisserPasser(2000)
     expect(assistant.appels.couverture).toHaveLength(0)
+  })
+})
+
+describe('Réglages : fausses couvertures', () => {
+  const MOI = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const chemin = (largeur: number, nom: string) => `${MOI}/${String(largeur).padStart(4, '0')}${nom}`.padEnd(MOI.length + 33, '0') + '.jpg'
+  // L'image rangée « se lit » en son adresse ; une adresse qui contient « faux » est une fausse couverture.
+  beforeEach(() => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (adresse) => new Response(String(adresse)))
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  const AVEC_FAUSSES = () =>
+    depotFictif({
+      oeuvres: [
+        oeuvreFictive({ id: 'minuit', titreFr: 'La Bibliothèque de minuit', editions: [{ ...edition('e1', '9782253936367'), couverture: chemin(575, 'f') }], monEdition: 'e1' }),
+        oeuvreFictive({ id: 'ferme', titreFr: 'La Ferme des animaux', editions: [{ ...edition('e2', '9780140817690'), couverture: chemin(575, 'f') }], monEdition: 'e2' }),
+        oeuvreFictive({ id: 'homme', titreFr: 'L’Homme qui plantait des arbres', editions: [{ ...edition('e3', '9782070744619'), couverture: chemin(300, 'a') }], monEdition: 'e3' }),
+      ],
+    })
+  const retirer = () => act(async () => fireEvent.click(section().getByRole('button', { name: 'Retirer les fausses couvertures' })))
+
+  it('retire les fausses couvertures, en cherche une vraie, et dit œuvre par œuvre ce qui a été fait', async () => {
+    const assistant = assistantFictif({
+      couverture: (demande) => ('isbn' in demande && demande.isbn === '9780140817690' ? imageFictive({ largeur: 800, hauteur: 1200 }) : { ok: true, valeur: null }),
+    })
+    const { depot } = await ouvrir({ depot: AVEC_FAUSSES(), assistant })
+    await retirer()
+    await laisserPasser(10_000)
+    const lignes = within(section().getByRole('list', { name: 'Ce que la vérification a donné' }))
+      .getAllByRole('listitem')
+      .map((ligne) => ligne.textContent)
+    expect(lignes).toEqual([
+      'La Bibliothèque de minuit : fausse couverture retirée, celle d’Ichnos reprend sa place',
+      'La Ferme des animaux : fausse couverture remplacée par une vraie',
+    ])
+    expect(section().getByRole('status')).toHaveTextContent('Vérification terminée.')
+    expect(depot.oeuvres().find((o) => o.id === 'minuit')?.editions[0].couverture).toBeNull()
+    expect(depot.oeuvres().find((o) => o.id === 'homme')?.editions[0].couverture).toBe(chemin(300, 'a'))
+    expect(assistant.appels.proposerFiche).toHaveLength(0)
+  })
+
+  it('dit simplement qu’il n’y a aucune fausse couverture', async () => {
+    const depot = depotFictif({ oeuvres: [oeuvreFictive({ id: 'homme', titreFr: 'L’Homme qui plantait des arbres', couverture: chemin(300, 'a') })] })
+    await ouvrir({ depot })
+    await retirer()
+    await laisserPasser(2000)
+    expect(section().getByRole('status')).toHaveTextContent('Aucune fausse couverture.')
   })
 })
 
