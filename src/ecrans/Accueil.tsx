@@ -85,7 +85,7 @@ function EnCeMoment() {
       {lectures && lectures.length > 0 && (
         <ul
           aria-label="Mes lectures en cours"
-          className="-mx-6 m-0 flex list-none snap-x snap-mandatory scroll-px-6 gap-[1.125rem] overflow-x-auto px-6 pt-1 pb-2 tablette:mx-0 tablette:px-0 tablette:scroll-px-0"
+          className="-mx-6 m-0 flex list-none snap-x snap-mandatory scroll-px-6 gap-[1.125rem] overflow-x-auto overscroll-x-contain px-6 pt-1 pb-2 tablette:mx-0 tablette:px-0 tablette:scroll-px-0"
         >
           {lectures.map((lecture) => (
             <CarteEnCours
@@ -129,7 +129,9 @@ function CarteEnCours({ lecture, enLigne, ouvrir }: { lecture: EnCours; enLigne:
   const long = texteProgression(p, { long: true })
   const auteurs = lecture.auteurs.join(', ')
   return (
-    <li className="flex w-[9.75rem] shrink-0 snap-start flex-col gap-3 tablette:w-[11rem]">
+    // « relative » : le texte réservé à VoiceOver (en position absolue) reste ancré dans sa carte, donc dans
+    // le cadre du carrousel. Sans cela, celui d'une carte hors de l'écran élargit toute la page.
+    <li className="relative flex w-[9.75rem] shrink-0 snap-start flex-col gap-3 tablette:w-[11rem]">
       <a href={LIENS.oeuvre(lecture.id)} className="flex flex-col gap-3 text-encre no-underline">
         <Couverture titre={lecture.titre} auteur={auteurs || null} graine={lecture.id} chemin={lecture.couverture} className="w-full" />
         <span className="flex flex-col gap-0.5">
