@@ -1,7 +1,7 @@
 import { catalogueEssai } from './catalogue.fictif'
 import { ENVIES, type Envie, type OeuvreIdee } from './modele'
 import { morceauxDe } from './phrase'
-import { proposer } from './proposer'
+import { proposer, titresCites } from './proposer'
 import { contexteDe, noter } from './score'
 
 // La phrase d'explication (docs/reference.md §7.4) et sa voix (§3), sur mon vrai catalogue.
@@ -202,5 +202,28 @@ describe('règles de voix et de sobriété', () => {
 
   it('« Le reprendre ? » ne vient que pour un livre en pause', () => {
     for (const { propositions } of groupes) for (const p of propositions) expect(p.phrase.includes('Le reprendre ?')).toBe(p.oeuvre.statut === 'en_pause')
+  })
+})
+
+describe('titres cités dans la phrase (mis en italique par l’écran)', () => {
+  it('donne le titre cité après « après », sans changer la phrase', () => {
+    const [premiere] = duJour(APRES_CRIME, 'reconfortant')
+    expect(premiere.phrase).toBe('Lumineux, après Crime et Châtiment. Atmosphère chaleureuse et douce.')
+    expect(premiere.titres).toEqual(['Crime et Châtiment'])
+  })
+
+  it('donne le titre cité après « proches de », et rien quand la phrase ne cite aucune œuvre', () => {
+    for (const situation of SITUATIONS)
+      for (const envie of TOUTES)
+        for (const p of duJour(situation, envie)) {
+          // Chaque titre donné est bien cité, à cet endroit-là.
+          for (const titre of p.titres) expect(p.phrase.includes(`après ${titre}`) || p.phrase.includes(`proches de ${titre}`)).toBe(true)
+          if (!/après |proches de /.test(p.phrase)) expect(p.titres).toEqual([])
+          else expect(p.titres.length).toBeGreaterThan(0)
+        }
+  })
+
+  it('ne prend pas pour un titre un mot de la phrase qui en serait un morceau', () => {
+    expect(titresCites('Plus grave, après Momo. Au cœur du livre : temps.', ['Momo', 'Le temps'])).toEqual(['Momo'])
   })
 })

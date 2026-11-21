@@ -79,11 +79,15 @@ describe('accueil : une idée pour la suite', () => {
     return faux
   }
 
-  it('propose une seule idée, qui mène à sa fiche, puis « Selon mon humeur »', async () => {
+  it('propose une seule idée, qui mène à sa fiche, puis « Selon mon envie du moment »', async () => {
     ouvrir([idee('momo', 'Momo', 'Michael Ende', 5, 'Conte'), idee('sid', 'Siddhartha', 'Hermann Hesse', 4, 'Roman philosophique')])
     const section = await screen.findByRole('region', { name: 'Une idée pour la suite' })
     expect(within(section).getAllByRole('link', { name: /^Voir la fiche de / })).toHaveLength(1)
-    expect(within(section).getByRole('link', { name: 'Selon mon humeur' })).toHaveAttribute('href', '#/decouvrir')
+    expect(within(section).getByRole('link', { name: 'Selon mon envie du moment' })).toHaveAttribute('href', '#/decouvrir')
+    // Une ligne de lien discrète, pas une seconde pilule à côté du bouton « Une autre idée ».
+    const lien = within(section).getByRole('link', { name: 'Selon mon envie du moment' })
+    expect(lien.className).not.toMatch(/(^|s)(border|bg-surface|bg-accent)(s|$)/)
+    expect(lien).toHaveClass('text-accent-texte')
     // L'accueil reste léger : ni « Commencer » ni « Pas maintenant ».
     expect(within(section).queryByRole('button', { name: /Commencer|Pas maintenant/ })).not.toBeInTheDocument()
   })
@@ -102,13 +106,13 @@ describe('accueil : une idée pour la suite', () => {
 
   it('ne propose jamais un livre en pause ici', async () => {
     ouvrir([idee('gai', 'Le Gai Savoir', 'Friedrich Nietzsche', 3, 'Philosophie', { statut: 'en_pause' })])
-    await screen.findByRole('link', { name: 'Selon mon humeur' })
+    await screen.findByRole('link', { name: 'Selon mon envie du moment' })
     expect(screen.queryByRole('region', { name: 'Une idée pour la suite' })).not.toBeInTheDocument()
   })
 
-  it('sans idée à proposer, la section n’apparaît pas ; « Selon mon humeur » reste', async () => {
+  it('sans idée à proposer, la section n’apparaît pas ; « Selon mon envie du moment » reste', async () => {
     ouvrir([idee('momo', 'Momo', 'Michael Ende', 5, 'Conte', { statut: 'termine' })])
-    expect(await screen.findByRole('link', { name: 'Selon mon humeur' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Selon mon envie du moment' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Une idée pour la suite' })).not.toBeInTheDocument()
     expect(screen.queryByText('Une idée pour la suite')).not.toBeInTheDocument()
   })

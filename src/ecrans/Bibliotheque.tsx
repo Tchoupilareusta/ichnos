@@ -417,7 +417,7 @@ function Grille({ oeuvres }: { oeuvres: OeuvreListee[] }) {
               className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.98]"
             />
             <span className="flex flex-col gap-0.5">
-              <span className="text-[0.9375rem] leading-[1.3] font-bold text-balance [overflow-wrap:anywhere]">{oeuvre.titre}</span>
+              <span className="text-[0.9375rem] leading-[1.3] font-bold text-balance coupure-francaise">{oeuvre.titre}</span>
               {oeuvre.auteurs.length > 0 && <span className="text-sm text-discret">{oeuvre.auteurs.join(', ')}</span>}
             </span>
           </a>

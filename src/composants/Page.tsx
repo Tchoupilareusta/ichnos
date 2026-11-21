@@ -11,14 +11,11 @@ export function Page({ children, entete }: { children: ReactNode; entete?: React
     <main
       id="contenu"
       tabIndex={-1}
-      className={`mx-auto outline-none flex w-full flex-col gap-10 pr-[max(1.5rem,env(safe-area-inset-right))] pl-[max(1.5rem,env(safe-area-inset-left))] tablette:pr-[max(2.5rem,env(safe-area-inset-right))] ${
+      className={`marge-bas-page mx-auto outline-none flex w-full flex-col gap-10 pr-[max(1.5rem,env(safe-area-inset-right))] pl-[max(1.5rem,env(safe-area-inset-left))] tablette:pr-[max(2.5rem,env(safe-area-inset-right))] ${
         enSaisie ? 'max-w-5xl tablette:pl-[max(2.5rem,env(safe-area-inset-left))]' : 'max-w-6xl tablette:pl-[calc(env(safe-area-inset-left)+18.5rem)]'
       }`}
-      style={{
-        paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
-        // Assez de place sous le contenu pour la navigation, ou pour la barre d'actions des tomes quand elle est plus haute.
-        paddingBottom: 'calc(max(env(safe-area-inset-bottom), 1rem) + max(7.5rem, var(--place-barre, 0px) + 1.5rem))',
-      }}
+      // En bas : la classe « marge-bas-page » (index.css), qui suit la barre du bas et la zone de sécurité.
+      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}
     >
       {entete}
       {children}

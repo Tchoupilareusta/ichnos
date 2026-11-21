@@ -35,14 +35,19 @@ export function Accueil() {
   )
 }
 
-function SelonMonHumeur() {
+/**
+ * Le chemin vers Découvrir, avec le vocabulaire de cet écran (« Mon envie du moment »). Une ligne
+ * de lien discrète, en texte accentué (la couleur des liens, §4.2), avec sa flèche : ni bordure ni
+ * fond, pour ne pas ressembler au bouton « Une autre idée » de la carte. Assez haute pour le doigt.
+ */
+function SelonMonEnvie() {
   return (
     <a
       href={LIENS.decouvrir}
-      className="flex h-14 max-w-xl items-center justify-between rounded-pilule border border-bordure bg-surface px-5 text-base font-semibold text-encre no-underline"
+      className="-ml-1 flex min-h-11 items-center gap-2 self-start rounded-pilule px-1 text-base font-semibold text-accent-texte no-underline transition-opacity duration-200 active:opacity-70"
     >
-      Selon mon humeur
-      <IconeFleche taille={20} />
+      Selon mon envie du moment
+      <IconeFleche taille={18} />
     </a>
   )
 }
@@ -50,7 +55,7 @@ function SelonMonHumeur() {
 /**
  * « Une idée pour la suite » : une seule idée, celle que « Surprends-moi » met en premier aujourd'hui,
  * jamais un livre en pause. « Une autre idée » montre la suivante sans rien écrire. Sans idée à
- * proposer (ou le temps de les lire), la section n'apparaît pas : seul reste « Selon mon humeur ».
+ * proposer (ou le temps de les lire), la section n'apparaît pas : seul reste « Selon mon envie du moment ».
  */
 function UneIdeePourLaSuite() {
   const idees = useIdees().data
@@ -85,7 +90,7 @@ function UneIdeePourLaSuite() {
     }
   }, [id, actuelle, titre])
 
-  if (!proposition || !resultat) return <SelonMonHumeur />
+  if (!proposition || !resultat) return <SelonMonEnvie />
 
   function uneAutre() {
     if (!resultat || !id) return
@@ -101,12 +106,12 @@ function UneIdeePourLaSuite() {
       </h2>
       <CarteIdee proposition={proposition} grande>
         {resultat.suite && (
-          <Bouton variante="secondaire" onClick={uneAutre} className="min-h-11 self-start px-5">
+          <Bouton variante="secondaire" onClick={uneAutre} className="min-h-11 self-start px-[18px]">
             Une autre idée
           </Bouton>
         )}
       </CarteIdee>
-      <SelonMonHumeur />
+      <SelonMonEnvie />
       <p role="status" className="sr-only">
         {annonce}
       </p>

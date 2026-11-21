@@ -220,8 +220,9 @@ describe('série', () => {
       { action: 'reglerTomes', id: 'vin', valeur: [{ numero: 2, possession: 'possede' }, { numero: 3, possession: 'possede' }] },
       { action: 'reglerTomes', id: 'vin', valeur: [{ numero: 2, lecture: 'lu' }, { numero: 3, lecture: 'lu' }] },
     ])
+    // La mise en avant suit la fiche publiée par TanStack Query (setTimeout) : l'attendre.
+    expect(await within(barre()!).findByRole('button', { name: 'Lu, choisi' })).toBeInTheDocument()
     expect(within(barre()!).getByRole('button', { name: 'Je l’ai, choisi' })).toBeInTheDocument()
-    expect(within(barre()!).getByRole('button', { name: 'Lu, choisi' })).toBeInTheDocument()
     expect(within(barre()!).getByText('2 tomes : Lu')).toBeInTheDocument()
     // La croix vide la sélection et emporte le message.
     fireEvent.click(within(barre()!).getByRole('button', { name: 'Annuler la sélection' }))

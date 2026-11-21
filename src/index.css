@@ -36,6 +36,8 @@
   --contour: #8f8172;
   --piste: #e6dacb;
   --barre: #550000;
+  --action: #550000;
+  --sur-action: #fbf8f3;
   --surlignage: #ebd3cd;
   --ombre: rgba(60, 35, 25, 0.08);
   --ombre-forte: rgba(60, 35, 25, 0.14);
@@ -56,6 +58,8 @@
     --contour: #6e6862;
     --piste: #3a3734;
     --barre: #c46a6a;
+    --action: #c46a6a;
+    --sur-action: #151413;
     --surlignage: #4a2524;
     --ombre: rgba(0, 0, 0, 0.35);
     --ombre-forte: rgba(0, 0, 0, 0.5);
@@ -76,6 +80,8 @@
   --contour: #6e6862;
   --piste: #3a3734;
   --barre: #c46a6a;
+  --action: #c46a6a;
+  --sur-action: #151413;
   --surlignage: #4a2524;
   --ombre: rgba(0, 0, 0, 0.35);
   --ombre-forte: rgba(0, 0, 0, 0.5);
@@ -97,6 +103,12 @@
   --color-contour: var(--contour);
   --color-piste: var(--piste);
   --color-barre: var(--barre);
+  /* L'action principale d'une carte (« Commencer ») : un fond qui se détache de la surface de la carte
+     d'au moins 3:1 dans les deux thèmes, avec un texte AA. Clair : le maroon (14,3:1). Sombre : #8D3131
+     n'atteindrait que 1,9:1 sur la carte ; c'est #C46A6A (celui de la barre de progression), avec
+     l'encre du fond : 4,1:1 sur la carte, 4,9:1 pour le texte. */
+  --color-action: var(--action);
+  --color-sur-action: var(--sur-action);
   --color-surlignage: var(--surlignage);
   /* Anneau d'un tome sélectionné : l'accent en clair, #C46A6A en sombre (contraste d'au moins 3:1 sur le fond). */
   --color-anneau: var(--barre);
@@ -115,6 +127,32 @@
   --shadow-forte: 0 12px 34px var(--ombre-forte);
 
   --breakpoint-tablette: 48rem;
+}
+
+/* ---------- Bas de page ---------- */
+/* Sous le contenu de chaque écran : la zone de sécurité, la hauteur de la barre du bas flottante
+   (la même expression que dans Navigation.tsx) et un écart, pour que la fin de la page ne passe
+   jamais sous la barre. La barre d'actions des tomes, plus haute, réserve sa place par
+   --place-barre. */
+.marge-bas-page {
+  padding-bottom: calc(max(env(safe-area-inset-bottom), 1rem) + max(min(4.5rem, 80px) + 2.5rem, var(--place-barre, 0px) + 1.5rem));
+}
+/* iPad et ordinateur : la navigation est sur le côté ; la marge reste pour la barre « Annuler /
+   Enregistrer » de « Modifier », posée en bas. */
+@media (width >= 48rem) {
+  .marge-bas-page {
+    padding-bottom: calc(max(env(safe-area-inset-bottom), 1rem) + max(7.5rem, var(--place-barre, 0px) + 1.5rem));
+  }
+}
+
+/* ---------- Coupure des titres ---------- */
+/* Un titre trop long pour sa ligne se coupe avec un tiret, à la française (la page est en
+   lang="fr"), jamais au milieu d'un mot sans tiret. « break-word » ne coupe un mot sans tiret
+   qu'en tout dernier recours, s'il ne tient sur aucune ligne : la page ne déborde jamais. */
+@utility coupure-francaise {
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 
 /* ---------- Base ---------- */

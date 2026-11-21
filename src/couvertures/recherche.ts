@@ -176,3 +176,84 @@ export async function remplacerPetitesCouvertures(outils: {
   }
   return dire({ termine: true })
 }
+
+// ---------------------------------------------------------------------------
+// Retirer les fausses couvertures
+// ---------------------------------------------------------------------------
+
+/** Ce qui a été fait pour une fausse couverture rangée (« image not available », page blanche…). */
+export type Retrait = {
+  oeuvre: string
+  titre: string
+  tome: number | null
+  /** `remplacee` : une vraie couverture de la même édition l'a remplacée ; `retiree` : la couverture d'Ichnos reprend sa place. */
+  issue: 'remplacee' | 'retiree'
+}
+
+export type AvancementRetrait = {
+  enCours: string | null
+  lignes: Retrait[]
+  termine: boolean
+  arret: null | 'arrete' | 'reseau' | 'indisponible'
+}
+
+/**
+ * Regarde chaque couverture rangée, sur l'appareil, avec le même contrôle que les recherches
+ * (estFausseCouverture : image de remplacement d'un catalogue, page blanche, toile unie). Pour
+ * chaque fausse couverture dont l'ISBN est connu, redemande la couverture de cette édition (le
+ * même contrôle écarte une nouvelle fausse) ; sans vraie couverture trouvée, la fausse est retirée
+ * et la couverture d'Ichnos (fond de couleur et titre) reprend sa place. Rien d'autre ne change.
+ */
+export async function retirerFaussesCouvertures(outils: {
+  depot: Depot
+  assistant: Assistant
+  couvertures: Couvertures
+  /** Lit l'image rangée à cette adresse ; null si elle ne se lit pas. */
+  lire: (adresse: string) => Promise<Blob | null>
+  /** Vrai si l'image n'est pas une couverture. */
+  estFausse: (image: Blob) => Promise<boolean>
+  attendre: () => Promise<void>
+  continuer: () => boolean
+  surAvancement: (avancement: AvancementRetrait) => void
+}): Promise<AvancementRetrait> {
+  const { depot, assistant, couvertures, lire, estFausse, attendre, continuer, surAvancement } = outils
+  const lignes: Retrait[] = []
+  const dire = (suite: Partial<AvancementRetrait>): AvancementRetrait => {
+    const avancement: AvancementRetrait = { enCours: null, lignes: lignes.map((l) => ({ ...l })), termine: false, arret: null, ...suite }
+    surAvancement(avancement)
+    return avancement
+  }
+
+  const lecture = await depot.listerCouvertures()
+  if (!lecture.ok) return dire({ arret: lecture.echec === 'reseau' ? 'reseau' : 'indisponible' })
+
+  // Une même image peut être rangée à plusieurs endroits : elle n'est regardée qu'une fois.
+  const verdicts = new Map<string, boolean>()
+  for (const rangee of lecture.couvertures) {
+    if (!continuer()) return dire({ arret: 'arrete' })
+    if (!verdicts.has(rangee.chemin)) {
+      const adresse = await couvertures.adresse(rangee.chemin)
+      const image = adresse ? await lire(adresse) : null
+      // Illisible (hors connexion, image disparue) : on n'y touche pas.
+      verdicts.set(rangee.chemin, image ? await estFausse(image) : false)
+    }
+    if (!verdicts.get(rangee.chemin)) continue
+
+    const commun = { oeuvre: rangee.oeuvre, titre: rangee.titre, tome: rangee.tome }
+    dire({ enCours: rangee.tome === null ? rangee.titre : `${rangee.titre}, tome ${rangee.tome}` })
+    let nouvelle: string | null = null
+    if (rangee.isbn) {
+      const reponse = await assistant.couverture({ isbn: rangee.isbn })
+      if (!reponse.ok) return dire({ arret: reponse.echec === 'reseau' ? 'reseau' : 'indisponible' })
+      if (reponse.valeur) {
+        const deposee = await couvertures.deposer(reponse.valeur.image)
+        if (deposee.ok) nouvelle = deposee.chemin
+      }
+    }
+    const ecrite = await depot.definirCouverture(rangee.oeuvre, rangee.cible, nouvelle)
+    if (!ecrite.ok) return dire({ arret: ecrite.echec === 'reseau' ? 'reseau' : 'indisponible' })
+    lignes.push({ ...commun, issue: nouvelle ? 'remplacee' : 'retiree' })
+    if (rangee.isbn) await attendre()
+  }
+  return dire({ termine: true })
+}

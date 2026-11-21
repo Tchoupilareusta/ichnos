@@ -5,12 +5,15 @@ import { Bouton } from '../composants/Bouton'
 import { useEnLigne } from '../navigation/useEnLigne'
 import { useSession } from '../session/Session'
 import { tailleImage } from './mesure'
+import { estFausseCouverture } from './uniformite'
 import {
   chercherCouverturesManquantes,
   PAUSE_ENTRE_DEMANDES,
   remplacerPetitesCouvertures,
+  retirerFaussesCouvertures,
   type Avancement,
   type AvancementRemplacement,
+  type AvancementRetrait,
   type Remplacement,
   type ResultatOeuvre,
 } from './recherche'
@@ -56,8 +59,30 @@ function conclusionRemplacement(avancement: AvancementRemplacement): string | nu
   return avancement.lignes.length === 0 ? 'Aucune couverture de petite taille.' : 'Remplacement terminé.'
 }
 
-/** Ce que la dernière action a donné : la recherche des couvertures manquantes, ou le remplacement des petites. */
-type Bilan = { action: 'recherche'; avancement: Avancement } | { action: 'remplacement'; avancement: AvancementRemplacement }
+function conclusionRetrait(avancement: AvancementRetrait): string | null {
+  if (avancement.arret === 'arrete') return 'Vérification arrêtée. Ce qui a été retiré ou remplacé le reste ; la relancer à tout moment.'
+  if (avancement.arret === 'reseau') return 'Plus de connexion : la vérification s’est interrompue. La relancer au retour du réseau.'
+  if (avancement.arret === 'indisponible')
+    return 'La recherche automatique ne répond pas pour le moment. Réessayer plus tard : ce qui a été retiré ou remplacé le reste.'
+  if (!avancement.termine) return null
+  return avancement.lignes.length === 0 ? 'Aucune fausse couverture.' : 'Vérification terminée.'
+}
+
+/** Lit une image rangée ; null si elle ne se lit pas (hors connexion, image disparue). */
+async function lireImage(adresse: string): Promise<Blob | null> {
+  try {
+    const reponse = await fetch(adresse)
+    return reponse.ok ? await reponse.blob() : null
+  } catch {
+    return null
+  }
+}
+
+/** Ce que la dernière action a donné : la recherche des couvertures manquantes, le remplacement des petites, ou le retrait des fausses. */
+type Bilan =
+  | { action: 'recherche'; avancement: Avancement }
+  | { action: 'remplacement'; avancement: AvancementRemplacement }
+  | { action: 'retrait'; avancement: AvancementRetrait }
 
 /**
  * Réglages : cherche, une par une, les couvertures qui manquent, ou une image plus grande pour
@@ -90,8 +115,15 @@ export function CouverturesManquantes() {
     try {
       if (action === 'recherche') {
         await chercherCouverturesManquantes({ ...commun, surAvancement: (avancement) => setBilan({ action, avancement }) })
-      } else {
+      } else if (action === 'remplacement') {
         await remplacerPetitesCouvertures({ ...commun, mesurer: tailleImage, surAvancement: (avancement) => setBilan({ action, avancement }) })
+      } else {
+        await retirerFaussesCouvertures({
+          ...commun,
+          lire: lireImage,
+          estFausse: estFausseCouverture,
+          surAvancement: (avancement) => setBilan({ action, avancement }),
+        })
       }
     } finally {
       setEnCours(null)
@@ -104,7 +136,13 @@ export function CouverturesManquantes() {
     }
   }
 
-  const fin = !bilan || enCours ? null : bilan.action === 'recherche' ? conclusion(bilan.avancement) : conclusionRemplacement(bilan.avancement)
+  const fin = !bilan || enCours
+    ? null
+    : bilan.action === 'recherche'
+      ? conclusion(bilan.avancement)
+      : bilan.action === 'remplacement'
+        ? conclusionRemplacement(bilan.avancement)
+        : conclusionRetrait(bilan.avancement)
   const cherche = bilan?.avancement.enCours ?? null
 
   return (
@@ -114,7 +152,8 @@ export function CouverturesManquantes() {
       </h2>
       <p className="m-0 text-discret">
         Ichnos cherche une à une les couvertures qui manquent, d’après l’ISBN de mes éditions et de mes tomes. Sans couverture trouvée, celle
-        d’Ichnos reste en place. Une couverture de petite taille peut être remplacée par une image plus grande de la même édition.
+        d’Ichnos reste en place. Une couverture de petite taille peut être remplacée par une image plus grande de la même édition. Une fausse
+        couverture (« image not available », page blanche) peut être retirée : une vraie est cherchée, sinon celle d’Ichnos revient.
       </p>
       <div className="flex flex-wrap gap-3">
         {enCours === 'recherche' ? (
@@ -135,6 +174,15 @@ export function CouverturesManquantes() {
             Remplacer les couvertures de petite taille
           </Bouton>
         )}
+        {enCours === 'retrait' ? (
+          <Bouton variante="secondaire" onClick={() => (continuer.current = false)}>
+            Arrêter
+          </Bouton>
+        ) : (
+          <Bouton variante="secondaire" occupe={!enLigne || enCours !== null} onClick={() => lancer('retrait')}>
+            Retirer les fausses couvertures
+          </Bouton>
+        )}
       </div>
       {!enLigne && !enCours && <p className="m-0 text-sm text-discret">Hors connexion : la recherche attendra le retour du réseau.</p>}
       {/* Le détail défile sans être annoncé : la zone d'annonce, plus bas, ne dit que le début et la fin. */}
@@ -143,6 +191,9 @@ export function CouverturesManquantes() {
       )}
       {enCours === 'remplacement' && (
         <p className="m-0 text-[0.9375rem] text-discret">{cherche ? `Recherche d’une plus grande image : ${cherche}…` : 'Mesure de mes couvertures…'}</p>
+      )}
+      {enCours === 'retrait' && (
+        <p className="m-0 text-[0.9375rem] text-discret">{cherche ? `Recherche d’une vraie couverture : ${cherche}…` : 'Vérification de mes couvertures…'}</p>
       )}
       {bilan?.action === 'recherche' && bilan.avancement.resultats.length > 0 && (
         <ul aria-label="Ce que la recherche a donné" className="m-0 flex w-full list-none flex-col gap-2 p-0">
@@ -165,8 +216,18 @@ export function CouverturesManquantes() {
           ))}
         </ul>
       )}
+      {bilan?.action === 'retrait' && bilan.avancement.lignes.length > 0 && (
+        <ul aria-label="Ce que la vérification a donné" className="m-0 flex w-full list-none flex-col gap-2 p-0">
+          {bilan.avancement.lignes.map((ligne) => (
+            <li key={`${ligne.oeuvre}/${ligne.tome ?? ''}`} className="border-t border-bordure pt-2 text-[0.9375rem] leading-snug">
+              <span className="font-bold">{ligne.tome === null ? ligne.titre : `${ligne.titre}, tome ${ligne.tome}`}</span> :{' '}
+              {ligne.issue === 'remplacee' ? 'fausse couverture remplacée par une vraie' : 'fausse couverture retirée, celle d’Ichnos reprend sa place'}
+            </li>
+          ))}
+        </ul>
+      )}
       <p role="status" className="m-0 text-[0.9375rem] font-semibold empty:hidden">
-        {enCours ? <span className="sr-only">{enCours === 'recherche' ? 'Recherche en cours…' : 'Remplacement en cours…'}</span> : (fin ?? '')}
+        {enCours ? <span className="sr-only">{enCours === 'recherche' ? 'Recherche en cours…' : enCours === 'remplacement' ? 'Remplacement en cours…' : 'Vérification en cours…'}</span> : (fin ?? '')}
       </p>
     </section>
   )

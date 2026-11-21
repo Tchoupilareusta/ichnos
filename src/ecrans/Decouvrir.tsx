@@ -51,7 +51,7 @@ export function Decouvrir() {
   const refMessage = useRef<HTMLDivElement>(null)
   // La phrase de chaque carte est gardée telle qu'à son arrivée : commencer une idée (qui devient
   // une « dernière lecture ») ne réécrit pas sous mes yeux la phrase des cartes voisines.
-  const phrases = useRef(new Map<string, string>())
+  const phrases = useRef(new Map<string, Pick<Proposition, 'phrase' | 'titres'>>())
   const idees = requete.data
 
   // La page affichée, recalculée à chaque relecture des données mais sans bouger.
@@ -67,8 +67,8 @@ export function Decouvrir() {
         if (commencee) return [{ id, proposition: commencee, commencee: true }]
         const proposition = r.propositions.find((p) => p.oeuvre.id === id)
         if (!proposition) return []
-        if (!phrases.current.has(id)) phrases.current.set(id, proposition.phrase)
-        return [{ id, proposition: { ...proposition, phrase: phrases.current.get(id) ?? proposition.phrase }, commencee: false }]
+        if (!phrases.current.has(id)) phrases.current.set(id, { phrase: proposition.phrase, titres: proposition.titres })
+        return [{ id, proposition: { ...proposition, ...phrases.current.get(id) }, commencee: false }]
       })
     }
     if (cases.length === 0) {
@@ -325,11 +325,11 @@ function SelecteurEnvie({ envie }: { envie: Envie }) {
 }
 
 const CLASSE_BOUTON_CARTE =
-  'flex min-h-11 cursor-pointer items-center justify-center rounded-pilule text-[0.9375rem] transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-60 aria-disabled:active:scale-100'
+  'flex min-h-11 min-w-0 cursor-pointer items-center justify-center rounded-pilule py-1.5 text-center text-[min(0.9375rem,17px)] leading-tight transition-transform duration-200 active:scale-[0.97] aria-disabled:cursor-default aria-disabled:opacity-60 aria-disabled:active:scale-100'
 
 /**
  * Une idée et ses deux boutons. « Commencer » (ou « Reprendre » pour un livre en pause) est en
- * avant, sur l'accent doux ; « Pas maintenant » reste discret, juste un contour. Une fois commencée,
+ * avant, sur le fond d'action (jeton « action », au moins 3:1 sur la carte dans les deux thèmes) ; « Pas maintenant » reste discret, juste un contour. Une fois commencée,
  * la carte laisse place à une ligne calme, à la même place.
  */
 function CarteDecouvrir({
@@ -369,7 +369,7 @@ function CarteDecouvrir({
             <IconeStatut statut="en_cours" />
           </span>
           <span className="flex min-w-0 flex-col">
-            <span className="leading-tight font-bold [overflow-wrap:anywhere]">{oeuvre.titre}</span>
+            <span className="coupure-francaise leading-tight font-bold">{oeuvre.titre}</span>
             <span className="text-sm text-discret">En cours.</span>
           </span>
         </p>
@@ -386,14 +386,14 @@ function CarteDecouvrir({
 
   return (
     <CarteIdee proposition={proposition}>
-      <div className="mt-auto flex flex-wrap items-center gap-2 @3xl/idees:flex-col @3xl/idees:items-stretch">
+      <div className="mt-auto flex items-stretch gap-2 @3xl/idees:flex-col">
         <button
           type="button"
           aria-label={`${verbe} ${oeuvre.titre}`}
           aria-haspopup="dialog"
           aria-disabled={!enLigne || undefined}
           onClick={() => enLigne && setConfirmer(true)}
-          className={`${CLASSE_BOUTON_CARTE} border-0 bg-accent-doux px-5 font-bold text-accent-texte`}
+          className={`${CLASSE_BOUTON_CARTE} border-0 bg-action px-[18px] font-bold text-sur-action`}
         >
           {verbe}
         </button>
@@ -402,7 +402,7 @@ function CarteDecouvrir({
           aria-label={`Pas maintenant pour ${oeuvre.titre}`}
           aria-disabled={!enLigne || undefined}
           onClick={() => enLigne && pasMaintenant()}
-          className={`${CLASSE_BOUTON_CARTE} border border-bordure bg-transparent px-4 font-semibold text-discret`}
+          className={`${CLASSE_BOUTON_CARTE} border border-bordure bg-transparent px-[14px] font-semibold text-discret`}
         >
           Pas maintenant
         </button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estPresqueUniforme, HAUTEUR_MESURE, LARGEUR_MESURE, partUniforme, SEUIL_UNIFORME } from './uniformite'
+import { estFausseCouverture, estImageDeRemplacement, HAUTEUR_MESURE, IMAGES_DE_REMPLACEMENT, LARGEUR_MESURE, partUniforme, ressemblance, SEUIL_RESSEMBLANCE, SEUIL_UNIFORME, signature } from './uniformite'
 
 // Les vraies images ne sont jamais dans le dépôt (§8.3) : ces images de 48 × 72 points les
 // reproduisent d'après ce qui a été mesuré le 20 novembre 2026 sur les originaux.
@@ -74,16 +74,81 @@ describe('mesure sur l’appareil', () => {
 
   it('écarte la page blanche, et libère l’image décodée', async () => {
     const essai = outils(pageBlancheSiddhartha)
-    expect(await estPresqueUniforme(new Blob(['x']), essai.outils)).toBe(true)
+    expect(await estFausseCouverture(new Blob(['x']), essai.outils)).toBe(true)
     expect(essai.liberee()).toBe(true)
   })
 
   it('garde une vraie couverture', async () => {
-    expect(await estPresqueUniforme(new Blob(['x']), outils(couvertureSobre).outils)).toBe(false)
+    expect(await estFausseCouverture(new Blob(['x']), outils(couvertureSobre).outils)).toBe(false)
   })
 
   it('n’écarte jamais une image faute d’avoir pu la mesurer', async () => {
-    expect(await estPresqueUniforme(new Blob(['x']), { decoder: async () => Promise.reject(new Error('illisible')) })).toBe(false)
-    expect(await estPresqueUniforme(new Blob(['x']), { ...outils(pageBlancheSiddhartha).outils, creerToile: () => ({ width: 0, height: 0, getContext: () => null }) })).toBe(false)
+    expect(await estFausseCouverture(new Blob(['x']), { decoder: async () => Promise.reject(new Error('illisible')) })).toBe(false)
+    expect(await estFausseCouverture(new Blob(['x']), { ...outils(pageBlancheSiddhartha).outils, creerToile: () => ({ width: 0, height: 0, getContext: () => null }) })).toBe(false)
+  })
+})
+
+describe('images de remplacement des catalogues (« image not available »)', () => {
+  /** Une image de 48 × 72 points peinte d'après un dessin (le gris de chaque case de 4 × 4). */
+  function depuisDessin(dessin: string, retouche: (gris: number, x: number, y: number) => number = (g) => g): Uint8ClampedArray {
+    const cases = Array.from({ length: dessin.length / 2 }, (_, i) => parseInt(dessin.slice(i * 2, i * 2 + 2), 16))
+    return image([255, 255, 255], (x, y) => {
+      const g = Math.max(0, Math.min(255, retouche(cases[Math.floor(y / 4) * 12 + Math.floor(x / 4)], x, y)))
+      return [g, g, g]
+    })
+  }
+  // La même image de Google, servie en 128 × 170 (empreinte différente) : son dessin, relevé le 22 novembre 2026.
+  const PETITE =
+    'fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffafcfdfdfcfdfffffffffffbe4e5ece1e7dffefffffffffbf9f7f6ececf3fffffffffffffffffffffbfffffffffffffffff0e7ebeefffffffffffffffff7f1f3f7fffffffffffffffffffcfcfdfffcfffffff5eaf5eaecece9f1e3f2fffff0edefe8eaeee9ebedf7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+  const grande = depuisDessin(IMAGES_DE_REMPLACEMENT[0])
+
+  /**
+   * L'Homme qui plantait des arbres, Gallimard : une vraie couverture blanche et sobre. Comme
+   * l'image de remplacement, fond blanc et lettres : l'auteur en haut, le titre sur trois lignes,
+   * le sigle nrf au milieu, l'éditeur en bas, à la place et à la taille mesurées sur l'original.
+   */
+  const gallimard = image([255, 255, 255], (x, y) => {
+    if (y === 5 && x >= 17 && x <= 30) return [70, 70, 70] // JEAN GIONO
+    if (y >= 16 && y <= 17 && x >= 12 && x <= 36) return [60, 60, 60] // L'HOMME
+    if (y >= 20 && y <= 21 && x >= 7 && x <= 41) return [60, 60, 60] // QUI PLANTAIT
+    if (y >= 24 && y <= 25 && x >= 10 && x <= 38) return [60, 60, 60] // DES ARBRES
+    if (y >= 42 && y <= 45 && x >= 19 && x <= 28) return [50, 50, 50] // nrf
+    if (y === 57 && x >= 16 && x <= 31) return [80, 80, 80] // GALLIMARD
+    return null
+  })
+
+  it('reconnaît l’image connue', () => {
+    expect(estImageDeRemplacement(grande)).toBe(true)
+  })
+
+  it('la reconnaît servie à une autre taille, avec une autre empreinte', () => {
+    const petite = depuisDessin(PETITE)
+    expect(ressemblance(signature(petite), signature(grande))).toBeGreaterThan(SEUIL_RESSEMBLANCE)
+    expect(estImageDeRemplacement(petite)).toBe(true)
+  })
+
+  it('la reconnaît un peu plus sombre, et avec le grain d’une compression JPEG', () => {
+    expect(estImageDeRemplacement(depuisDessin(IMAGES_DE_REMPLACEMENT[0], (g, x, y) => g - 12 + bruit(x, y, 4)))).toBe(true)
+  })
+
+  it('garde une vraie couverture blanche et sobre (Gallimard)', () => {
+    expect(ressemblance(signature(gallimard), signature(grande))).toBeLessThan(0.5)
+    expect(estImageDeRemplacement(gallimard)).toBe(false)
+  })
+
+  it('garde les couvertures sobres et illustrées des autres tests', () => {
+    expect(estImageDeRemplacement(couvertureSobre)).toBe(false)
+    expect(estImageDeRemplacement(image([120, 60, 40], (x, y) => [(x * 5) % 256, (y * 3) % 256, ((x + y) * 4) % 256]))).toBe(false)
+  })
+
+  it('ne dit rien d’une image toute unie (le contrôle d’uniformité s’en charge)', () => {
+    expect(ressemblance(signature(image([255, 255, 255])), signature(grande))).toBe(0)
+  })
+
+  it('l’écarte sur l’appareil, et garde la couverture de Gallimard', async () => {
+    const decoder = async () => ({ largeur: 575, hauteur: 750, image: {}, liberer: () => {} })
+    const toile = (points: Uint8ClampedArray) => () => ({ width: 0, height: 0, getContext: () => ({ drawImage: () => {}, getImageData: () => ({ data: points }) }) })
+    expect(await estFausseCouverture(new Blob(['x']), { decoder, creerToile: toile(grande) })).toBe(true)
+    expect(await estFausseCouverture(new Blob(['x']), { decoder, creerToile: toile(gallimard) })).toBe(false)
   })
 })

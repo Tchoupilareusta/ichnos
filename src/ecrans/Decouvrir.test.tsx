@@ -241,3 +241,54 @@ describe('Découvrir hors connexion', () => {
     await waitFor(() => expect(titres()).toHaveLength(2))
   })
 })
+
+describe('Découvrir : mise en page des cartes', () => {
+  // jsdom ne calcule pas de mise en page : ces tests gardent les causes des défauts vus sur iPhone
+  // (couverture étirée à la hauteur du texte, titres coupés au milieu d'un mot sans tiret).
+  it('garde la couverture à sa largeur fixe, alignée en haut, et coupe les titres à la française', async () => {
+    ouvrir()
+    await waitFor(() => expect(cartes()).toHaveLength(3))
+    for (const lien of cartes()) {
+      const couverture = lien.querySelector('[data-etat]')!
+      expect(couverture).toHaveClass('self-start', 'shrink-0', 'aspect-[5/8]')
+      expect(couverture.className).toMatch(/w-\[\d+px\]/)
+      const titre = lien.querySelector('h3')!
+      expect(titre).toHaveClass('coupure-francaise')
+      expect(titre.className).not.toMatch(/anywhere|break-all/)
+    }
+  })
+
+  it('met « Commencer » et « Pas maintenant » sur une seule ligne', async () => {
+    ouvrir()
+    await waitFor(() => expect(cartes()).toHaveLength(3))
+    const rang = screen.getAllByRole('button', { name: /^Commencer / })[0].parentElement!
+    expect(rang).toHaveClass('flex')
+    expect(rang).not.toHaveClass('flex-wrap')
+  })
+})
+
+describe('Découvrir : titre cité dans la phrase', () => {
+  it('met en italique le titre de l’œuvre citée, et le reste de la phrase en romain', async () => {
+    const ilYA = (jours: number) => new Date(Date.now() - jours * 86_400_000).toISOString()
+    // Le Meilleur des mondes, sombre, terminé il y a deux jours : les lumineuses le citent.
+    ouvrir({
+      oeuvres: bibliotheque({
+        '1984': {
+          statut: 'termine',
+          historique: [
+            { type: 'commence', valeur: null, date: ilYA(10), precision: 'jour' },
+            { type: 'termine', valeur: null, date: ilYA(2), precision: 'jour' },
+          ],
+        },
+      }),
+    })
+    await waitFor(() => expect(cartes().length).toBeGreaterThan(0))
+    const cites = [...document.querySelectorAll('[data-idee] cite')]
+    expect(cites.length).toBeGreaterThan(0)
+    for (const cite of cites) {
+      expect(cite).toHaveTextContent('Le Meilleur des mondes')
+      expect(cite).toHaveClass('italic')
+      expect(cite.parentElement?.textContent).toMatch(/après Le Meilleur des mondes/)
+    }
+  })
+})

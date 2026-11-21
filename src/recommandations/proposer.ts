@@ -31,6 +31,11 @@ export type Proposition = {
   phrase: string
   /** Ses morceaux, deux au plus. */
   morceaux: string[]
+  /**
+   * Les titres d'œuvres cités dans la phrase (« après Crime et Châtiment », « proches de Momo ») :
+   * l'écran les met en italique. La phrase elle-même ne change pas.
+   */
+  titres: string[]
 }
 
 /**
@@ -127,9 +132,12 @@ export function proposer(idees: Idees, demande: Demande): Resultat {
   if (choisies.length === 0) choisir(true)
 
   const dites = new Set<string>()
+  // Les seuls titres qu'une phrase peut citer : mes dernières lectures et les œuvres que j'ai aimées.
+  const citables = [...new Set([...contexte.recentes, ...contexte.aimees].map((o) => o.titre))]
   const propositions = choisies.map((note) => {
     const morceaux = morceauxDe(note, envie, contexte, dites)
-    return { oeuvre: note.oeuvre, phrase: morceaux.join(' '), morceaux }
+    const phrase = morceaux.join(' ')
+    return { oeuvre: note.oeuvre, phrase, morceaux, titres: titresCites(phrase, citables) }
   })
 
   const reste = fond.filter((n) => !choisies.includes(n)).length
@@ -146,6 +154,11 @@ export function proposer(idees: Idees, demande: Demande): Resultat {
   else if (suite === null && propositions.length < Math.min(combien, 3)) situation = 'peu'
 
   return { propositions, situation, suite }
+}
+
+/** Les titres que la phrase cite, là où elle les cite : juste après « après » ou « proches de ». */
+export function titresCites(phrase: string, citables: readonly string[]): string[] {
+  return citables.filter((titre) => phrase.includes(`après ${titre}`) || phrase.includes(`proches de ${titre}`))
 }
 
 /** Une ou deux idées en tout pour cette envie. L'écran s'en sert aussi quand une page déjà affichée a perdu une carte. */
