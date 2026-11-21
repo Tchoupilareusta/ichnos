@@ -73,13 +73,13 @@ Les poids, selon l'envie :
 
 Pourquoi l'affinité est calculée en « part des thèmes » : au premier essai, elle comptait le nombre de thèmes de cœur, et comme 15 de mes 54 thèmes sont des thèmes de cœur, la moitié du catalogue obtenait la note maximale. Les trois mêmes livres (Siddhartha, Jonathan Livingston le goéland, Un psaume pour les recyclés sauvages) sortaient alors dans presque toutes les envies. Avec la part des thèmes, les notes s'étalent.
 
-**Vérifié sur le catalogue** (300 graines, « Surprends-moi ») : sans lecture récente, 1,34 proposition lumineuse sur trois en moyenne ; après Crime et Châtiment, 1,62, et la première des trois est lumineuse sur les 300 graines. Le contraste des œuvres de tonalité 4 ou 5 passe au-dessus du neutre (0,67 à 1), celui des œuvres de tonalité 1 ou 2 reste au neutre ou en dessous (0,13 à 0,50). Les lumineuses remontent, sans chasser tout le reste : la variété garde une place à un autre ton.
+**Vérifié sur le catalogue, avec le code final** (300 graines, « Surprends-moi ») : sans lecture récente, 1,70 proposition lumineuse sur trois en moyenne ; après Crime et Châtiment, 1,96, et la première des trois est lumineuse 299 fois sur 300 (260 fois sans lecture récente). Le contraste de chaque œuvre de tonalité 4 ou 5 passe au-dessus du neutre, celui de chaque œuvre de tonalité 1 ou 2 reste au neutre ou en dessous. Les lumineuses remontent, sans chasser tout le reste : la variété garde une place à un autre ton, et le hasard doux (30 % dans cette envie) garde sa part. (Les chiffres du prototype, 1,34 et 1,62, et « 300 sur 300 », ont changé avec le classement des familles du §1.5.)
 
 ### 1.5 Alternance indicative (§7.5)
 
 Cinq familles, dans l'ordre du cahier des charges : philosophique ou introspectif → lumineux ou réconfortant → classique existentiel → dystopie ou réflexion sociale → autre chose (fiction, manga, découverte).
 
-Chaque œuvre tombe dans une famille d'après ses étiquettes. Les œuvres de la famille qui *suit* celle de ma dernière lecture reçoivent un petit supplément de contraste (+0,15). C'est tout : une œuvre d'une autre famille peut très bien passer devant. Ce n'est jamais un filtre, jamais un ordre, et rien ne le montre à l'écran.
+Chaque œuvre tombe dans une famille d'après ses étiquettes, le genre d'abord : dystopie ou critique sociale, puis littérature existentielle, puis roman philosophique ou philosophie, puis lumineux et doux, sinon « autre chose ». (Siddhartha est donc « philosophique » avant d'être « réconfortant ».) Les œuvres de la famille qui *suit* celle de ma dernière lecture reçoivent un petit supplément de contraste (+0,15). C'est tout : une œuvre d'une autre famille peut très bien passer devant. Ce n'est jamais un filtre, jamais un ordre, et rien ne le montre à l'écran.
 
 ### 1.6 Variété : trois propositions qui diffèrent
 
@@ -186,39 +186,47 @@ Précautions :
 - La question que l'appli me pose est à l'infinitif : « Le reprendre ? ».
 - Jamais de « tu », de « vous », ni d'impératif (« lis », « découvre »).
 
-### 3.3 Exemples sortis du prototype, sur mon catalogue
+### 3.3 Exemples produits par le code final, sur mon catalogue
+
+Ces exemples sont figés dans `src/recommandations/phrase.test.ts` (graine du 21 novembre 2026). Ils remplacent ceux du prototype : les deux retouches demandées sont faites (« Court. » seul pour un roman court ; une formule répétée n'est gardée que sur la première carte), et les thèmes sont cités dans l'ordre où la base les rend (alphabétique).
 
 Si je viens de terminer **Crime et Châtiment**, envie « Quelque chose de réconfortant » :
 
-- *Un psaume pour les recyclés sauvages* — « Lumineux, après Crime et Châtiment. Atmosphère douce et chaleureuse. »
-- *Jonathan Livingston le goéland* — « Lumineux, après Crime et Châtiment. Atmosphère poétique et sereine. »
-- *La Bibliothèque de minuit* — « Plus lumineux, après Crime et Châtiment. Atmosphère douce. »
+- *La Maison au milieu de la mer céruléenne* — « Lumineux, après Crime et Châtiment. Atmosphère chaleureuse et douce. »
+- *Jonathan Livingston le goéland* — « Atmosphère sereine et poétique. Parmi mes thèmes de cœur : compassion et liberté. »
+- *Un psaume pour les recyclés sauvages* — « Récit humaniste, atmosphère chaleureuse et contemplative. Au cœur du livre : acceptation de soi et beauté des choses simples. »
 
 Même situation, « Surprends-moi » :
 
-- *Jonathan Livingston le goéland* — « Lumineux, après Crime et Châtiment. Parmi mes thèmes de cœur : liberté et compassion. »
-- *Vagabond* — « Un autre registre, après Crime et Châtiment : aventure historique. Au cœur du livre : quête de sens et humilité. »
-- *Le Gai Savoir* — « Plus lumineux, après Crime et Châtiment. Au cœur du livre : liberté et quête de sens. »
+- *Un psaume pour les recyclés sauvages* — « Lumineux, après Crime et Châtiment. Parmi mes thèmes de cœur : acceptation de soi et beauté des choses simples. »
+- *Découvrir un sens à sa vie* — « Témoignage, atmosphère âpre et introspective. Au cœur du livre : dignité et liberté. »
+- *1984* — « Dystopie, atmosphère dérangeante et oppressante. Au cœur du livre : liberté et propagande. »
+
+Même situation, « Une lecture courte » :
+
+- *Un psaume pour les recyclés sauvages* — « Lumineux, après Crime et Châtiment. Court. »
+- *Le Petit Prince* — « Court : un conte. Parmi mes thèmes de cœur : beauté des choses simples et relations humaines. »
+- *Jonathan Livingston le goéland* — « Spiritualité, atmosphère poétique et sereine. Au cœur du livre : compassion et courage. »
 
 Premier jour, rien de lu, « Une réflexion philosophique » :
 
-- *La Bibliothèque de minuit* — « Roman philosophique, atmosphère mélancolique et douce. Parmi mes thèmes de cœur : regrets et acceptation de soi. »
-- *Découvrir un sens à sa vie* — « Philosophie, atmosphère âpre et introspective. Au cœur du livre : résilience et quête de sens. »
-- *Siddhartha* — « Roman philosophique, atmosphère contemplative et sereine. Au cœur du livre : quête de sens et sagesse. »
+- *La Bibliothèque de minuit* — « Roman philosophique, atmosphère introspective et douce. Parmi mes thèmes de cœur : acceptation de soi et quête de sens. »
+- *La Chute* — « Littérature existentielle, atmosphère introspective et dérangeante. Au cœur du livre : conscience morale et culpabilité. »
+- *Découvrir un sens à sa vie* — « Philosophie, atmosphère introspective et âpre. Au cœur du livre : dignité et liberté. »
 
 Après **Momo** et **Le Petit Prince**, « Remets mes idées en question » :
 
-- *Le Meilleur des mondes* — « Plus grave, après Momo. Dystopie, atmosphère dérangeante et ironique. »
-- *La Ferme des animaux* — « Plus grave, après Momo. Critique sociale, atmosphère ironique et dérangeante. »
-- *Sa Majesté des mouches* — « Plus grave, après Momo. Classique, atmosphère tendue et âpre. »
+- *La Ferme des animaux* — « Plus grave, après Momo. Critique sociale, atmosphère dérangeante et ironique. »
+- *Le Meilleur des mondes* — « Dystopie, atmosphère dérangeante et ironique. Parmi mes thèmes de cœur : liberté ; technologie et attention. »
+- *La Métamorphose* — « Atmosphère dérangeante et oppressante. Au cœur du livre : aliénation et différence. »
 
 **Vinland Saga** en cours et **1984** terminé, « Changer d'univers » :
 
-- *Siddhartha* — « Un autre registre, après Vinland Saga : roman philosophique. Parmi mes thèmes de cœur : quête de sens et paix intérieure. »
-- *Le Gai Savoir* — « Un autre registre, après Vinland Saga : philosophie. Au cœur du livre : liberté et quête de sens. »
-- *La Ferme des animaux* — « Un autre registre, après Vinland Saga : fable et allégorie. Au cœur du livre : pouvoir et propagande. »
+- *Siddhartha* — « Un autre registre, après Vinland Saga : roman philosophique. Parmi mes thèmes de cœur : paix intérieure et quête de sens. »
+- *La Maison au milieu de la mer céruléenne* — « Fantasy et merveilleux, atmosphère chaleureuse et douce. Au cœur du livre : acceptation de soi et compassion. »
+- *Le Désert des Tartares* — « Littérature existentielle, atmosphère contemplative et mélancolique. Au cœur du livre : attente et quête de sens. »
 
-À retoucher en codant, repéré dans ces essais : « Court : un roman court. » se répète (dire « Court. » seul pour un roman court) ; quand trois propositions commencent par la même formule (« Plus grave, après Momo. »), ne la garder que sur la première.
+Un livre en pause (Lettres à Lucilius, « Une réflexion philosophique ») : « En pause pour l'instant. Le reprendre ? Philosophie, atmosphère introspective et sereine. »
 
 ---
 
@@ -320,7 +328,7 @@ Les deux fonctions sont ajoutées à la liste de `01_securite_test.sql`.
 
 Les tests chargent `catalogue/catalogue-initial.json` (mes 35 œuvres et leurs étiquettes, déjà publiques). Les situations de lecture sont écrites dans chaque test ; mes vrais statuts restent hors du dépôt.
 
-- **Après une lecture sombre, les lumineuses remontent.** Crime et Châtiment terminé hier : le contraste de chaque œuvre de tonalité 4 ou 5 dépasse le neutre, celui de chaque œuvre de tonalité 1 ou 2 ne le dépasse pas ; sur 300 graines, la première proposition de « Surprends-moi » est lumineuse, et il y a plus de lumineuses qu'avant parmi les trois.
+- **Après une lecture sombre, les lumineuses remontent.** Crime et Châtiment terminé hier : le contraste de chaque œuvre de tonalité 4 ou 5 dépasse le neutre, celui de chaque œuvre de tonalité 1 ou 2 ne le dépasse pas ; sur 300 graines, la première proposition de « Surprends-moi » est lumineuse plus de neuf fois sur dix (et plus souvent qu'avant), et il y a plus de lumineuses qu'avant parmi les trois.
 - **Les trois propositions diffèrent.** Pour les six envies et 300 graines : jamais deux fois le même auteur, jamais mêmes genres et même tonalité, jamais deux fois la même œuvre.
 - **Une envie vide.** Tout ce qui est court est terminé : « Une lecture courte » rend zéro proposition et la bonne phrase. Avec deux courtes restantes : deux propositions exactement, et aucune troisième « pour remplir ».
 - **Jamais hors sujet.** Pour chaque envie à filtre et 300 graines, chaque proposition passe le filtre de l'envie.
@@ -408,3 +416,122 @@ Chaque étape : tests, compilation, vérification du rendu, court résumé, comm
 Aucun envoi sur GitHub sans accord.
 
 À constater sur l'iPhone après la fusion : la pertinence des idées sur ma vraie bibliothèque (c'est le seul endroit où mes vrais statuts sont visibles), le menu des envies au doigt, VoiceOver sur les cartes.
+
+---
+
+## Reprise
+
+*Écrit le 21 novembre 2026, à la fin de la première session (Fable 5.2). La session suivante (Opus 5.5, effort moyen) part d'ici pour les points 4 à 7 du §8.*
+
+### Où on en est
+
+Branche `etape-7-recommandations`, partie de `main` à jour. Sept commits, **aucun envoyé sur GitHub** :
+
+| Commit | Contenu |
+|---|---|
+| `7b8114d` | Accueil : la page ne défile plus sur le côté (iPhone) |
+| `746d963` | Ce plan, validé |
+| `a345a3f` | Bandeau « Hors connexion » : il reste collé en haut |
+| `7252948` | Point 1 : l'algorithme et sa phrase |
+| `5ecb194` | Point 2 : la migration, ses tests, la contre-épreuve |
+| `6489165` | Point 3 : le dépôt et ses requêtes |
+| le dernier | Plan mis à jour et cette section |
+
+État vérifié à la fin : `npm test` → 1186 tests réussis (59 fichiers) ; `npm run build` réussi ; les onze fichiers de `supabase/tests` passent sur le banc local (594 vérifications).
+
+**Rien n'est encore visible dans l'appli** : l'écran Découvrir affiche toujours sa phrase d'attente, et l'accueil n'a pas encore sa suggestion. C'est l'objet des points 4 et 5.
+
+### Ce qui reste
+
+| # | Travail | Détail |
+|---|---|---|
+| 4 | Écran Découvrir | §4.1 de ce plan, avec les précisions du §7 bis : « Pas maintenant » plus discret que « Commencer » ; confirmation courte avant « Commencer ». |
+| 5 | Suggestion de l'accueil | §4.2. Jamais de livre en pause ; la section n'apparaît pas s'il n'y a rien à proposer. |
+| 6 | Audit et captures | `/impeccable audit`, corrections, captures sur iPhone en clair et en sombre (393 et 440), iPad (834). Vérifier sur les captures que trois cartes à deux boutons ne chargent pas l'écran. |
+| 7 | Référence | Mettre à jour `docs/reference.md` (liste plus bas), puis supprimer ce fichier. |
+
+Puis s'arrêter : pas d'envoi sur GitHub sans accord. Une pull request ne lance que l'Action « Migrations » ; les tests de l'appli ne tournent sur GitHub qu'au déploiement de `main`.
+
+### Ce que le code offre déjà
+
+Tout est dans `src/recommandations/` (calcul pur) et `src/bibliotheque/` (dépôt et requêtes).
+
+**Lire les idées** : `useIdees()` (`src/bibliotheque/requetes.ts`) rend `{ oeuvres, deCote }`. Elle se relit toute seule dès qu'une écriture relit la bibliothèque (statut, ressenti, possession, tomes, ajout, suppression) : sa clé de cache est rangée sous celle de la bibliothèque.
+
+**Calculer les propositions** : `proposer(idees, demande)` (`proposer.ts`).
+
+```ts
+const resultat = proposer(idees, {
+  envie,                                   // 'surprise' | 'reconfortant' | 'philosophique' | 'remise_en_question' | 'lecture_courte' | 'changer_d_univers'
+  graine: graineDuJour(maintenant, envie), // hasard.ts : mêmes idées toute la journée
+  maintenant,                              // à prendre une fois, à l'ouverture de l'écran
+  dejaVues,                                // identifiants déjà vus : « D'autres idées »
+  imposees, completer,                     // la page affichée, à garder telle quelle (voir plus bas)
+  combien, sansPause,                      // accueil : combien: 1, sansPause: true
+})
+// resultat.propositions : [{ oeuvre, phrase, morceaux }]
+// resultat.situation    : 'normal' | 'peu' | 'aucune' | 'tout_vu' | 'sans_lecture_recente' | 'rien_a_decouvrir' | 'bibliotheque_vide'
+// resultat.suite        : 'autres' (il reste des idées) | 'debut' (tout a été vu) | null (pas de bouton)
+```
+
+- `messageDe(resultat)` rend la phrase calme du §2, ou `null`. L'écran n'a pas de texte à inventer.
+- `ENVIES`, `libelleEnvie`, `estEnvie` (`modele.ts`) : les six envies, dans l'ordre du sélecteur.
+- Chaque proposition porte `oeuvre.couverture`, `oeuvre.titre`, `oeuvre.auteurs`, `oeuvre.statut` (« en_pause » : le bouton dit « Reprendre »).
+
+**Écrire** : `useIdeesDeCote()` rend `{ mettre, reprendre }`. `mettre.mutate({ id, envie })` pour « Pas maintenant », `reprendre.mutate(id)` pour « Annuler ». Les deux s'affichent tout de suite et se défont en cas d'échec. « Commencer » et « Reprendre » : `useModifierOeuvre(id).statut.mutate('en_cours')`, qui existe depuis l'étape 5 (un appel par carte, puisque la requête est liée à une œuvre).
+
+**Recette pour l'écran Découvrir** (testée dans `proposer.test.ts`, bloc « D'autres idées ») :
+
+- L'écran garde deux choses : `vues` (identifiants des pages précédentes) et `page` (identifiants affichés, ou rien au départ).
+- Premier affichage : `proposer({ dejaVues: vues })`, puis retenir les identifiants dans `page`.
+- Ensuite, tant que la page ne change pas : `proposer({ imposees: page, completer: false, dejaVues: vues })`. La page ne bouge pas sous le doigt quand les données se relisent. Une œuvre qui n'est plus candidate (je viens de la commencer) disparaît de la liste rendue : l'écran garde lui-même sa ligne « En cours. » à cet endroit.
+- « D'autres idées » : ajouter `page` à `vues`, vider `page`. Si `suite` vaut `'debut'`, le bouton devient « Revoir depuis le début » : vider `vues` et `page`.
+- « Pas maintenant » sur X : `mettre.mutate`, puis `proposer({ imposees: page sans X, dejaVues: vues + page })` ; la nouvelle venue est la dernière de la liste rendue : la placer là où était X. « Annuler » : `reprendre.mutate(X)` et remettre la page d'avant.
+- L'envie vient de l'adresse (`#/decouvrir?envie=reconfortant`) : `useRouteCourante().parametres`, validée par `estEnvie`, « surprise » par défaut. `App.tsx` remonte l'écran quand l'adresse change : `vues` et `page` repartent de zéro, c'est voulu.
+
+**Recette pour l'accueil** : `proposer(idees, { envie: 'surprise', graine: graineDuJour(maintenant, 'surprise'), maintenant, combien: 1, sansPause: true, dejaVues })`. Avec la même graine que Découvrir, l'idée de l'accueil est la première de « Surprends-moi ». « Une autre idée » : ajouter l'identifiant à `dejaVues` ; quand `suite` vaut `'debut'`, repartir de zéro. Si `propositions` est vide, ne rien afficher.
+
+**Composants à réutiliser** : `Menu` (le sélecteur des envies, comme les bulles Statut et Possession), `Dialogue` (la confirmation de « Commencer »), `MessageTemporaire` (« Idée mise de côté · Annuler »), `Couverture`, `Bouton`, `EtatVide`, `Page`, `TitrePage`.
+
+**Pour les tests des écrans** : `depotFictif({ oeuvres, deCote, maintenant })` connaît `lireIdees`, `mettreIdeeDeCote` et `reprendreIdee` ; ses écritures apparaissent dans `appels.ecritures` sous `ideeDeCote` et `ideeReprise`. Pour une bibliothèque réaliste, donner aux œuvres fictives leurs étiquettes (avec `coeur`), leur tonalité, et un historique daté (c'est de lui que viennent « terminé le » et « touché le »).
+
+**Aperçu local** (`/ichnos/apercu.html#/decouvrir`, serveur `ichnos-dev`) : `src/apercu.tsx`, non suivi par Git, a déjà une lecture sombre terminée il y a trois jours et aimée (Crime et Châtiment), un livre en pause (Le Gai Savoir), trois lectures en cours, et une œuvre sur cinq en « Envie de lire ». Rien à y ajouter pour voir les écrans.
+
+### Ce que le code a précisé ou changé par rapport au plan
+
+Décisions prises en codant, à reporter dans la référence au point 7 :
+
+1. **Familles de l'alternance** : le genre d'abord (§1.5). Coût si c'est un mauvais choix : seulement le petit coup de pouce (+0,15) et la variété entre familles.
+2. **« La première est lumineuse sur 300 graines »** était vrai pour le prototype seulement. Avec le code final : 299 sur 300. Le test demande « plus de neuf fois sur dix, et plus souvent qu'avant ».
+3. **Livre en pause tout seul** : s'il ne reste que des livres en pause à proposer, un seul est montré (sinon l'écran serait vide alors qu'il y a une idée). Jamais sur l'accueil.
+4. **Phrase** : quand il reste de la place, un morceau dit ce que le livre est (« Dystopie, atmosphère dérangeante et oppressante. »). Le genre nommé est le plus rare de ma bibliothèque (« Dystopie » plutôt que « Classique »). Un thème dont le nom contient « et » est séparé par un point-virgule (« liberté ; technologie et attention »). Pour une série dont j'ai une partie : « J'en ai déjà une partie. » Un même morceau n'est jamais dit deux fois dans un groupe de trois : en « Une lecture courte », « Court. » peut donc n'apparaître que sur une carte.
+5. **Ordre des thèmes cités** : alphabétique, parce que la base ne garde pas d'ordre entre les étiquettes d'une œuvre.
+6. **Mise de côté** : la fonction rend la date de la base ; elle ne vérifie pas que l'œuvre est « à découvrir » (mettre de côté une œuvre déjà lue est sans effet).
+7. **Six mois** : 183 jours. Une lecture en cours sans date connue compte, en dernier.
+8. **Vocabulaire** : les noms d'étiquettes dont dépendent les envies sont réunis au début de `src/recommandations/envies.ts`, comparés sans tenir compte des majuscules ni des accents.
+9. **Une œuvre presque sans étiquettes** (ajoutée à la main) reste proposable en « Surprends-moi », avec une note neutre et la phrase « Une idée parmi mes livres à découvrir. » ; elle n'entre dans aucune envie à filtre.
+
+### Vérifications faites, et celles qui manquent
+
+- **Algorithme** : 65 tests sur les 35 œuvres du catalogue ; quatorze fautes glissées une à une dans le code sont toutes attrapées.
+- **Base** : 47 tests ; dix fautes glissées dans une copie de la migration (revoke retiré, `security definer`, contrôle d'appartenance retiré, droit donné à `anon`, ancienne ligne non remplacée, envie non vérifiée…) sont toutes attrapées. **Vérifié sur le banc local seulement** (Postgres embarqué PGlite, hors du dépôt) : l'Action « Migrations », sur la vraie base jetable, ne tournera qu'à l'envoi sur GitHub. C'est elle qui fait foi.
+- **Dépôt et requêtes** : 20 tests, dont le cas du réseau qui tombe au milieu d'un « Pas maintenant ».
+- **Débordement de l'accueil et bandeau « Hors connexion »** : corrigés et mesurés dans Chromium. **À confirmer sur l'iPhone** : le geste du doigt sur l'accueil, le filet `overflow-x: clip` dans Safari, le bandeau collé en haut hors connexion.
+- Le banc local se remonte avec les paquets `@electric-sql/pglite` et `@electric-sql/pglite-pgtap` installés dans un dossier temporaire, jamais dans le projet. Attention : son décor ne doit pas retirer d'office le droit d'exécution à `public`, sinon « revoke retiré » passe inaperçu.
+
+### Pièges connus pour les écrans
+
+- **Texte caché pour VoiceOver dans une zone qui défile sur le côté** : il lui faut un ancêtre positionné dans cette zone, sinon toute la page s'élargit (c'était le bug de l'accueil). `src/ecrans/Accueil.test.tsx` le vérifie ; la nouvelle section de l'accueil doit passer ce test.
+- **Mesurer un débordement** : comparer `scrollWidth` et `clientWidth` du document, et essayer aussi avec le texte à 17 px (taille par défaut de l'iPhone).
+- **Trois boutons ne tiennent pas** sur une ligne à 393 points à côté d'une couverture : la carte elle-même est le lien vers la fiche, et il ne reste que deux boutons dessous.
+- Aucun test ne doit dépasser 1 seconde en local.
+
+### Pour la référence (point 7)
+
+- **§5** : Découvrir (sélecteur, trois cartes, « Commencer » avec confirmation, « Pas maintenant » et son « Annuler », « D'autres idées », états vides) ; Accueil (« Une idée pour la suite »).
+- **§6.1** : `recommendation_log` ne reçoit que des mises de côté, une ligne par œuvre ; `reason` et les réponses « choisie » et « aucune » restent inutilisées ; les deux fonctions.
+- **§6.4** : « À relire un jour » compte comme un signe positif (décision du 21 novembre 2026).
+- **§7** : tout ce plan, résumé : candidats, dernières lectures, composantes et poids, familles, variété, graine du jour, livre en pause, trois semaines, envies et leurs filtres, phrase, limites (vocabulaire renommé, nom propre en minuscule, thèmes par ordre alphabétique).
+- **§10.2** : dix fonctions appelables au lieu de huit, avec la contre-épreuve.
+- **§11** : l'étape 7 faite ; à constater sur l'iPhone (pertinence des idées sur ma vraie bibliothèque, menu des envies au doigt, VoiceOver sur les cartes) ; les deux corrections de ce jour (débordement de l'accueil, bandeau hors connexion).
+- En tête : une ligne « Mise à jour du 21 novembre 2026 ».
