@@ -22,6 +22,7 @@ import {
 } from './depot'
 import { comparerTitres, possessionAffichee, possessionsFiltrables } from './modele'
 import { appliquerChangements } from './tomes'
+import type { MiseDeCote, OeuvreIdee } from '../recommandations/modele'
 
 /** Une œuvre de test : seuls les champs utiles au test sont à donner. */
 export function oeuvreFictive(champs: Partial<OeuvreDetaillee> & { id: string; titreFr: string }): OeuvreDetaillee {
@@ -198,6 +199,34 @@ function versEnCours(o: OeuvreDetaillee): EnCours {
   }
 }
 
+/**
+ * L'œuvre telle que les recommandations la lisent. Les dates viennent de l'historique : la fin
+ * est celle du dernier « terminé », et la lecture a été touchée à la date du dernier événement.
+ */
+export function versIdee(o: OeuvreDetaillee): OeuvreIdee {
+  const noms = (genre: string) => o.etiquettes.filter((e) => e.genre === genre).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  const fin = [...o.historique].reverse().find((e) => e.type === 'termine')
+  return {
+    id: o.id,
+    titre: versListee(o).titre,
+    auteurs: o.auteurs.filter((a) => a.role === 'auteur').map((a) => a.nom),
+    forme: o.forme,
+    tonalite: o.tonalite,
+    exigence: o.exigence,
+    longueur: o.longueur,
+    estSerie: o.estSerie,
+    genres: noms('genre').map((e) => e.nom),
+    themes: noms('theme').map((e) => ({ nom: e.nom, coeur: e.coeur })),
+    atmospheres: noms('atmosphere').map((e) => e.nom),
+    statut: o.statut,
+    possession: possessionAffichee(o.possession, o.estSerie, o.tomes.map((t) => t.possession)),
+    appreciation: o.appreciation,
+    toucheeLe: o.historique[o.historique.length - 1]?.date ?? null,
+    finieLe: o.statut === 'termine' && fin ? fin.date.slice(0, 10) : null,
+    couverture: couvertureAffichee(couverturesDeLaFiche(o)),
+  }
+}
+
 /** Fausse bibliothèque pour les tests : aucun réseau, tout est en mémoire. */
 export function depotFictif(
   depart: {
@@ -207,9 +236,14 @@ export function depotFictif(
     installation?: Installation
     /** Réponse imposée à toutes les écritures (sauf l'installation). */
     ecriture?: Ecriture
+    /** Les idées déjà mises de côté (« Pas maintenant »). */
+    deCote?: MiseDeCote[]
+    /** L'heure de la « base », pour dater une mise de côté (par défaut : maintenant). */
+    maintenant?: () => Date
   } = {},
 ) {
   let oeuvres = depart.oeuvres ?? []
+  let deCote = depart.deCote ?? []
   let compteur = 0
   const appels = {
     listerOeuvres: 0,
@@ -434,7 +468,29 @@ export function depotFictif(
       if (resultat.ok) oeuvres = depart.catalogue ?? []
       return resultat
     },
+    async lireIdees() {
+      if (depart.lecture && !depart.lecture.ok) return depart.lecture
+      // Comme dans la base : une œuvre supprimée emporte sa mise de côté.
+      const connues = deCote.filter((mise) => oeuvres.some((o) => o.id === mise.oeuvre))
+      return { ok: true, idees: { oeuvres: oeuvres.map(versIdee).sort((a, b) => comparerTitres(a.titre, b.titre)), deCote: connues } }
+    },
+    // Ce que ferait mettre_idee_de_cote : une seule ligne par œuvre, datée par la « base ».
+    async mettreIdeeDeCote(id, envie) {
+      appels.ecritures.push({ action: 'ideeDeCote', id, valeur: envie })
+      if (depart.ecriture && !depart.ecriture.ok) return depart.ecriture
+      if (!oeuvres.some((o) => o.id === id)) return { ok: false, echec: 'introuvable' }
+      const depuis = (depart.maintenant?.() ?? new Date()).toISOString()
+      deCote = [...deCote.filter((mise) => mise.oeuvre !== id), { oeuvre: id, depuis }]
+      return { ok: true, depuis }
+    },
+    async reprendreIdee(id) {
+      appels.ecritures.push({ action: 'ideeReprise', id })
+      if (depart.ecriture && !depart.ecriture.ok) return depart.ecriture
+      if (!oeuvres.some((o) => o.id === id)) return { ok: false, echec: 'introuvable' }
+      deCote = deCote.filter((mise) => mise.oeuvre !== id)
+      return { ok: true }
+    },
   }
 
-  return { depot, appels, attente, oeuvres: () => oeuvres }
+  return { depot, appels, attente, oeuvres: () => oeuvres, deCote: () => deCote }
 }

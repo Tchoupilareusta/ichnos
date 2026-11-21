@@ -29,6 +29,7 @@ export const VOCABULAIRE = {
   themes: catalogue.tags.theme.map((t) => t.name),
 }
 
+const parNom = (noms: string[]) => [...noms].sort((a, b) => a.localeCompare(b, 'fr'))
 const COEUR = new Set(catalogue.tags.theme.filter((t) => t.is_interest).map((t) => t.name))
 
 /**
@@ -48,9 +49,10 @@ export function catalogueEssai(etats: Record<string, Partial<OeuvreIdee>> = {}):
     exigence: w.density,
     longueur: w.length as Longueur,
     estSerie: w.is_series,
-    genres: w.genres,
-    themes: w.themes.map((nom) => ({ nom, coeur: COEUR.has(nom) })),
-    atmospheres: w.atmospheres,
+    // Comme le dépôt : la base ne garde pas d'ordre, les étiquettes arrivent par ordre alphabétique.
+    genres: parNom(w.genres),
+    themes: parNom(w.themes).map((nom) => ({ nom, coeur: COEUR.has(nom) })),
+    atmospheres: parNom(w.atmospheres),
     statut: 'a_decouvrir',
     possession: 'non_possede',
     appreciation: null,

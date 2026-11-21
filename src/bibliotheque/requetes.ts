@@ -4,6 +4,7 @@ import type {
   ChangementTome,
   EchecEcriture,
   EchecFiche,
+  EchecLecture,
   Ecriture,
   EnCours,
   FicheEnvoi,
@@ -13,6 +14,7 @@ import type {
 } from './depot'
 import type { CibleCouverture } from '../couvertures/choix'
 import type { Possession, Statut } from './modele'
+import type { Envie, Idees, MiseDeCote } from '../recommandations/modele'
 import { appliquerChangements } from './tomes'
 import { historiqueAvecFin, type Appreciation, type LectureTome, type PrecisionDate, type StatutMedia, type Unite } from './suivi'
 
@@ -30,6 +32,12 @@ export const CLES = {
   oeuvre: (id: string) => ['oeuvre', id] as const,
   enCours: ['en-cours'] as const,
   vocabulaire: ['vocabulaire'] as const,
+  /**
+   * Ce que les recommandations lisent. Rangé sous « oeuvres » exprès : toute écriture qui fait
+   * relire la bibliothèque (statut, ressenti, possession, tomes, ajout, suppression…) fait aussi
+   * relire les idées, sans que chaque écriture ait à y penser.
+   */
+  idees: ['oeuvres', 'idees'] as const,
   couverture: (chemin: string) => ['couverture', chemin] as const,
 }
 
@@ -116,6 +124,63 @@ export function useVocabulaire() {
       return lecture.vocabulaire
     },
   })
+}
+
+/** Ma bibliothèque vue par l'algorithme des recommandations, et mes idées mises de côté (§7). */
+export function useIdees() {
+  const { depot } = useSession()
+  return useQuery<Idees, EchecDepot<EchecLecture>>({
+    queryKey: CLES.idees,
+    queryFn: async () => {
+      const lecture = await depot.lireIdees()
+      if (!lecture.ok) throw new EchecDepot(lecture.echec)
+      return lecture.idees
+    },
+  })
+}
+
+/**
+ * « Pas maintenant » (mettre) et son « Annuler » (reprendre). L'idée quitte ou retrouve les
+ * propositions tout de suite ; en cas d'échec, l'état d'avant revient. Puis les idées se relisent,
+ * avec la date de mise de côté donnée par la base.
+ */
+export function useIdeesDeCote() {
+  const { depot } = useSession()
+  const client = useQueryClient()
+  type Avant = { avant?: Idees }
+  const afficher = async (changer: (deCote: MiseDeCote[]) => MiseDeCote[]): Promise<Avant> => {
+    await client.cancelQueries({ queryKey: CLES.idees })
+    const avant = client.getQueryData<Idees>(CLES.idees)
+    if (avant) client.setQueryData<Idees>(CLES.idees, { ...avant, deCote: changer(avant.deCote) })
+    return { avant }
+  }
+  const retablir = (_e: unknown, _v: unknown, contexte: Avant | undefined) => {
+    if (contexte?.avant) client.setQueryData(CLES.idees, contexte.avant)
+  }
+  const relire = () => client.invalidateQueries({ queryKey: CLES.idees })
+
+  const mettre = useMutation<string, EchecDepot<EchecEcriture>, { id: string; envie: Envie }, Avant>({
+    mutationFn: async ({ id, envie }) => {
+      const resultat = await depot.mettreIdeeDeCote(id, envie)
+      if (!resultat.ok) throw new EchecDepot(resultat.echec)
+      return resultat.depuis
+    },
+    onMutate: ({ id }) => afficher((deCote) => [...deCote.filter((mise) => mise.oeuvre !== id), { oeuvre: id, depuis: new Date().toISOString() }]),
+    onError: retablir,
+    onSettled: relire,
+  })
+
+  const reprendre = useMutation<void, EchecDepot<EchecEcriture>, string, Avant>({
+    mutationFn: async (id) => {
+      const resultat = await depot.reprendreIdee(id)
+      if (!resultat.ok) throw new EchecDepot(resultat.echec)
+    },
+    onMutate: (id) => afficher((deCote) => deCote.filter((mise) => mise.oeuvre !== id)),
+    onError: retablir,
+    onSettled: relire,
+  })
+
+  return { mettre, reprendre }
 }
 
 const verifier = (resultat: Ecriture) => {

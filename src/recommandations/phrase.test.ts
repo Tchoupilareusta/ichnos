@@ -39,24 +39,25 @@ describe('exemples figés, tirés de mon catalogue', () => {
   it('après Crime et Châtiment, « Quelque chose de réconfortant »', () => {
     expect(phrases(APRES_CRIME, 'reconfortant')).toEqual([
       ['La Maison au milieu de la mer céruléenne', 'Lumineux, après Crime et Châtiment. Atmosphère chaleureuse et douce.'],
-      ['Jonathan Livingston le goéland', 'Atmosphère sereine et poétique. Parmi mes thèmes de cœur : liberté et compassion.'],
-      ['Un psaume pour les recyclés sauvages', 'Atmosphère douce et chaleureuse. Au cœur du livre : quête de sens et acceptation de soi.'],
+      ['Jonathan Livingston le goéland', 'Atmosphère sereine et poétique. Parmi mes thèmes de cœur : compassion et liberté.'],
+      // « Atmosphère chaleureuse et douce. » est déjà dit plus haut : le même morceau ne revient pas.
+      ['Un psaume pour les recyclés sauvages', 'Récit humaniste, atmosphère chaleureuse et contemplative. Au cœur du livre : acceptation de soi et beauté des choses simples.'],
     ])
   })
 
   it('après Crime et Châtiment, « Surprends-moi »', () => {
     expect(phrases(APRES_CRIME, 'surprise')).toEqual([
-      ['Un psaume pour les recyclés sauvages', 'Lumineux, après Crime et Châtiment. Parmi mes thèmes de cœur : quête de sens et acceptation de soi.'],
-      ['Découvrir un sens à sa vie', 'Témoignage, atmosphère âpre et introspective. Au cœur du livre : résilience et quête de sens.'],
-      ['1984', 'Dystopie, atmosphère oppressante et tendue. Au cœur du livre : totalitarisme et surveillance.'],
+      ['Un psaume pour les recyclés sauvages', 'Lumineux, après Crime et Châtiment. Parmi mes thèmes de cœur : acceptation de soi et beauté des choses simples.'],
+      ['Découvrir un sens à sa vie', 'Témoignage, atmosphère âpre et introspective. Au cœur du livre : dignité et liberté.'],
+      ['1984', 'Dystopie, atmosphère dérangeante et oppressante. Au cœur du livre : liberté et propagande.'],
     ])
   })
 
   it('premier jour, rien de lu, « Une réflexion philosophique »', () => {
     expect(phrases(RIEN_DE_LU, 'philosophique')).toEqual([
-      ['La Bibliothèque de minuit', 'Roman philosophique, atmosphère introspective et mélancolique. Parmi mes thèmes de cœur : regrets et acceptation de soi.'],
-      ['La Chute', 'Littérature existentielle, atmosphère introspective et ironique. Au cœur du livre : culpabilité et jugement.'],
-      ['Découvrir un sens à sa vie', 'Philosophie, atmosphère introspective et âpre. Au cœur du livre : résilience et quête de sens.'],
+      ['La Bibliothèque de minuit', 'Roman philosophique, atmosphère introspective et douce. Parmi mes thèmes de cœur : acceptation de soi et quête de sens.'],
+      ['La Chute', 'Littérature existentielle, atmosphère introspective et dérangeante. Au cœur du livre : conscience morale et culpabilité.'],
+      ['Découvrir un sens à sa vie', 'Philosophie, atmosphère introspective et âpre. Au cœur du livre : dignité et liberté.'],
     ])
   })
 
@@ -64,23 +65,23 @@ describe('exemples figés, tirés de mon catalogue', () => {
     expect(phrases(APRES_MOMO, 'remise_en_question')).toEqual([
       ['La Ferme des animaux', 'Plus grave, après Momo. Critique sociale, atmosphère dérangeante et ironique.'],
       ['Le Meilleur des mondes', 'Dystopie, atmosphère dérangeante et ironique. Parmi mes thèmes de cœur : liberté ; technologie et attention.'],
-      ['La Métamorphose', 'Atmosphère dérangeante et oppressante. Au cœur du livre : identité et aliénation.'],
+      ['La Métamorphose', 'Atmosphère dérangeante et oppressante. Au cœur du livre : aliénation et différence.'],
     ])
   })
 
   it('Vinland Saga en cours et 1984 terminé, « Changer d’univers »', () => {
     expect(phrases(VIVANTE, 'changer_d_univers')).toEqual([
-      ['Siddhartha', 'Un autre registre, après Vinland Saga : roman philosophique. Parmi mes thèmes de cœur : quête de sens et paix intérieure.'],
+      ['Siddhartha', 'Un autre registre, après Vinland Saga : roman philosophique. Parmi mes thèmes de cœur : paix intérieure et quête de sens.'],
       ['La Maison au milieu de la mer céruléenne', 'Fantasy et merveilleux, atmosphère chaleureuse et douce. Au cœur du livre : acceptation de soi et compassion.'],
-      ['Le Désert des Tartares', 'Littérature existentielle, atmosphère mélancolique et contemplative. Au cœur du livre : rapport au temps et attente.'],
+      ['Le Désert des Tartares', 'Littérature existentielle, atmosphère contemplative et mélancolique. Au cœur du livre : attente et quête de sens.'],
     ])
   })
 
   it('après Crime et Châtiment, « Une lecture courte » : « Court. » seul pour un roman court', () => {
     expect(phrases(APRES_CRIME, 'lecture_courte')).toEqual([
       ['Un psaume pour les recyclés sauvages', 'Lumineux, après Crime et Châtiment. Court.'],
-      ['Le Petit Prince', 'Court : un conte. Parmi mes thèmes de cœur : relations humaines et beauté des choses simples.'],
-      ['Jonathan Livingston le goéland', 'Spiritualité, atmosphère poétique et sereine. Au cœur du livre : liberté et courage.'],
+      ['Le Petit Prince', 'Court : un conte. Parmi mes thèmes de cœur : beauté des choses simples et relations humaines.'],
+      ['Jonathan Livingston le goéland', 'Spiritualité, atmosphère poétique et sereine. Au cœur du livre : compassion et courage.'],
     ])
   })
 })
@@ -106,10 +107,10 @@ describe('les morceaux de la phrase', () => {
     expect(morceaux(RIEN_DE_LU, 'Le Joueur d’échecs', 'lecture_courte')[0]).toBe('Court : une nouvelle.')
     expect(morceaux(RIEN_DE_LU, 'Le Prophète', 'lecture_courte')[0]).toBe('Court : de la poésie.')
     expect(morceaux(RIEN_DE_LU, 'La Métamorphose', 'lecture_courte')[0]).toBe('Court.')
-    expect(morceaux(RIEN_DE_LU, 'Momo', 'reconfortant')[0]).toBe('Atmosphère douce et poétique.')
-    expect(morceaux(RIEN_DE_LU, 'Fahrenheit 451', 'remise_en_question')[0]).toBe('Dystopie, atmosphère tendue et poétique.')
+    expect(morceaux(RIEN_DE_LU, 'Momo', 'reconfortant')[0]).toBe('Atmosphère douce et onirique.')
+    expect(morceaux(RIEN_DE_LU, 'Fahrenheit 451', 'remise_en_question')[0]).toBe('Dystopie, atmosphère oppressante et poétique.')
     // Sa Majesté des mouches n'est ni une dystopie ni une critique sociale : c'est son atmosphère qui dérange.
-    expect(morceaux(RIEN_DE_LU, 'Sa Majesté des mouches', 'remise_en_question')[0]).toBe('Atmosphère dérangeante et tendue.')
+    expect(morceaux(RIEN_DE_LU, 'Sa Majesté des mouches', 'remise_en_question')[0]).toBe('Atmosphère dérangeante et âpre.')
     expect(morceaux(RIEN_DE_LU, 'Des fleurs pour Algernon', 'philosophique')[0]).toBe('Atmosphère introspective et mélancolique.')
   })
 
@@ -122,16 +123,16 @@ describe('les morceaux de la phrase', () => {
 
   it('ce qui est déjà à moi : la première personne', () => {
     const envie = catalogueEssai({ 'La Ferme des animaux': { statut: 'envie_de_lire' } })
-    expect(morceaux(envie, 'La Ferme des animaux')).toEqual(['Au cœur du livre : pouvoir et propagande.', 'Déjà dans mes envies de lire.'])
+    expect(morceaux(envie, 'La Ferme des animaux')).toEqual(['Au cœur du livre : hypocrisie et pouvoir.', 'Déjà dans mes envies de lire.'])
     const possede = catalogueEssai({ 'La Ferme des animaux': { possession: 'possede' } })
-    expect(morceaux(possede, 'La Ferme des animaux')).toEqual(['Au cœur du livre : pouvoir et propagande.', 'Je l’ai déjà.'])
+    expect(morceaux(possede, 'La Ferme des animaux')).toEqual(['Au cœur du livre : hypocrisie et pouvoir.', 'Je l’ai déjà.'])
     const partielle = catalogueEssai({ 'Chainsaw Man': { possession: 'partielle' } })
-    expect(morceaux(partielle, 'Chainsaw Man')).toEqual(['Au cœur du livre : désir et solitude.', 'J’en ai déjà une partie.'])
+    expect(morceaux(partielle, 'Chainsaw Man')).toEqual(['Au cœur du livre : absurde et désir.', 'J’en ai déjà une partie.'])
   })
 
   it('le genre nommé est celui qui distingue l’œuvre, pas « Classique »', () => {
-    expect(morceaux(RIEN_DE_LU, '1984')[0]).toBe('Dystopie, atmosphère oppressante et tendue.')
-    expect(morceaux(RIEN_DE_LU, 'Le Désert des Tartares')[0]).toBe('Littérature existentielle, atmosphère mélancolique et contemplative.')
+    expect(morceaux(RIEN_DE_LU, '1984')[0]).toBe('Dystopie, atmosphère dérangeante et oppressante.')
+    expect(morceaux(RIEN_DE_LU, 'Le Désert des Tartares')[0]).toBe('Littérature existentielle, atmosphère contemplative et mélancolique.')
   })
 
   it('un livre en pause : une question, pas un rappel', () => {

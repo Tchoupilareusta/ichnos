@@ -20,6 +20,7 @@ import {
   type Unite,
 } from './suivi'
 import type { CibleCouverture } from '../couvertures/choix'
+import type { Envie, Idees } from '../recommandations/modele'
 
 /** Une œuvre telle que la grille de la bibliothèque a besoin de la connaître. */
 export type OeuvreListee = {
@@ -209,6 +210,8 @@ export type RechercheIsbn = { ok: true; trouve: { id: string; tome: number | nul
 export type Lecture = { ok: true; oeuvres: OeuvreListee[] } | { ok: false; echec: EchecLecture }
 export type LectureEnCours = { ok: true; lectures: EnCours[] } | { ok: false; echec: EchecLecture }
 export type LectureFiche = { ok: true; oeuvre: OeuvreDetaillee } | { ok: false; echec: EchecFiche }
+/** Ce que les recommandations lisent : ma bibliothèque vue par l'algorithme, et mes idées mises de côté. */
+export type LectureIdees = { ok: true; idees: Idees } | { ok: false; echec: EchecLecture }
 export type LectureVocabulaire = { ok: true; vocabulaire: Vocabulaire } | { ok: false; echec: EchecLecture }
 export type Installation = { ok: true } | { ok: false; echec: EchecInstallation }
 export type Ecriture = { ok: true } | { ok: false; echec: EchecEcriture }
@@ -233,6 +236,9 @@ export type Achat = {
 export type EchecAchat = EchecEcriture | 'isbn_ailleurs'
 /** L'édition devenue la mienne (null pour un tome). */
 export type NoteAchat = { ok: true; edition: string | null } | { ok: false; echec: EchecAchat }
+
+/** « Pas maintenant » : la date de mise de côté, donnée par la base. */
+export type MiseDeCoteNotee = { ok: true; depuis: string } | { ok: false; echec: EchecEcriture }
 
 /** Ce qui change pour un tome sélectionné : sa possession, sa lecture, ou les deux (« Annuler » remet les deux). */
 export type ChangementTome = { numero: number; possession?: Possession; lecture?: LectureTome }
@@ -275,6 +281,12 @@ export interface Depot {
   listerCouvertures(): Promise<LectureCouvertures>
   /** Installe le catalogue de départ dans une bibliothèque vide. Tout ou rien. */
   installerCatalogue(): Promise<Installation>
+  /** Tout ce que les recommandations lisent, en une fois : chaque œuvre avec ses étiquettes et ma relation à elle, et mes idées mises de côté. */
+  lireIdees(): Promise<LectureIdees>
+  /** « Pas maintenant » : met une proposition de côté, une seule ligne par œuvre (fonction mettre_idee_de_cote). */
+  mettreIdeeDeCote(id: string, envie: Envie): Promise<MiseDeCoteNotee>
+  /** « Annuler » juste après : retire la mise de côté (fonction reprendre_idee). */
+  reprendreIdee(id: string): Promise<Ecriture>
 }
 
 const absent = async () => ({ ok: false as const, echec: 'inconnu' as const })
@@ -303,4 +315,7 @@ export const DEPOT_ABSENT: Depot = {
   listerSansCouverture: absent,
   listerCouvertures: absent,
   installerCatalogue: absent,
+  lireIdees: absent,
+  mettreIdeeDeCote: absent,
+  reprendreIdee: absent,
 }
