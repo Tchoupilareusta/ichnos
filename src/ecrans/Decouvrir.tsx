@@ -51,7 +51,7 @@ export function Decouvrir() {
   const refMessage = useRef<HTMLDivElement>(null)
   // La phrase de chaque carte est gardée telle qu'à son arrivée : commencer une idée (qui devient
   // une « dernière lecture ») ne réécrit pas sous mes yeux la phrase des cartes voisines.
-  const phrases = useRef(new Map<string, string>())
+  const phrases = useRef(new Map<string, Pick<Proposition, 'phrase' | 'titres'>>())
   const idees = requete.data
 
   // La page affichée, recalculée à chaque relecture des données mais sans bouger.
@@ -67,8 +67,8 @@ export function Decouvrir() {
         if (commencee) return [{ id, proposition: commencee, commencee: true }]
         const proposition = r.propositions.find((p) => p.oeuvre.id === id)
         if (!proposition) return []
-        if (!phrases.current.has(id)) phrases.current.set(id, proposition.phrase)
-        return [{ id, proposition: { ...proposition, phrase: phrases.current.get(id) ?? proposition.phrase }, commencee: false }]
+        if (!phrases.current.has(id)) phrases.current.set(id, { phrase: proposition.phrase, titres: proposition.titres })
+        return [{ id, proposition: { ...proposition, ...phrases.current.get(id) }, commencee: false }]
       })
     }
     if (cases.length === 0) {

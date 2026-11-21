@@ -266,3 +266,29 @@ describe('Découvrir : mise en page des cartes', () => {
     expect(rang).not.toHaveClass('flex-wrap')
   })
 })
+
+describe('Découvrir : titre cité dans la phrase', () => {
+  it('met en italique le titre de l’œuvre citée, et le reste de la phrase en romain', async () => {
+    const ilYA = (jours: number) => new Date(Date.now() - jours * 86_400_000).toISOString()
+    // Le Meilleur des mondes, sombre, terminé il y a deux jours : les lumineuses le citent.
+    ouvrir({
+      oeuvres: bibliotheque({
+        '1984': {
+          statut: 'termine',
+          historique: [
+            { type: 'commence', valeur: null, date: ilYA(10), precision: 'jour' },
+            { type: 'termine', valeur: null, date: ilYA(2), precision: 'jour' },
+          ],
+        },
+      }),
+    })
+    await waitFor(() => expect(cartes().length).toBeGreaterThan(0))
+    const cites = [...document.querySelectorAll('[data-idee] cite')]
+    expect(cites.length).toBeGreaterThan(0)
+    for (const cite of cites) {
+      expect(cite).toHaveTextContent('Le Meilleur des mondes')
+      expect(cite).toHaveClass('italic')
+      expect(cite.parentElement?.textContent).toMatch(/après Le Meilleur des mondes/)
+    }
+  })
+})

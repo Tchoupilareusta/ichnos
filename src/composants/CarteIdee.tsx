@@ -15,6 +15,29 @@ import type { Proposition } from '../recommandations/proposer'
  * Quand la carte devient trop étroite pour ce texte (très grandes tailles), la couverture passe
  * au-dessus du texte.
  */
+/**
+ * La phrase, avec en italique le titre de l'œuvre qu'elle cite (« Lumineux, après *Crime et
+ * Châtiment*. »). Un titre n'est mis en italique que là où la phrase le cite, juste après « après »
+ * ou « proches de ». VoiceOver lit le texte normalement.
+ */
+export function avecTitres(phrase: string, titres: readonly string[]): ReactNode {
+  const morceaux: ReactNode[] = []
+  let reste = phrase
+  for (;;) {
+    let premier: { position: number; titre: string } | null = null
+    for (const titre of titres)
+      for (const avant of ['après ', 'proches de ']) {
+        const trouve = reste.indexOf(avant + titre)
+        if (trouve >= 0 && (!premier || trouve + avant.length < premier.position)) premier = { position: trouve + avant.length, titre }
+      }
+    if (!premier) break
+    morceaux.push(reste.slice(0, premier.position), <cite key={morceaux.length} className="italic">{premier.titre}</cite>)
+    reste = reste.slice(premier.position + premier.titre.length)
+  }
+  morceaux.push(reste)
+  return morceaux
+}
+
 export function CarteIdee({
   proposition,
   grande = false,
@@ -50,7 +73,7 @@ export function CarteIdee({
             </span>
           )}
           <span id={`${id}-phrase`} className="mt-1 max-w-[65ch] text-[0.9375rem] leading-[1.4]">
-            {phrase}
+            {avecTitres(phrase, proposition.titres)}
           </span>
         </span>
       </a>
