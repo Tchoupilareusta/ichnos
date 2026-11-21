@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { progressionDe, type EnCours } from '../bibliotheque/depot'
-import { useEnCours } from '../bibliotheque/requetes'
+import { useEnCours, useIdees } from '../bibliotheque/requetes'
+import { CarteIdee } from '../composants/CarteIdee'
+import { graineDuJour } from '../recommandations/hasard'
+import { proposer } from '../recommandations/proposer'
 import { texteProgression } from '../bibliotheque/suivi'
 import { Bouton } from '../composants/Bouton'
 import { IconeFleche, IconeReglages, IconeSignet } from '../composants/Icones'
@@ -27,15 +30,87 @@ export function Accueil() {
       }
     >
       <EnCeMoment />
-
-      <a
-        href={LIENS.decouvrir}
-        className="flex h-14 max-w-xl items-center justify-between rounded-pilule border border-bordure bg-surface px-5 text-base font-semibold text-encre no-underline"
-      >
-        Selon mon humeur
-        <IconeFleche taille={20} />
-      </a>
+      <UneIdeePourLaSuite />
     </Page>
+  )
+}
+
+function SelonMonHumeur() {
+  return (
+    <a
+      href={LIENS.decouvrir}
+      className="flex h-14 max-w-xl items-center justify-between rounded-pilule border border-bordure bg-surface px-5 text-base font-semibold text-encre no-underline"
+    >
+      Selon mon humeur
+      <IconeFleche taille={20} />
+    </a>
+  )
+}
+
+/**
+ * « Une idée pour la suite » : une seule idée, celle que « Surprends-moi » met en premier aujourd'hui,
+ * jamais un livre en pause. « Une autre idée » montre la suivante sans rien écrire. Sans idée à
+ * proposer (ou le temps de les lire), la section n'apparaît pas : seul reste « Selon mon humeur ».
+ */
+function UneIdeePourLaSuite() {
+  const idees = useIdees().data
+  const [maintenant] = useState(() => new Date())
+  const [vues, setVues] = useState<string[]>([])
+  const [actuelle, setActuelle] = useState<string | null>(null)
+  const [annonce, setAnnonce] = useState('')
+  const resultat = idees
+    ? proposer(idees, {
+        envie: 'surprise',
+        graine: graineDuJour(maintenant, 'surprise'),
+        maintenant,
+        combien: 1,
+        sansPause: true,
+        dejaVues: vues,
+        // L'idée affichée reste la même quand les données se relisent.
+        imposees: actuelle ? [actuelle] : [],
+      })
+    : null
+  const proposition = resultat?.propositions[0] ?? null
+  const id = proposition?.oeuvre.id ?? null
+  const titre = proposition?.oeuvre.titre ?? ''
+  const annoncer = useRef(false)
+
+  useEffect(() => {
+    if (!id || id === actuelle) return
+    setActuelle(id)
+    // Après « Une autre idée », VoiceOver apprend laquelle est venue (le bouton garde le focus).
+    if (annoncer.current) {
+      annoncer.current = false
+      setAnnonce(`Nouvelle idée : ${titre}.`)
+    }
+  }, [id, actuelle, titre])
+
+  if (!proposition || !resultat) return <SelonMonHumeur />
+
+  function uneAutre() {
+    if (!resultat || !id) return
+    setVues(resultat.suite === 'debut' ? [] : [...vues, id])
+    setActuelle(null)
+    annoncer.current = true
+  }
+
+  return (
+    <section aria-labelledby="idee" className="flex max-w-xl flex-col gap-4">
+      <h2 id="idee" className="m-0 text-[1.5rem] leading-tight">
+        Une idée pour la suite
+      </h2>
+      <CarteIdee proposition={proposition} grande>
+        {resultat.suite && (
+          <Bouton variante="secondaire" onClick={uneAutre} className="min-h-11 self-start px-5">
+            Une autre idée
+          </Bouton>
+        )}
+      </CarteIdee>
+      <SelonMonHumeur />
+      <p role="status" className="sr-only">
+        {annonce}
+      </p>
+    </section>
   )
 }
 
@@ -85,7 +160,7 @@ function EnCeMoment() {
       {lectures && lectures.length > 0 && (
         <ul
           aria-label="Mes lectures en cours"
-          className="-mx-6 m-0 flex list-none snap-x snap-mandatory scroll-px-6 gap-[1.125rem] overflow-x-auto px-6 pt-1 pb-2 tablette:mx-0 tablette:px-0 tablette:scroll-px-0"
+          className="-mx-6 m-0 flex list-none snap-x snap-mandatory scroll-px-6 gap-[1.125rem] overflow-x-auto overscroll-x-contain px-6 pt-1 pb-2 tablette:mx-0 tablette:px-0 tablette:scroll-px-0"
         >
           {lectures.map((lecture) => (
             <CarteEnCours
@@ -129,7 +204,9 @@ function CarteEnCours({ lecture, enLigne, ouvrir }: { lecture: EnCours; enLigne:
   const long = texteProgression(p, { long: true })
   const auteurs = lecture.auteurs.join(', ')
   return (
-    <li className="flex w-[9.75rem] shrink-0 snap-start flex-col gap-3 tablette:w-[11rem]">
+    // « relative » : le texte réservé à VoiceOver (en position absolue) reste ancré dans sa carte, donc dans
+    // le cadre du carrousel. Sans cela, celui d'une carte hors de l'écran élargit toute la page.
+    <li className="relative flex w-[9.75rem] shrink-0 snap-start flex-col gap-3 tablette:w-[11rem]">
       <a href={LIENS.oeuvre(lecture.id)} className="flex flex-col gap-3 text-encre no-underline">
         <Couverture titre={lecture.titre} auteur={auteurs || null} graine={lecture.id} chemin={lecture.couverture} className="w-full" />
         <span className="flex flex-col gap-0.5">

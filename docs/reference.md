@@ -14,6 +14,7 @@
 *Mise à jour du 20 novembre 2026 : ISBN à tirets, cadre de couverture 5:8 sans bandes, photo de mon exemplaire quand aucune couverture n’est trouvée, redressement d’une photo et correction légère de sa lumière (§3, §4.3, §5, §8.5, §10.1, §11).*
 *Mise à jour du 20 novembre 2026 : refonte de « Modifier » (couverture d'abord, sections repliées, barre « Annuler / Enregistrer », tout attend « Enregistrer », « Chercher cette édition »), boutons des panneaux empilés, fausses couvertures presque uniformes écartées (§3, §5, §8.1, §8.5, §11).*
 *Mise à jour du 20 novembre 2026 (soir) : retouches des tomes après essai sur iPhone : gestes au doigt par les événements tactiles, cercles, haut de section allégé, légende sous la grille, menu compact qui attend le doigt levé, message sur une ligne (§6.2, §6.3, §11).*
+*Mise à jour du 21 novembre 2026 : recommandations (étape 7) : algorithme, écran Découvrir, « Une idée pour la suite » sur l'accueil, « Pas maintenant » rangé par deux fonctions, « À relire un jour » compté comme un signe positif (§5, §6.1, §6.4, §7, §10.2, §11).*
 *Mise à jour du 20 novembre 2026 : tomes d'une série, « sélectionner d'abord, puis appliquer » (barre d'actions, message « Annuler », fonction `regler_tomes`) ; voix de l'interface : consignes à l'infinitif, messages neutres ; idée pour plus tard : une version nette de ma photo (§3, §5, §6.2, §6.3, §8.5, §10.2, §11, §12).*
 
 Ce document complète le cahier des charges initial. Il consigne les décisions prises, le modèle de données, la logique des recommandations et le plan de développement. En cas de doute, c'est lui qui fait foi.
@@ -138,10 +139,10 @@ Tous les couples texte/fond doivent atteindre un contraste WCAG AA.
 
 | Écran | Contenu |
 |---|---|
-| Accueil | Lectures en cours, la plus récemment touchée d'abord (carrousel de couvertures cliquables, rangée sans défilement sur iPad quand elle tient, progression en texte seul : « p. 75 sur 230 », « Lettre 12 », « Tome 4 sur 29 » ; bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre en pause » — nouveau nom de « Le mettre de côté », ce statut étant fusionné dans « En pause » ; après « J'ai terminé », le même panneau propose mon ressenti). Un anime n'y figure jamais. Puis une suggestion personnalisée avec sa raison, un lien « Selon mon humeur », dernières lectures terminées (étapes 7 et 8). Pas de barre de progression sur l'accueil. |
+| Accueil | Lectures en cours, la plus récemment touchée d'abord (carrousel de couvertures cliquables, rangée sans défilement sur iPad quand elle tient, progression en texte seul : « p. 75 sur 230 », « Lettre 12 », « Tome 4 sur 29 » ; bouton « Où j'en suis » qui ouvre un panneau de mise à jour : page/tome/lettre, « J'ai terminé ce livre », « Le mettre en pause » — nouveau nom de « Le mettre de côté », ce statut étant fusionné dans « En pause » ; après « J'ai terminé », le même panneau propose mon ressenti). Un anime n'y figure jamais. Puis « Une idée pour la suite » (étape 7, §7.7) : une seule idée, sa phrase, « Une autre idée », et le lien « Selon mon humeur » vers Découvrir ; sans idée à proposer, la section n'apparaît pas et seul le lien reste. Puis les dernières lectures terminées (étape 8). Pas de barre de progression sur l'accueil. |
 | Bibliothèque | Grille de couvertures (2 colonnes sur iPhone, 4 sur iPad en portrait, 6 en paysage, quelle que soit la taille du texte), recherche (« Rechercher » ; VoiceOver : « Rechercher un titre ou un auteur »), bulles-menus Statut et Possession, panneau « Filtres » avec les six filtres. |
 | Fiche d'une œuvre | Couverture, titres français et original, auteur, thèmes juste sous le titre (Lora italique, surlignage doux sur toute la hauteur du mot, jamais en forme de bouton), statut et possession (pastilles avec icône ; pour une série, la possession résume et mène aux tomes), progression avec barre (seulement « En cours » ou « En pause » ; unité et total choisis ici), synopsis sans spoiler, genre, longueur et atmosphère en une ligne, « Mon ressenti » (avec « Retirer »), « Mon parcours » en quelques mots, mon édition en une ligne (traduction et ISBN dans « Détails »), tomes (sélectionner d'abord, puis appliquer, comme dans Photos : voir §6.2 ; le panneau d'un tome, par un appui long (ou la touche I au clavier), montre sa couverture, son état, son ISBN, « Je l'ai acheté » et « Choisir une image »), notes et citations, média associé (épisodes vus avec − et +, statut). La fiche se termine sur l'œuvre, jamais sur la suppression. |
-| Découvrir | « Mon envie du moment » : un seul sélecteur avec les six modes, puis trois propositions expliquées, « Pas maintenant » (met l'idée de côté quelques semaines), « D'autres idées ». Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6). |
+| Découvrir | « Mon envie du moment » : une seule grande bulle qui ouvre le menu des six envies, portée par l'adresse (`#/decouvrir?envie=reconfortant`). Puis trois idées, chacune dans une carte qui mène à la fiche (couverture, titre, auteur, phrase), avec « Commencer » (« Reprendre » pour un livre en pause), confirmé par une question courte, et « Pas maintenant », plus discret, qui met l'idée de côté trois semaines (« Idée mise de côté · Annuler »). Puis « D'autres idées » et une ligne discrète qui explique « Pas maintenant ». États vides et hors connexion : §7.7. Un mode séparé, « Découvrir ailleurs », propose des œuvres absentes de la bibliothèque (§7.6, étape 7b). |
 | Ajouter | Deux choix : « Remplir automatiquement », mis en avant (ISBN à 13 chiffres : l'édition exacte de mon exemplaire ; titre, et auteur si je veux : une liste d'œuvres où je choisis, puis la fiche commune à toutes les éditions, sans ISBN, éditeur ni pagination), et « Tout saisir à la main » (le formulaire complet). Si l'ISBN est déjà dans ma bibliothèque, ou si une œuvre au titre très proche y est, l'appli me prévient avant d'aller plus loin et propose d'ouvrir sa fiche ou d'y ajouter l'édition. Le formulaire prérempli montre la source de chaque champ, la couverture trouvée (que je peux ne pas garder) et la proposition de l'IA (§8.4). Rien n'est enregistré sans ma validation. Hors connexion, la recherche est grisée. |
 | Modifier | Le formulaire de la fiche, dans l'ordre de ce que je change le plus souvent (refonte du 20 novembre 2026, détail plus bas). Visible : la couverture en grand, « Mon édition », « Titre et auteur ». Replié, avec un résumé d'une ligne : « Description et étiquettes », « Détails de l'œuvre », « Tomes et médias » (« À l'écran » pour un livre seul), « Autres éditions ». Tout en bas, séparée : la suppression, après confirmation. Une barre fixe « Annuler / Enregistrer » remplace la navigation. Tout attend « Enregistrer », couverture comprise. |
 | Réglages | Thème, « Chercher les couvertures manquantes » (une demande à la fois, sans IA, avec la liste de ce qui a été trouvé ou non, œuvre par œuvre ; une couverture de moins de 450 px de large est dite « de petite taille »), « Remplacer les couvertures de petite taille » (§8.5), export des données, compte, gestion des genres, thèmes et atmosphères. |
@@ -236,8 +237,15 @@ Base PostgreSQL via Supabase. Toutes les tables portent un `user_id` et sont pro
 **`notes`** — citations et réflexions.
 - `work_id`, `kind` (citation, commentaire, réflexion), `body`, `location` (ex. « p. 75 », « lettre 12 »), `created_at`
 
-**`recommendation_log`** — propositions faites.
+**`recommendation_log`** — idées mises de côté par « Pas maintenant ».
 - `mode`, `work_id`, `reason`, `response` (choisie, ignorée, aucune), `shown_at`
+- Depuis l'étape 7 (21 novembre 2026), elle ne reçoit que des mises de côté : une ligne par œuvre au plus (une nouvelle mise de côté remplace l'ancienne), avec l'envie et la date donnée par la base. Ce n'est pas un historique : rien n'en est affiché, et ni les idées montrées ni celles que je choisis ne sont notées. `reason` et les réponses « choisie » et « aucune » restent inutilisées.
+
+Idées mises de côté (fonctions `mettre_idee_de_cote` et `reprendre_idee`, ajoutées le 21 novembre 2026) :
+- **`mettre_idee_de_cote(oeuvre, envie)`** retire l'éventuelle mise de côté précédente de cette œuvre et ajoute la nouvelle, datée par la base, en tout ou rien ; elle rend cette date. Elle ne vérifie pas que l'œuvre est « à découvrir » : mettre de côté une œuvre déjà lue est sans effet.
+- **`reprendre_idee(oeuvre)`** retire la mise de côté : elle sert à « Annuler ».
+- **Refus.** Envie qui n'est pas l'une des six (`EO001`) ; œuvre introuvable dans ma bibliothèque (`EO002`).
+- Elles ne touchent à rien d'autre : ni statut, ni possession, ni progression, ni historique, ni notes. « Commencer » passe par `changer_statut` (§6.3).
 
 **`ai_calls`** — journal des appels à l'IA (ajouté à l'étape 6).
 - `action`, `occurred_at`. Une ligne par appel, sans aucun contenu (ni titre, ni ISBN, ni texte).
@@ -304,48 +312,101 @@ Choix facultatif parmi quelques mots :
 - « Pas pour moi, pas maintenant »
 - « À relire un jour »
 
-Les deux premiers renforcent les thèmes de l'œuvre dans les recommandations. Le troisième les atténue doucement, sans jamais exclure un auteur ou un genre.
+« M'a marqué », « Beau moment » et « À relire un jour » renforcent les thèmes de l'œuvre dans les recommandations (« À relire un jour » compte comme un signe positif depuis le 21 novembre 2026 : on ne veut relire que ce qu'on a aimé). « Pas pour moi, pas maintenant » les atténue doucement, sans jamais exclure un auteur ou un genre (§7.2).
 
 Il est proposé, sans obligation, quand je termine un livre (« Plus tard » ferme sans rien choisir), puis se voit et se change sur la fiche sous « Mon ressenti ». Un lien « Retirer » l'efface ; toucher à nouveau le mot choisi aussi.
 
 ## 7. Recommandations (version 1)
 
-Algorithme déterministe fondé sur les étiquettes, sans IA. Seul le mode séparé « Découvrir ailleurs » (§7.6) fait appel à l'IA.
+Algorithme déterministe fondé sur les étiquettes, sans IA (étape 7, réalisée le 21 novembre 2026). Seul le mode séparé « Découvrir ailleurs » (§7.6) fait appel à l'IA. Rien n'est mesuré, compté ni affiché en chiffres : aucun score n'apparaît à l'écran.
+
+Code : `src/recommandations/` (calcul pur, sans écran ni base : `modele.ts`, `envies.ts`, `score.ts`, `proposer.ts`, `phrase.ts`, `hasard.ts`), lu par `useIdees()` (`src/bibliotheque/requetes.ts`) ; écrans `src/ecrans/Decouvrir.tsx` et `src/ecrans/Accueil.tsx`, carte commune `src/composants/CarteIdee.tsx`. Mêmes entrées, mêmes sorties : on lui donne ma bibliothèque, l'envie, la date et une graine ; il rend au plus trois propositions, chacune avec sa phrase. Les propositions sont calculées sur l'appareil, à partir de ce qui est déjà chargé : elles s'affichent aussi hors connexion.
 
 ### 7.1 Candidats
 
-Œuvres « À découvrir » ou « Envie de lire ». « En pause » peut être proposé avec douceur (« le reprendre ? »), jamais avec insistance.
+- Les œuvres « À découvrir » et « Envie de lire », et « En pause » avec douceur (§7.5, « Un livre en pause »).
+- Jamais « En cours » ni « Terminé ». Jamais une idée mise de côté depuis moins de 3 semaines.
+- **Mes dernières lectures**, qui servent au contraste et à la phrase : au plus les trois plus récentes parmi mes lectures « En cours » (date : la dernière fois que j'y ai touché ; sans date connue, elle compte en dernier) et mes lectures « Terminé » dont la date de fin est connue et a moins de six mois (183 jours). La plus récente compte pleinement, la deuxième à 60 %, la troisième à 30 %. Un livre « Terminé » sans date (lu autrefois) ne compte pas comme lecture récente, mais son ressenti compte pour l'affinité. Sans lecture récente, le contraste est neutre pour tout le monde et la phrase n'y fait pas allusion.
 
 ### 7.2 Score
 
-Pour chaque candidat :
-- **Affinité** : thèmes en commun avec les centres d'intérêt et avec les œuvres appréciées.
-- **Contraste** : écart de tonalité, de genre et d'atmosphère avec les deux ou trois dernières lectures. Après une lecture sombre, les œuvres lumineuses remontent.
-- **Envie** : léger bonus pour « Envie de lire ».
-- **Disponibilité** : léger bonus si le livre est possédé.
-- **Variété** : les trois propositions d'une même demande doivent différer entre elles (genre, tonalité).
-- **Hasard doux** : une petite part aléatoire pour éviter la répétition.
+Chaque composante vaut entre 0 et 1.
 
-Une proposition ignorée n'est pas pénalisée : elle n'est simplement pas reproposée pendant quelque temps.
+| Composante | Ce qu'elle mesure | Calcul |
+|---|---|---|
+| **Affinité** | Ce livre parle-t-il de ce qui compte pour moi ? | 60 % : la part de ses thèmes qui sont des thèmes de cœur. 40 % : ses thèmes en commun avec les œuvres dont le ressenti est « M'a marqué », « Beau moment » ou « À relire un jour ». « Pas pour moi, pas maintenant » retire un peu (20 % au plus), sans jamais écarter un auteur ou un genre. |
+| **Contraste** | Change-t-il de mes dernières lectures ? | Pour chaque lecture récente : 50 % l'écart de tonalité (de 1 sombre à 5 lumineux), 25 % les genres différents, 25 % les atmosphères différentes. Plus le petit coup de pouce de l'alternance (§7.5). |
+| **Accord avec l'envie** | Dans une envie à filtre, à quel point le livre y correspond | Propre à chaque envie (`envies.ts`). Exemple : pour « réconfortant », une tonalité 5 compte plus qu'une tonalité 4. |
+| **Envie** | Il est dans « Envie de lire » | 1 ou 0. |
+| **Disponibilité** | Je l'ai | 1 si je l'ai ; pour une série, dès que j'en ai une partie ; sinon 0. |
+| **Hasard doux** | Éviter de revoir toujours les mêmes | Un nombre tiré de la graine et de l'œuvre (§7.5, « Hasard qu'on peut fixer »). |
+
+Poids, selon l'envie :
+
+| | Surprends-moi | Envies à filtre (réconfortant, philosophique, remise en question, lecture courte) | Changer d'univers |
+|---|---|---|---|
+| Accord avec l'envie | — | 25 % | — |
+| Affinité | 30 % | 25 % | 15 % |
+| Contraste | 25 % | 20 % | 60 % |
+| Envie | 10 % | 10 % | 10 % |
+| Disponibilité | 5 % | 5 % | 5 % |
+| Hasard doux | 30 % | 15 % | 10 % |
+
+L'affinité est une *part* des thèmes, pas un nombre de thèmes : au premier essai, la moitié du catalogue obtenait la note maximale (15 de mes 54 thèmes sont des thèmes de cœur) et les trois mêmes livres sortaient dans presque toutes les envies.
+
+Vérifié sur le catalogue (300 graines, « Surprends-moi ») : sans lecture récente, 1,70 proposition lumineuse sur trois en moyenne ; après Crime et Châtiment, 1,96, et la première des trois est lumineuse 299 fois sur 300. Le test demande « plus de neuf fois sur dix, et plus souvent qu'avant ».
+
+**Variété.** Les trois propositions sont choisies une à une : une candidate perd des points si elle ressemble à une proposition déjà retenue (mêmes genres, tonalité proche, même famille, §7.5). Deux règles fermes : jamais deux œuvres du même auteur ; jamais deux œuvres aux mêmes genres et à la même tonalité. En « Surprends-moi » et « Changer d'univers », la ressemblance coûte plus cher.
+
+**« Pas maintenant ».** Seul ce geste compte comme « ignorée » : voir trois idées et demander « D'autres idées » n'ignore rien. L'idée est mise de côté 3 semaines (21 jours), pour toutes les envies et pour l'accueil, rangée dans `recommendation_log` (§6.1). Passé ce délai, elle revient avec exactement la même note qu'avant : aucune pénalité.
 
 ### 7.3 Modes
 
-| Mode | Filtre principal |
+Les filtres s'appuient sur les étiquettes de mon vocabulaire. On ne complète jamais avec une œuvre hors sujet : le filtre s'applique d'abord, et ce qui reste est ce qui est proposé.
+
+| Envie | Filtre |
 |---|---|
-| Surprends-moi | Aucun filtre, variété maximale |
-| Quelque chose de réconfortant | Tonalité lumineuse, atmosphère douce ou humaniste |
-| Une réflexion philosophique | Existentiel, moral ou introspectif |
-| Remets mes idées en question | Dystopie, critique sociale, littérature dérangeante |
-| Une lecture courte | Longueur courte, conte, nouvelle |
-| Changer d'univers | Écart maximal avec les trois dernières lectures |
+| Surprends-moi | Aucun. Variété maximale, davantage de hasard. |
+| Quelque chose de réconfortant | Tonalité 4 ou 5, **et** atmosphère Douce, Chaleureuse ou Sereine, ou genre Récit humaniste. |
+| Une réflexion philosophique | Genre Roman philosophique, Littérature existentielle, Philosophie ou Spiritualité, **ou** atmosphère Introspective. |
+| Remets mes idées en question | Genre Dystopie ou Critique sociale, **ou** atmosphère Dérangeante. |
+| Une lecture courte | Longueur courte, ou conte, nouvelle, roman court. Jamais une série (une série de 29 tomes n'est pas une lecture courte). |
+| Changer d'univers | Aucun filtre d'étiquette, mais seulement les œuvres dont le contraste avec mes trois dernières lectures atteint la moitié de l'échelle. |
+
+Une œuvre presque sans étiquettes (ajoutée à la main) reste proposable en « Surprends-moi », avec une note neutre et la phrase « Une idée parmi mes livres à découvrir. » ; elle n'entre dans aucune envie à filtre.
 
 ### 7.4 Explication
 
-Chaque proposition est accompagnée d'une phrase courte construite à partir des raisons du score. Exemple : « Lumineux, après Crime et Châtiment. Il parle du temps et de l'attention aux autres. »
+Une phrase de deux morceaux courts au plus, pris dans les raisons réelles du score : d'abord ce qui distingue l'œuvre maintenant (contraste avec ma dernière lecture, ou ce qui la fait entrer dans l'envie), puis ce qui me la rapproche (thèmes de cœur, œuvre aimée) ; à défaut, ce que le livre est, ou ce qui est au cœur du livre.
+
+| Raison | Morceau |
+|---|---|
+| Tonalité plus haute d'au moins 2 crans que ma dernière lecture | « Lumineux, après *Titre*. » (tonalité 5) ou « Plus lumineux, après *Titre*. » |
+| Tonalité plus basse d'au moins 2 crans | « Plus grave, après *Titre*. » |
+| Aucun genre en commun avec ma dernière lecture | « Un autre registre, après *Titre* : *genre*. » |
+| Envie « réconfortant » | « Atmosphère chaleureuse et douce. » |
+| Ce que le livre est | « Dystopie, atmosphère dérangeante et oppressante. » (le genre nommé est le plus rare de ma bibliothèque) |
+| Envie « lecture courte » | « Court : un conte. », ou « Court. » seul pour un roman court |
+| Thèmes de cœur | « Parmi mes thèmes de cœur : compassion et liberté. » |
+| Deux thèmes en commun avec une œuvre aimée | « Des thèmes proches de *Titre* : amitié et enfance. » |
+| Sinon | « Au cœur du livre : liberté et propagande. » |
+| « Envie de lire », si la place reste | « Déjà dans mes envies de lire. » |
+| Je l'ai, si la place reste | « Je l'ai déjà. » ; pour une série dont j'ai une partie : « J'en ai déjà une partie. » |
+| En pause | « En pause pour l'instant. Le reprendre ? » |
+
+- Un même morceau n'est jamais dit deux fois dans un groupe de trois : « Parmi mes thèmes de cœur » ne sert qu'une fois (les autres disent « Au cœur du livre »), « Plus grave, après Momo. » ou « Court. » n'apparaissent que sur une carte.
+- Grammaire : « après *Titre* » ne se contracte jamais ; les thèmes viennent après deux-points, sans article, dans l'ordre alphabétique (la base ne garde pas d'ordre entre les étiquettes d'une œuvre) ; un thème dont le nom contient « et » est séparé par un point-virgule (« liberté ; technologie et attention ») ; les atmosphères s'accordent avec « atmosphère » ; les noms d'étiquettes perdent leur majuscule initiale.
+- Jamais de chiffre, de note ni de pourcentage. Voix (§3) : première personne pour ce qui m'appartient (« mes thèmes de cœur », « Je l'ai déjà »), tournure neutre pour le livre, infinitif pour la question (« Le reprendre ? »). Jamais « tu », « vous » ni impératif.
+- Exemples figés dans `src/recommandations/phrase.test.ts`. Après Crime et Châtiment, « Quelque chose de réconfortant » : *La Maison au milieu de la mer céruléenne* — « Lumineux, après Crime et Châtiment. Atmosphère chaleureuse et douce. »
+- À l'écran, la phrase d'une carte reste celle de son arrivée tant que la page est affichée : commencer une idée (qui devient une dernière lecture) ne réécrit pas sous mes yeux la phrase des cartes voisines.
 
 ### 7.5 Alternance indicative
 
-Philosophique → réconfortant → classique existentiel → dystopie → autre chose. Elle oriente le score de contraste, sans jamais devenir une règle.
+Cinq familles, dans l'ordre du cahier des charges : philosophique ou introspectif → lumineux ou réconfortant → classique existentiel → dystopie ou réflexion sociale → autre chose (fiction, manga, découverte). Chaque œuvre tombe dans une famille d'après ses étiquettes, le genre d'abord : dystopie ou critique sociale, puis littérature existentielle, puis roman philosophique ou philosophie, puis lumineux et doux, sinon « autre chose » (Siddhartha est donc « philosophique » avant d'être « réconfortant »). Les œuvres de la famille qui *suit* celle de ma dernière lecture reçoivent un petit supplément de contraste (+0,15). Ce n'est jamais un filtre ni un ordre, et rien ne le montre à l'écran.
+
+**Un livre en pause.** Au plus un par groupe de trois, jamais en première position, et sa note est légèrement réduite (× 0,8) : il n'insiste pas. S'il ne reste que des livres en pause à proposer, un seul est montré. Sa phrase commence par « En pause pour l'instant. Le reprendre ? » et son bouton dit « Reprendre ». Jamais sur l'accueil, où il ressemblerait à un rappel.
+
+**Hasard qu'on peut fixer.** Le hasard vient d'une graine (un texte), jamais de `Math.random`. Dans l'appli, la graine est la date du jour et l'envie : mes idées restent les mêmes toute la journée si je reviens sur l'écran, et changent le lendemain. Dans les tests, elle est écrite en dur.
 
 ### 7.6 Découvrir ailleurs
 
@@ -357,6 +418,45 @@ Un mode séparé de « Mon envie du moment », pour trouver des œuvres qui ne s
 - **Vérification avant affichage** : chaque proposition est vérifiée sur Google Books ou la BnF. L'ISBN, l'éditeur et la couverture viennent toujours de ces sources, jamais de l'IA. Une proposition introuvable dans ces sources n'est pas affichée.
 - **« Ajouter à ma liste »** enregistre l'œuvre en « À découvrir », déjà étiquetée. Rien n'est enregistré sans ce geste.
 - Si l'IA est indisponible ou si la limite de dépense est atteinte, ce mode l'indique simplement ; tout le reste de l'appli fonctionne.
+
+### 7.7 Écrans (étape 7)
+
+**Découvrir** (`#/decouvrir`), de haut en bas :
+
+1. Le titre, puis « Mon envie du moment » : une grande bulle qui ouvre le menu des six envies (le composant des bulles Statut et Possession). À la première ouverture : « Surprends-moi ». L'envie est portée par l'adresse (`#/decouvrir?envie=reconfortant`) : rien n'est rangé sur l'appareil, le retour arrière fonctionne, et une envie inconnue revient à « Surprends-moi ». Changer d'envie repart de zéro (idées vues oubliées) et rend le focus au sélecteur.
+2. Trois idées, chacune dans une carte. La couverture, le titre, l'auteur et la phrase forment un seul lien vers la fiche (VoiceOver : « Voir la fiche de Momo », puis l'auteur et la phrase). Dessous, deux boutons : **« Commencer »** (« Reprendre » pour un livre en pause), sur l'accent doux, et **« Pas maintenant »**, plus discret (simple contour, texte secondaire). VoiceOver : « Commencer Momo », « Pas maintenant pour Momo ». La page affichée ne bouge pas quand les données se relisent.
+3. Une phrase calme quand il y a peu d'idées, puis « D'autres idées », puis une ligne discrète : « « Pas maintenant » met l'idée de côté quelques semaines. Rien d'autre ne change. »
+
+Ce que je peux faire d'une idée :
+
+- **Ouvrir la fiche** : toucher la carte.
+- **Commencer** : une confirmation courte (« Commencer Momo ? » — « Oui, commencer » / « Pas tout de suite »), parce qu'un début de lecture ne s'efface pas proprement de mon parcours. Puis `changer_statut`. La carte laisse place, au même endroit, à une ligne calme : le titre, « En cours. » et « Voir la fiche ». Le livre apparaît sur l'accueil.
+- **Pas maintenant** : l'idée suivante prend sa place, et le message « Idée mise de côté · Annuler » s'affiche environ 5 secondes, sur une ligne. Sur iPhone, il prend la place de la barre du bas le temps de son affichage, pour ne recouvrir aucune carte ; sur iPad, il se pose en bas de la colonne de contenu. « Annuler » remet l'idée exactement à sa place. Le focus va à l'idée arrivée (ou revenue), qui reste visible au-dessus du message.
+- **D'autres idées** : les trois suivantes, en écartant celles déjà vues depuis l'ouverture de l'écran ; rien n'est écrit. VoiceOver annonce les titres. Quand tout a été vu : « Toutes les idées pour cette envie ont été vues. » et le bouton devient « Revoir depuis le début ».
+
+États (aucune de ces phrases ne compte, ne félicite ni ne presse) :
+
+| Situation | Ce que l'écran montre |
+|---|---|
+| 1 ou 2 idées | Elles seules, puis « Une seule idée pour cette envie, pour l'instant. » ou « Deux idées seulement pour cette envie, pour l'instant. » Pas de bouton « D'autres idées ». |
+| Aucune (tout est lu, en cours ou de côté) | « Aucune idée pour cette envie pour l'instant. » Le sélecteur reste juste au-dessus. |
+| « Changer d'univers » sans lecture récente | « Cette envie part de mes dernières lectures : rien de récent pour l'instant. » |
+| Rien à découvrir dans toute la bibliothèque | « Tout ce qui est dans ma bibliothèque est lu ou en cours. » et « Ajouter une œuvre ». |
+| Bibliothèque vide | « Dès que ma bibliothèque aura quelques œuvres à découvrir, des idées selon mon humeur apparaîtront ici. » |
+| Hors connexion | Les idées s'affichent ; « Commencer » et « Pas maintenant » sont grisés, avec « Hors connexion : ces choix reviendront avec le réseau. » ; « D'autres idées » fonctionne. |
+
+iPad : en portrait (colonne de contenu d'environ 500 points à côté de la barre latérale), les cartes restent l'une sous l'autre, comme sur iPhone : trois cartes côte à côte y seraient trop étroites pour la phrase ; dès que la colonne atteint 48 rem (iPad en paysage), elles se mettent côte à côte, couverture au-dessus, boutons empilés en bas de carte. Phrases de 65 caractères au plus.
+
+**Accueil, « Une idée pour la suite »**, sous « En ce moment » : une seule idée, la première de « Surprends-moi » aujourd'hui (même graine que Découvrir), jamais un livre en pause. La carte mène à la fiche (même carte que Découvrir, en un peu plus grand) ; « Une autre idée » montre la suivante sans rien écrire, puis revient à la première quand tout a été vu ; puis le lien « Selon mon humeur ». Pas de « Commencer » ni de « Pas maintenant » ici : l'accueil reste léger. Sans idée à proposer (ou le temps de les lire), la section n'apparaît pas : seul reste « Selon mon humeur ».
+
+Nulle part : aucun score, aucun classement, aucun « x idées restantes », aucun rappel d'un livre mis de côté ou en pause, aucune notification, aucun objectif.
+
+### 7.8 Limites connues
+
+- **Vocabulaire renommé.** Les envies reconnaissent les étiquettes par leur nom (réunis au début de `src/recommandations/envies.ts`, comparés sans tenir compte des majuscules ni des accents). Si je renomme « Dystopie », l'envie « Remets mes idées en question » ne la reconnaît plus. Accepté pour la version 1 ; un test vérifie que chaque nom existe dans le catalogue.
+- **Nom propre en minuscule.** Les étiquettes perdent leur majuscule dans la phrase : un thème « Japon » s'écrirait « japon ».
+- **Thèmes par ordre alphabétique**, faute d'ordre gardé par la base.
+- **Quand une envie est vide parce que tout y est de côté**, rien ne propose de « les reproposer maintenant » : elles reviennent seules au bout de trois semaines. À revoir si cela gêne à l'usage.
 
 ## 8. Couvertures et métadonnées
 
@@ -522,7 +622,7 @@ Import (validé le 18 novembre 2026) :
 - Formulaire de connexion : un vrai élément `form`, champs `autocomplete="email"` et `autocomplete="current-password"`, pour le remplissage automatique de Bitwarden sur iPhone. Le message d'erreur ne dit jamais si c'est l'adresse ou le mot de passe qui est faux.
 - Session longue : gardée sur l'appareil et renouvelée automatiquement, jusqu'à la déconnexion depuis les Réglages.
 - RLS activé sur toutes les tables, avec politiques en lecture et en écriture.
-- Huit fonctions de la base sont appelables par le compte connecté, et par lui seul (la huitième, `regler_tomes`, ajoutée le 20 novembre 2026 : possession et lecture de plusieurs tomes, et leur annulation, en tout ou rien, §6.1) : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes, et garde les couvertures de ce qu'elle ne supprime pas), depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien, et, depuis l'étape 6, `reserver_appel_ia` (compte mes appels à l'IA des dernières 24 heures et en réserve un si la limite n'est pas atteinte) et `noter_achat` (« Je l'ai acheté » : mon édition ou le tome, son ISBN, sa couverture et la possession, en tout ou rien, §6.1). Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité. Pour `regler_tomes`, on a aussi vérifié que les tests échouent bien si l'on retire le `revoke`, si la fonction passe en `security definer`, ou si l'on retire son contrôle d'appartenance (faute glissée dans une copie de la migration, une à la fois).
+- Dix fonctions de la base sont appelables par le compte connecté, et par lui seul (la huitième, `regler_tomes`, ajoutée le 20 novembre 2026 : possession et lecture de plusieurs tomes, et leur annulation, en tout ou rien, §6.1 ; les neuvième et dixième, `mettre_idee_de_cote` et `reprendre_idee`, ajoutées le 21 novembre 2026 : « Pas maintenant » et son « Annuler », §6.1 et §7.2) : `importer_catalogue` (§9), `enregistrer_oeuvre` (ajout et modification d'une œuvre avec ses auteurs, étiquettes, éditions, tomes et médias, en tout ou rien ; elle ne touche ni au statut, ni à la possession, ni à la progression, ni aux notes, et garde les couvertures de ce qu'elle ne supprime pas), depuis l'étape 5, `changer_statut`, `noter_progression` et `dater_fin` (statut, dates et historique ; position ou tome courant et sa trace ; date de fin approximative, §6.3), chacune en tout ou rien, et, depuis l'étape 6, `reserver_appel_ia` (compte mes appels à l'IA des dernières 24 heures et en réserve un si la limite n'est pas atteinte) et `noter_achat` (« Je l'ai acheté » : mon édition ou le tome, son ISBN, sa couverture et la possession, en tout ou rien, §6.1). Elles s'exécutent avec les droits de l'appelant, donc sous RLS, et vérifient en plus elles-mêmes que l'œuvre est à moi : les tests coupent la RLS un instant pour s'assurer que ce second contrôle tient seul. Toute nouvelle fonction ouverte doit être ajoutée aux tests de sécurité. Pour `regler_tomes`, on a aussi vérifié que les tests échouent bien si l'on retire le `revoke`, si la fonction passe en `security definer`, ou si l'on retire son contrôle d'appartenance (faute glissée dans une copie de la migration, une à la fois). Même contre-épreuve pour `mettre_idee_de_cote` et `reprendre_idee` (`supabase/tests/11_idees_de_cote_test.sql`), avec dix fautes en tout (dont droit donné à `anon`, ancienne ligne non remplacée, envie non vérifiée), toutes attrapées sur le banc local ; l'Action « Migrations » sur la vraie base jetable fait foi.
 - Seule la clé publique Supabase dans le frontend. Toutes les autres clés dans les secrets GitHub ou les secrets Supabase.
 - Fonction serveur « assistant » (§7.6, §8) : une seule Edge Function porte tout ce qui a besoin d'une clé (Google Books, API Claude). L'étape 7b y ajoutera son action.
   - Elle n'est appelable que par le compte connecté : elle vérifie elle-même le jeton de session auprès de Supabase, à chaque appel. Sans compte, rien ne passe ; dans le doute (service de connexion muet), rien ne passe non plus.
@@ -564,7 +664,7 @@ Objectif : une application complète et en ligne avant le départ, sans sacrifie
 | 4 | Bibliothèque et fiches : grille, recherche, filtres, ajout, modification, statuts, possession | Opus 5.5, moyen |
 | 5 | Suivi de lecture : unités, tomes, média associé, mise à jour rapide, ressenti facultatif proposé quand je termine un livre (§6.4) | Opus 5.5, élevé |
 | 6 | Couvertures, métadonnées automatiques et fiche automatique (§8.4) | Fable 5.2, élevé |
-| 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil | Fable 5.2, élevé |
+| 7 | Recommandations : algorithme, tests, écran Découvrir, suggestion d'accueil (**faite le 21 novembre 2026** : algorithme, base et dépôt en Fable 5.2, élevé ; écrans en Opus 5.5, moyen) | Fable 5.2, élevé |
 | 7b | « Découvrir ailleurs » (§7.6) : Edge Function, vérification des propositions, écran | Fable 5.2, élevé |
 | 8 | Accueil final, notes, export, sauvegarde et veille | Opus 5.5, moyen |
 | 9 | Finitions : animations, PWA complète, hors ligne (dont le cache qui survit à la fermeture de l'appli, reporté de l'étape 4 : jusque-là, on consulte hors connexion ce qui a déjà été chargé), accessibilité, animations des interactions (§4.3), mouvements réduits (voir plus bas), audit design (Impeccable) | Opus 5.5, moyen |
@@ -593,6 +693,9 @@ Points reportés :
 
 - **Tomes, sélection : à constater sur l'iPhone.** Premier essai le 20 novembre 2026 : le glissement déclenchait l'appui long au lieu de sélectionner (cause et correction au §6.2). Après la correction, vérifiés dans les tests (séquence d'iOS reproduite) et dans Chromium avec de vrais événements tactiles, mais pas encore sur un écran tactile : le partage entre sélection et défilement ; l'absence du menu « Copier / Chercher » et de la loupe d'iOS ; l'appui long d'une demi-seconde et son annulation au moindre mouvement ; le toucher ailleurs qui vide la sélection (Safari n'envoie un clic que sur un élément qui en écoute : à vérifier sur un endroit vide de la page) ; VoiceOver (« sélectionné » au double toucher, annonce du menu, toucher deux fois et maintenir pour les détails) ; le menu au-dessus de l'indicateur d'accueil.
 - **Étape 9, sélection des tomes.** Animer l'apparition et la disparition du menu de sélection (`data-etat` et `hidden`), l'anneau de sélection (`data-etat="selectionne"` sur chaque tome) et le message « Annuler » (`data-etat` du message).
+- **Étape 7, deux corrections du 21 novembre 2026.** L'accueil ne défile plus sur le côté sur iPhone (un texte réservé à VoiceOver, dans le carrousel, élargissait la page ; un test le garde) ; le bandeau « Hors connexion » reste collé en haut de l'écran pendant le défilement. Mesurés dans Chromium seulement.
+- **Étape 7, à constater sur l'iPhone, après la fusion.** La pertinence des idées sur ma vraie bibliothèque (Découvrir et l'accueil : c'est le seul endroit où mes vrais statuts sont visibles) ; le menu des envies au doigt ; VoiceOver sur les cartes (nom « Voir la fiche de … », puis l'auteur et la phrase ; « Commencer Momo », « Pas maintenant pour Momo ») ; le message « Idée mise de côté · Annuler » à la place de la barre du bas ; le glissement sur le côté de l'accueil et le filet `overflow-x: clip` dans Safari ; le bandeau hors connexion collé en haut. La migration des idées mises de côté n'a été essayée que sur le banc local : l'Action « Migrations » de la pull request est la première vérification sur une vraie base.
+- **Étape 9, recommandations.** Animer l'arrivée d'une idée à la place d'une autre (`data-etat="proposee"` sur chaque carte de Découvrir), son passage à la ligne « En cours. » (`data-etat="commencee"`), le message « Idée mise de côté » (`data-etat` du message) et le retour de la barre du bas. Relevés par l'audit de l'étape 7 : la barre du bas disparaît 5 secondes pendant le message (VoiceOver lit le message, la barre revient seule) ; après « D'autres idées », les nouvelles cartes peuvent être au-dessus de l'écran à 393 points (VoiceOver annonce les titres, le focus reste sur le bouton).
 
 Signal pour monter l'effort : un fichier oublié, des tests non lancés, une modification abandonnée en cours de route.
 

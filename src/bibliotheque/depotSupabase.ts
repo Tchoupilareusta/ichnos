@@ -16,6 +16,7 @@ import {
   type TypeMedia,
 } from './modele'
 import type { Appreciation, Evenement, LectureTome, PrecisionDate, StatutMedia, TypeEvenement, Unite } from './suivi'
+import type { MiseDeCote, OeuvreIdee } from '../recommandations/modele'
 
 /** La seule partie du client Supabase dont la bibliothèque a besoin. */
 export type ClientDonnees = Pick<SupabaseClient, 'from' | 'rpc'>
@@ -245,6 +246,72 @@ export function versEnCours(ligne: LigneEnCours): EnCours | null {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Recommandations (docs/reference.md §7) : ce que l'algorithme lit
+// ---------------------------------------------------------------------------
+
+type LigneIdee = {
+  id: string
+  title_fr: string
+  title_original: string | null
+  original_language: string | null
+  form: Forme
+  tone: number | null
+  density: number | null
+  length: Longueur | null
+  is_series: boolean
+  cover_path?: string | null
+  work_authors: UnOuPlusieurs<LienAuteur>
+  work_tags: UnOuPlusieurs<LienEtiquette>
+  volumes: UnOuPlusieurs<{ number?: number; ownership: Possession; reading_status?: LectureTome; cover_path?: string | null }>
+  library_entries: UnOuPlusieurs<{
+    reading_status?: Statut
+    ownership?: Possession
+    appreciation?: Appreciation | null
+    finished_at?: string | null
+    updated_at?: string | null
+    editions: UnOuPlusieurs<{ language: string | null; cover_path?: string | null }>
+  }>
+}
+
+// Une seule demande pour toute la bibliothèque : les couvertures et ma relation à chaque œuvre voyagent avec.
+const COLONNES_IDEES =
+  'id, title_fr, title_original, original_language, form, tone, density, length, is_series, cover_path, work_authors(role, authors(name)), work_tags(tags(kind, name, is_interest)), volumes(number, ownership, reading_status, cover_path), library_entries(reading_status, ownership, appreciation, finished_at, updated_at, editions(language, cover_path))'
+
+export function versOeuvreIdee(ligne: LigneIdee): OeuvreIdee {
+  const entree = premier(ligne.library_entries)
+  const edition = premier(entree?.editions)
+  const lesEtiquettes = etiquettes(ligne.work_tags)
+  return {
+    id: ligne.id,
+    titre: titresAffiches(ligne, edition?.language).principal,
+    auteurs: nomsAuteurs(ligne.work_authors),
+    forme: ligne.form,
+    tonalite: ligne.tone,
+    exigence: ligne.density,
+    longueur: ligne.length,
+    estSerie: ligne.is_series,
+    genres: nomsDuGenre(lesEtiquettes, 'genre'),
+    themes: lesEtiquettes.filter((e) => e.genre === 'theme').map((e) => ({ nom: e.nom, coeur: e.coeur })),
+    atmospheres: nomsDuGenre(lesEtiquettes, 'atmosphere'),
+    statut: entree?.reading_status ?? 'a_decouvrir',
+    possession: possessionAffichee(
+      entree?.ownership ?? 'non_possede',
+      ligne.is_series,
+      tous(ligne.volumes).map((tome) => tome.ownership),
+    ),
+    appreciation: entree?.appreciation ?? null,
+    toucheeLe: entree?.updated_at ?? null,
+    finieLe: entree?.finished_at ?? null,
+    couverture: couvertureAffichee({
+      estSerie: ligne.is_series,
+      oeuvre: ligne.cover_path ?? null,
+      monEdition: edition?.cover_path ?? null,
+      tomes: tomesIllustres(ligne.volumes),
+    }),
+  }
+}
+
 const COLONNES_FICHE =
   'id, title_fr, title_original, original_language, first_published_year, form, synopsis, tone, density, length, is_series, cover_path, work_authors(role, authors(name)), work_tags(tags(kind, name, is_interest))'
 
@@ -404,7 +471,7 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
     async enregistrerOeuvre(fiche) {
       const { data, error } = await client.rpc('enregistrer_oeuvre', { fiche })
       if (error) return { ok: false, echec: echecEcriture(error) }
-      if (typeof data !== 'string') return { ok: false, echec: 'inconnu' }
+      
       return { ok: true, id: data }
     },
 
@@ -555,6 +622,35 @@ export function creerDepotSupabase(client: ClientDonnees, chargerCatalogue: () =
         }
       }
       return { ok: true, couvertures }
+    },
+
+    async lireIdees() {
+      const [oeuvres, deCote] = await Promise.all([
+        client.from('works').select(COLONNES_IDEES),
+        // Au plus une ligne par œuvre (fonction mettre_idee_de_cote) : la durée est appliquée par l'algorithme.
+        client.from('recommendation_log').select('work_id, shown_at').eq('response', 'ignoree'),
+      ])
+      const erreur = oeuvres.error ?? deCote.error
+      if (erreur) return { ok: false, echec: echecLecture(erreur) }
+      return {
+        ok: true,
+        idees: {
+          oeuvres: ((oeuvres.data ?? []) as unknown as LigneIdee[]).map(versOeuvreIdee).sort((a, b) => comparerTitres(a.titre, b.titre)),
+          deCote: ((deCote.data ?? []) as { work_id: string; shown_at: string }[]).map((ligne): MiseDeCote => ({ oeuvre: ligne.work_id, depuis: ligne.shown_at })),
+        },
+      }
+    },
+
+    async mettreIdeeDeCote(id, envie) {
+      const { data, error } = await client.rpc('mettre_idee_de_cote', { oeuvre: id, envie })
+      if (error) return { ok: false, echec: echecEcriture(error) }
+      // La base rend la date de mise de côté : sans elle, rien ne dit que l'écriture a eu lieu.
+      if (typeof data !== 'string') return { ok: false, echec: 'inconnu' }
+      return { ok: true, depuis: data }
+    },
+
+    async reprendreIdee(id) {
+      return appeler('reprendre_idee', { oeuvre: id })
     },
 
     async installerCatalogue() {
