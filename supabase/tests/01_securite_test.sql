@@ -161,9 +161,9 @@ select is_empty(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and has_function_privilege('authenticated', p.oid, 'execute')
-      and p.proname not in ('importer_catalogue', 'enregistrer_oeuvre', 'changer_statut', 'noter_progression', 'dater_fin', 'reserver_appel_ia', 'noter_achat', 'regler_tomes')
+      and p.proname not in ('importer_catalogue', 'enregistrer_oeuvre', 'changer_statut', 'noter_progression', 'dater_fin', 'reserver_appel_ia', 'noter_achat', 'regler_tomes', 'mettre_idee_de_cote', 'reprendre_idee')
   $$,
-  'Le compte connecté ne peut appeler que l’import du catalogue, l’enregistrement d’une œuvre, le suivi de lecture, la réservation d’un appel à l’IA, la note d’un achat et le réglage des tomes'
+  'Le compte connecté ne peut appeler que l’import du catalogue, l’enregistrement d’une œuvre, le suivi de lecture, la réservation d’un appel à l’IA, la note d’un achat, le réglage des tomes, et la mise de côté d’une idée ou sa reprise'
 );
 
 select is_empty(
